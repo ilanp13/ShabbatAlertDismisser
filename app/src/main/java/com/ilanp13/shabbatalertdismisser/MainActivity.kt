@@ -66,26 +66,40 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
 
-        // Candle lighting minutes spinner
-        val candleOptions = arrayOf("18", "20", "22", "30", "40")
-        spinnerCandle.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, candleOptions)
-        val savedCandle = prefs.getInt("candle_lighting_minutes", 18).toString()
-        spinnerCandle.setSelection(candleOptions.indexOf(savedCandle).coerceAtLeast(0))
+        // Candle lighting minhag spinner
+        val candleProfiles = MinhagProfiles.candleLighting
+        spinnerCandle.adapter = ArrayAdapter(this,
+            android.R.layout.simple_spinner_dropdown_item,
+            candleProfiles.map { it.display })
+        val savedCandleKey = prefs.getString("candle_profile",
+            MinhagProfiles.candleKeyFor(prefs.getInt("candle_lighting_minutes", 18)))!!
+        spinnerCandle.setSelection(candleProfiles.indexOfFirst { it.key == savedCandleKey }.coerceAtLeast(0))
         spinnerCandle.onItemSelectedListener = object : SimpleSpinnerListener() {
             override fun onItemSelected(pos: Int) {
-                prefs.edit().putInt("candle_lighting_minutes", candleOptions[pos].toInt()).apply()
+                val profile = candleProfiles[pos]
+                prefs.edit()
+                    .putString("candle_profile", profile.key)
+                    .putInt("candle_lighting_minutes", profile.minutes)
+                    .apply()
                 updateShabbatTimes(tvShabbatTimes)
             }
         }
 
-        // Havdalah minutes spinner
-        val havdalahOptions = arrayOf("25", "30", "40", "50", "60", "72")
-        spinnerHavdalah.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, havdalahOptions)
-        val savedHavdalah = prefs.getInt("havdalah_minutes", 40).toString()
-        spinnerHavdalah.setSelection(havdalahOptions.indexOf(savedHavdalah).coerceAtLeast(0))
+        // Havdalah minhag spinner
+        val havdalahProfiles = MinhagProfiles.havdalah
+        spinnerHavdalah.adapter = ArrayAdapter(this,
+            android.R.layout.simple_spinner_dropdown_item,
+            havdalahProfiles.map { it.display })
+        val savedHavdalahKey = prefs.getString("havdalah_profile",
+            MinhagProfiles.havdalahKeyFor(prefs.getInt("havdalah_minutes", 40)))!!
+        spinnerHavdalah.setSelection(havdalahProfiles.indexOfFirst { it.key == savedHavdalahKey }.coerceAtLeast(0))
         spinnerHavdalah.onItemSelectedListener = object : SimpleSpinnerListener() {
             override fun onItemSelected(pos: Int) {
-                prefs.edit().putInt("havdalah_minutes", havdalahOptions[pos].toInt()).apply()
+                val profile = havdalahProfiles[pos]
+                prefs.edit()
+                    .putString("havdalah_profile", profile.key)
+                    .putInt("havdalah_minutes", profile.minutes)
+                    .apply()
                 updateShabbatTimes(tvShabbatTimes)
             }
         }

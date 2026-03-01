@@ -16,8 +16,8 @@
     <string name="shabbat_times_title">Next Shabbat</string>
     <string name="shabbat_times_format">Starts: %1$s\nEnds: %2$s</string>
     <string name="shabbat_times_unavailable">Could not calculate times</string>
-    <string name="candle_lighting_label">Candle lighting (minutes before sunset)</string>
-    <string name="havdalah_label">Havdalah (minutes after sunset)</string>
+    <string name="candle_lighting_label">Candle lighting minhag</string>
+    <string name="havdalah_label">Motzei Shabbat / Havdalah minhag</string>
     <string name="delay_label">Delay before dismissing alert</string>
     <string name="delay_format">%d seconds</string>
     <string name="status_shabbat_only">✅ Active — auto-dismiss during Shabbat</string>

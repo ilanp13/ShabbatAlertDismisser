@@ -16,8 +16,8 @@
     <string name="shabbat_times_title">שבת הקרובה</string>
     <string name="shabbat_times_format">כניסה: %1$s\nיציאה: %2$s</string>
     <string name="shabbat_times_unavailable">לא ניתן לחשב זמנים</string>
-    <string name="candle_lighting_label">הדלקת נרות (דקות לפני שקיעה)</string>
-    <string name="havdalah_label">הבדלה (דקות אחרי שקיעה)</string>
+    <string name="candle_lighting_label">מנהג הדלקת נרות</string>
+    <string name="havdalah_label">מנהג מוצאי שבת / הבדלה</string>
     <string name="delay_label">השהייה לפני סגירת ההתראה</string>
     <string name="delay_format">%d שניות</string>
     <string name="status_shabbat_only">✅ פעיל — סגירה אוטומטית בשבת</string>
