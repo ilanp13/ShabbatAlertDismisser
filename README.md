@@ -20,6 +20,16 @@ Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates 
 - Hebrew and English UI
 - Supports major Android OEM cell broadcast packages (AOSP, Google, Samsung)
 
+## Screenshots
+
+| Main screen | Minhag & times | Delay & settings |
+|---|---|---|
+| ![Main](screenshots/01-main-screen.jpeg) | ![Minhag](screenshots/02-minhag-and-times.jpeg) | ![Delay](screenshots/03-delay-and-settings.jpeg) |
+
+| Screen-on options | Notification |
+|---|---|
+| ![Screen on](screenshots/04-screen-on-options.jpeg) | ![Notification](screenshots/05-notification.jpeg) |
+
 ## Setup
 
 1. Build and install the app
