@@ -8,6 +8,7 @@
     <string name="mode_always">Always (including weekdays)</string>
     <string name="mode_disabled">Disabled</string>
     <string name="open_accessibility">Open Accessibility Settings</string>
+    <string name="battery_opt_hint">⚡ For reliable operation: Settings → Battery → Background usage limits → Never sleeping apps → add this app</string>
     <string name="location_title">Location</string>
     <string name="update_location">Update Location</string>
     <string name="location_format">Lat: %.4f, Lon: %.4f</string>

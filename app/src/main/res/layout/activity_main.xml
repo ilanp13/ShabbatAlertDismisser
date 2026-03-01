@@ -77,6 +77,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/open_accessibility"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/battery_opt_hint"
+            android:textSize="12sp"
+            android:alpha="0.6"
             android:layout_marginBottom="24dp" />
 
         <!-- Location -->

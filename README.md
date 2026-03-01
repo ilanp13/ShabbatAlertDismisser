@@ -6,24 +6,19 @@ An Android accessibility service that automatically dismisses cell broadcast eme
 
 The app registers as an Android Accessibility Service and listens for windows opened by cell broadcast packages. When an alert is detected during the configured time window, it waits a configurable delay (so you can hear the siren), then taps the dismiss button automatically.
 
-Shabbat times are calculated locally using the **NOAA solar algorithm** based on your GPS coordinates — no internet connection required.
+Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates and chosen minhag for maximum accuracy. If no network is available, the app falls back to a local **NOAA solar algorithm**.
 
 ## Features
 
 - Auto-dismiss during **Shabbat only**, **Shabbat + Jewish holidays**, **always**, or **disabled**
-- Configurable **candle lighting** offset (18, 20, 22, 30, or 40 minutes before sunset)
-- Configurable **Havdalah** offset (25–72 minutes after sunset)
+- **Minhag profiles** — choose your community calendar (Ashkenaz, Or HaChaim, Kise Rachamim, Ben Ish Chai, Jerusalem) and get accurate candle lighting / Havdalah times automatically
+- **Standard (Gra) or Rabenu Tam** end-of-Shabbat, per your custom
 - Configurable **delay** before dismissing (5–60 seconds) — gives you time to hear the siren
-- Shows upcoming Shabbat start/end times in-app
+- **Persistent status notification** showing current state and upcoming Shabbat times (optional, can be disabled in-app)
+- Shows upcoming Shabbat start/end times in-app, synced via Hebcal
+- Offline fallback — works without internet using local sunset calculation
 - Hebrew and English UI
-- Works entirely offline
 - Supports major Android OEM cell broadcast packages (AOSP, Google, Samsung)
-
-## Requirements
-
-- Android 8.0+ (API 26)
-- Accessibility service permission
-- Location permission (for sunset calculation)
 
 ## Setup
 
@@ -31,22 +26,32 @@ Shabbat times are calculated locally using the **NOAA solar algorithm** based on
 2. Open the app → tap **Open Accessibility Settings**
 3. Find **Shabbat Alert Dismisser** → enable it → confirm
 4. Back in the app → tap **Update Location** → allow location permission
-5. Verify the Shabbat times shown are correct for your area
-6. Adjust candle lighting / Havdalah minutes to your custom (minhag)
+5. Select your **minhag** and preferred end-of-Shabbat (Gra / Rabenu Tam)
+6. Verify the Shabbat times shown are correct for your area
 7. Set the delay before the alert is dismissed
 8. Done — the service runs silently in the background
+
+## Keeping the service alive (Samsung / aggressive OEMs)
+
+Android restarts the accessibility service automatically after a normal reboot or crash. However, some OEMs (especially Samsung) aggressively kill background services to save battery, which can cause the service to stop working mid-Shabbat.
+
+**Recommended:** add the app to the "Never sleeping apps" list:
+
+> **Settings → Battery → Background usage limits → Never sleeping apps → add *Shabbat Alert Dismisser***
+
+> ⚠️ **Note:** If you use **Force Stop** (Settings → Apps → Force Stop), Android will disable the accessibility service and it must be re-enabled manually. This is an Android security feature and cannot be worked around.
 
 ## Building from source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/shabbat-alert-dismisser.git
-cd shabbat-alert-dismisser
+git clone https://github.com/ilanp13/ShabbatAlertDismisser.git
+cd ShabbatAlertDismisser
 ./gradlew assembleDebug
 ```
 
-Or open the project in **Android Studio** (Electric Eel or newer) and hit Run.
+Or open the project in **Android Studio (Hedgehog or newer)** and hit Run.
 
-**Requirements:** Android SDK 34, Gradle 8.2, Kotlin 1.9
+**Requirements:** Android SDK 34, Gradle 8.7, Kotlin 2.0, JDK 21
 
 ## Project structure
 
@@ -55,8 +60,11 @@ app/src/main/
 ├── java/com/ilanp13/shabbatalertdismisser/
 │   ├── MainActivity.kt           # Settings UI
 │   ├── AlertDismissService.kt    # Accessibility service — detects and dismisses alerts
-│   ├── ShabbatCalculator.kt      # NOAA-based sunset / Shabbat time calculator
-│   └── HolidayCalculator.kt      # Hebrew calendar converter + Yom Tov detection
+│   ├── HebcalService.kt          # Fetches accurate Shabbat times from Hebcal API
+│   ├── MinhagProfiles.kt         # Named community calendar profiles
+│   ├── ShabbatCalculator.kt      # NOAA-based sunset / Shabbat time calculator (offline fallback)
+│   ├── HolidayCalculator.kt      # Hebrew calendar converter + Yom Tov detection
+│   └── BootReceiver.kt           # Refreshes Hebcal cache after device reboot
 └── res/
     ├── layout/activity_main.xml
     ├── values/strings.xml         # English
@@ -68,9 +76,11 @@ app/src/main/
 
 | Permission | Why |
 |---|---|
+| `INTERNET` | Fetch accurate Shabbat times from Hebcal API |
 | `ACCESS_FINE_LOCATION` | Calculate local sunset time |
+| `POST_NOTIFICATIONS` | Show persistent status notification (Android 13+) |
 | `BIND_ACCESSIBILITY_SERVICE` | Detect and dismiss alert windows |
-| `RECEIVE_BOOT_COMPLETED` | (Reserved for future auto-start) |
+| `RECEIVE_BOOT_COMPLETED` | Refresh Hebcal times after device reboot |
 
 ## Disclaimer
 
