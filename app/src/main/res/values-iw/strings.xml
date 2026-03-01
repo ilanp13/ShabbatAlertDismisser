@@ -8,7 +8,7 @@
     <string name="mode_always">תמיד (כולל ימי חול)</string>
     <string name="mode_disabled">מושבת</string>
     <string name="open_accessibility">פתח הגדרות נגישות</string>
-    <string name="battery_opt_hint">⚡ להפעלה אמינה: הגדרות ← סוללה ← הגבלות שימוש ברקע ← אפליקציות ללא שינה ← הוסף אפליקציה זו</string>
+    <string name="battery_opt_hint">⚡ פתח הגדרות אופטימיזציית סוללה</string>
     <string name="location_title">מיקום</string>
     <string name="update_location">עדכן מיקום</string>
     <string name="location_format">קו רוחב: %.4f, קו אורך: %.4f</string>

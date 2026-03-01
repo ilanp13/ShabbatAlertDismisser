@@ -97,6 +97,9 @@ class MainActivity : AppCompatActivity() {
         btnAccessibility.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
+        findViewById<Button>(R.id.btnBatteryOpt).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        }
         btnUpdateLoc.setOnClickListener {
             requestLocationUpdate(tvLocation, tvShabbatTimes, tvSyncStatus)
         }
