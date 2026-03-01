@@ -22,7 +22,7 @@ object MinhagProfiles {
     val all = listOf(
         Profile("ashkenaz",      "אשכנז / Ashkenaz",                18, 42),
         Profile("or_hachaim",    "אור החיים (Or HaChaim)",           20, 31),
-        Profile("kise_rachamim", "כיסא רחמים (Kise Rachamim)",       40, 37),
+        Profile("kise_rachamim", "כיסא רחמים (Kise Rachamim)",       20, 37),
         Profile("ben_ish_chai",  "בן איש חי (Ben Ish Chai)",         20, 40),
         Profile("jerusalem",     "ירושלים (Jerusalem)",               40, 40),
     )
