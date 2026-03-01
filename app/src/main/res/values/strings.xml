@@ -30,6 +30,7 @@
     <string name="status_shabbat_holidays">✅ Active — auto-dismiss during Shabbat &amp; holidays</string>
     <string name="status_always">✅ Active — auto-dismiss always</string>
     <string name="status_disabled">⏸ Disabled</string>
+    <string name="status_screen_on">🔆 Screen stays on during Shabbat</string>
     <string name="status_no_accessibility">⚠️ Accessibility service not enabled — tap the button below</string>
     <string name="battery_info">ℹ️ Battery impact: minimal — event-driven, no background polling</string>
     <string name="screen_on_switch_label">Keep screen on during Shabbat</string>

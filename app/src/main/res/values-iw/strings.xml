@@ -30,6 +30,7 @@
     <string name="status_shabbat_holidays">✅ פעיל — סגירה אוטומטית בשבת ובחגים</string>
     <string name="status_always">✅ פעיל — סגירה אוטומטית תמיד</string>
     <string name="status_disabled">⏸ מושבת</string>
+    <string name="status_screen_on">🔆 המסך יישאר דלוק בשבת</string>
     <string name="status_no_accessibility">⚠️ שירות הנגישות לא מופעל — לחץ על הכפתור למטה</string>
     <string name="battery_info">ℹ️ צריכת סוללה: מינימלית — מבוסס אירועים, ללא סריקת רקע</string>
     <string name="screen_on_switch_label">שמור מסך דלוק בשבת</string>

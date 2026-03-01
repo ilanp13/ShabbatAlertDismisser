@@ -116,6 +116,7 @@ class MainActivity : AppCompatActivity() {
         switchScreenOn.isChecked = prefs.getBoolean("keep_screen_on", false)
         switchScreenOn.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("keep_screen_on", isChecked).apply()
+            updateStatusText(tvStatus)
         }
 
         // ── Request notification permission (Android 13+) ────────────────────
@@ -193,13 +194,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateStatusText(tv: TextView) {
         val mode = prefs.getString("mode", "shabbat_only")
-        tv.text = when {
+        val base = when {
             !isAccessibilityServiceEnabled()  -> getString(R.string.status_no_accessibility)
             mode == "disabled"                -> getString(R.string.status_disabled)
             mode == "always"                  -> getString(R.string.status_always)
             mode == "shabbat_holidays"        -> getString(R.string.status_shabbat_holidays)
             else                              -> getString(R.string.status_shabbat_only)
         }
+        val screenOn = prefs.getBoolean("keep_screen_on", false)
+            && isAccessibilityServiceEnabled()
+            && mode != "disabled"
+        tv.text = if (screenOn) "$base\n${getString(R.string.status_screen_on)}" else base
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
