@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Star of David -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,18 L63,36 L81,36 L67.5,48 L72,66 L54,57 L36,66 L40.5,48 L27,36 L45,36 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,90 L45,72 L27,72 L40.5,60 L36,42 L54,51 L72,42 L67.5,60 L81,72 L63,72 Z" />
+</vector>

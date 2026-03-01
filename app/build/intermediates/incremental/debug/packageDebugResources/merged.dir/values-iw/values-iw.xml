@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">סגירת התראות בשבת</string>
+    <string name="delay_format">%d שניות</string>
+    <string name="delay_label">השהייה לפני סגירת ההתראה</string>
+    <string name="end_shabbat_gra">לפי הגר״א</string>
+    <string name="end_shabbat_label">צאת השבת</string>
+    <string name="end_shabbat_rt">רבנו תם</string>
+    <string name="location_failed">לא ניתן לקבל מיקום</string>
+    <string name="location_format">קו רוחב: %.4f, קו אורך: %.4f</string>
+    <string name="location_title">מיקום</string>
+    <string name="location_updated">המיקום עודכן</string>
+    <string name="minhag_label">המנהג שלי</string>
+    <string name="mode_always">תמיד (כולל ימי חול)</string>
+    <string name="mode_disabled">מושבת</string>
+    <string name="mode_label">מצב סגירה אוטומטית</string>
+    <string name="mode_shabbat_holidays">שבת + חגים</string>
+    <string name="mode_shabbat_only">שבת בלבד</string>
+    <string name="open_accessibility">פתח הגדרות נגישות</string>
+    <string name="service_description">סוגר אוטומטית התראות חירום בשבת כדי שלא יחסמו את המסך.</string>
+    <string name="shabbat_times_format">כניסה: %1$s\nיציאה: %2$s</string>
+    <string name="shabbat_times_title">שבת הקרובה</string>
+    <string name="shabbat_times_unavailable">לא ניתן לחשב זמנים</string>
+    <string name="status_always">✅ פעיל — סגירה אוטומטית תמיד</string>
+    <string name="status_disabled">⏸ מושבת</string>
+    <string name="status_no_accessibility">⚠️ שירות הנגישות לא מופעל — לחץ על הכפתור למטה</string>
+    <string name="status_shabbat_holidays">✅ פעיל — סגירה אוטומטית בשבת ובחגים</string>
+    <string name="status_shabbat_only">✅ פעיל — סגירה אוטומטית בשבת</string>
+    <string name="sync_status_offline">⚠️ אופליין — משתמש בזמנים מקומיים משוערים</string>
+    <string name="sync_status_synced">✓ זמנים סונכרנו עם Hebcal</string>
+    <string name="sync_status_syncing">⏳ מסנכרן זמנים עם Hebcal…</string>
+    <string name="update_location">עדכן מיקום</string>
+</resources>
