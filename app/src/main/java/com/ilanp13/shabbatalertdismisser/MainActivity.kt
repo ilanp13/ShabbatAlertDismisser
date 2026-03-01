@@ -108,6 +108,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Refresh accessibility status every time we return (e.g. from accessibility settings)
+        updateStatusText(findViewById(R.id.tvStatus))
         // Auto-refresh if Hebcal cache has expired (havdalah is in the past)
         if (prefs.getLong("hebcal_havdalah_ms", 0) < System.currentTimeMillis()) {
             syncHebcal(
@@ -194,9 +196,11 @@ class MainActivity : AppCompatActivity() {
 
         if (candleMs > 0 && havdalahMs > now - 7 * 86_400_000L) {
             val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
+            // Round havdalah to nearest minute (≥30 s rounds up — matches published calendars)
+            val havdalahDisplayMs = ((havdalahMs + 30_000L) / 60_000L) * 60_000L
             tv.text = getString(R.string.shabbat_times_format,
                 fmt.format(Date(candleMs)),
-                fmt.format(Date(havdalahMs)))
+                fmt.format(Date(havdalahDisplayMs)))
             return
         }
 
@@ -208,9 +212,10 @@ class MainActivity : AppCompatActivity() {
         val times   = ShabbatCalculator(lat, lon).getShabbatTimes(candle, havdala)
         if (times != null) {
             val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
+            val havdalahMs = ((times.second.time.time + 30_000L) / 60_000L) * 60_000L
             tv.text = getString(R.string.shabbat_times_format,
                 fmt.format(times.first.time),
-                fmt.format(times.second.time))
+                fmt.format(Date(havdalahMs)))
         } else {
             tv.text = getString(R.string.shabbat_times_unavailable)
         }
