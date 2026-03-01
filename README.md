@@ -31,6 +31,21 @@ Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates 
 7. Set the delay before the alert is dismissed
 8. Done — the service runs silently in the background
 
+## Battery impact
+
+The app is designed to be extremely lightweight:
+
+| What it does | Battery cost |
+|---|---|
+| Accessibility service (idle) | Near zero — event-driven, only wakes on cell broadcast windows |
+| Notification refresh | Once per minute (negligible string update) |
+| Hebcal sync | Once per week, single HTTP call |
+| Location | On demand only (when you tap Update Location) |
+
+In practice the app won't appear in your battery stats.
+
+> ⚠️ **Keep screen on** (optional): if enabled, the display stays lit during Shabbat — this *does* drain the battery significantly. The battery optimization setting below is especially recommended if you use this feature.
+
 ## Keeping the service alive (Samsung / aggressive OEMs)
 
 Android restarts the accessibility service automatically after a normal reboot or crash. However, some OEMs (especially Samsung) aggressively kill background services to save battery, which can cause the service to stop working mid-Shabbat.

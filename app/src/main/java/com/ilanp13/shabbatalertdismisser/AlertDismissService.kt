@@ -6,9 +6,12 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.View
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
@@ -45,25 +48,32 @@ class AlertDismissService : AccessibilityService() {
         PreferenceManager.getDefaultSharedPreferences(this)
     }
 
-    // Update notification whenever relevant prefs change
+    // Update notification / screen state whenever relevant prefs change
     private val prefChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key in listOf("mode", "hebcal_candle_ms", "hebcal_havdalah_ms", "show_notification")) {
             postStatusNotification()
+        }
+        if (key in listOf("mode", "keep_screen_on", "hebcal_candle_ms", "hebcal_havdalah_ms")) {
+            updateScreenOn()
         }
     }
 
     private val notifUpdateRunnable = object : Runnable {
         override fun run() {
             postStatusNotification()
+            updateScreenOn()
             handler.postDelayed(this, NOTIF_UPDATE_MS)
         }
     }
+
+    private var screenOnView: View? = null
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onServiceConnected() {
         createNotificationChannel()
         postStatusNotification()
+        updateScreenOn()
         handler.postDelayed(notifUpdateRunnable, NOTIF_UPDATE_MS)
         prefs.registerOnSharedPreferenceChangeListener(prefChangeListener)
         Log.d(TAG, "Service connected")
@@ -74,7 +84,65 @@ class AlertDismissService : AccessibilityService() {
         prefs.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         handler.removeCallbacks(notifUpdateRunnable)
         getSystemService(NotificationManager::class.java).cancel(NOTIF_ID)
+        removeScreenOnOverlay()
         Log.d(TAG, "Service destroyed")
+    }
+
+    // ── Screen-on overlay ─────────────────────────────────────────────────────
+
+    /**
+     * Keeps the screen awake using a zero-size TYPE_ACCESSIBILITY_OVERLAY window
+     * with FLAG_KEEP_SCREEN_ON — no extra permissions required for accessibility services.
+     */
+    private fun updateScreenOn() {
+        val wantScreenOn = prefs.getBoolean("keep_screen_on", false) && isActiveNow()
+        if (wantScreenOn && screenOnView == null) {
+            try {
+                val params = WindowManager.LayoutParams(
+                    1, 1,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                    PixelFormat.TRANSLUCENT
+                )
+                val view = View(this)
+                getSystemService(WindowManager::class.java).addView(view, params)
+                screenOnView = view
+                Log.d(TAG, "Screen-on overlay added")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to add screen-on overlay: ${e.message}")
+            }
+        } else if (!wantScreenOn) {
+            removeScreenOnOverlay()
+        }
+    }
+
+    private fun removeScreenOnOverlay() {
+        screenOnView?.let {
+            try {
+                getSystemService(WindowManager::class.java).removeView(it)
+                Log.d(TAG, "Screen-on overlay removed")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to remove screen-on overlay: ${e.message}")
+            }
+            screenOnView = null
+        }
+    }
+
+    /** Returns true if auto-dismiss is currently active (mode + Shabbat check). */
+    private fun isActiveNow(): Boolean {
+        val mode = prefs.getString("mode", "shabbat_only")
+        if (mode == "disabled") return false
+        if (mode == "always")   return true
+        val lat         = prefs.getFloat("latitude",  31.7683f).toDouble()
+        val lon         = prefs.getFloat("longitude", 35.2137f).toDouble()
+        val candleMins  = prefs.getInt("candle_lighting_minutes", 18)
+        val havdalahMins = prefs.getInt("havdalah_minutes", 40)
+        val isShabbat   = isShabbatNow(lat, lon, candleMins, havdalahMins)
+        val isHoliday   = if (mode == "shabbat_holidays")
+            HolidayCalculator.isYomTovToday(candleMins, havdalahMins, lat, lon) else false
+        return isShabbat || isHoliday
     }
 
     // ── Notification ──────────────────────────────────────────────────────────

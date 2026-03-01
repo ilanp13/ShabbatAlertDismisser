@@ -202,13 +202,38 @@
             android:layout_height="wrap_content"
             android:textSize="14sp" />
 
+        <!-- Battery info -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/battery_info"
+            android:textSize="12sp"
+            android:alpha="0.6"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp" />
+
         <!-- Persistent notification toggle -->
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switchNotification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/notif_switch_label"
-            android:layout_marginTop="24dp" />
+            android:text="@string/notif_switch_label" />
+
+        <!-- Keep screen on toggle -->
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchScreenOn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/screen_on_switch_label"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/screen_on_warning"
+            android:textSize="12sp"
+            android:alpha="0.6"
+            android:layout_marginTop="2dp" />
 
     </LinearLayout>
 </ScrollView>

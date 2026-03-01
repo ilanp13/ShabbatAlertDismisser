@@ -111,6 +111,13 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putBoolean("show_notification", isChecked).apply()
         }
 
+        // ── Keep screen on toggle ─────────────────────────────────────────────
+        val switchScreenOn = findViewById<SwitchMaterial>(R.id.switchScreenOn)
+        switchScreenOn.isChecked = prefs.getBoolean("keep_screen_on", false)
+        switchScreenOn.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("keep_screen_on", isChecked).apply()
+        }
+
         // ── Request notification permission (Android 13+) ────────────────────
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)

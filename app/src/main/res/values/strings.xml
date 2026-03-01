@@ -31,6 +31,9 @@
     <string name="status_always">✅ Active — auto-dismiss always</string>
     <string name="status_disabled">⏸ Disabled</string>
     <string name="status_no_accessibility">⚠️ Accessibility service not enabled — tap the button below</string>
+    <string name="battery_info">ℹ️ Battery impact: minimal — event-driven, no background polling</string>
+    <string name="screen_on_switch_label">Keep screen on during Shabbat</string>
+    <string name="screen_on_warning">⚠️ Keeps display always lit — drains battery faster</string>
     <string name="notif_switch_label">Show persistent notification</string>
     <string name="notif_channel_name">Shabbat Status</string>
     <string name="notif_channel_desc">Shows current auto-dismiss status and upcoming Shabbat times</string>
