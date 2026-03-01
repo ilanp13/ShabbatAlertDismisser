@@ -95,7 +95,8 @@ class AlertDismissService : AccessibilityService() {
      * with FLAG_KEEP_SCREEN_ON — no extra permissions required for accessibility services.
      */
     private fun updateScreenOn() {
-        val wantScreenOn = when (prefs.getString("screen_on_mode", "off")) {
+        val modeDisabled = prefs.getString("mode", "shabbat_only") == "disabled"
+        val wantScreenOn = !modeDisabled && when (prefs.getString("screen_on_mode", "off")) {
             "always"  -> true
             "shabbat" -> isShabbatOrHolidayNow()
             else      -> false
