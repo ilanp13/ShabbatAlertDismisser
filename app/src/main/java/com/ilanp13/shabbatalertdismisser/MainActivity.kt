@@ -119,12 +119,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
-        val service = "$packageName/.AlertDismissService"
+        val cn = android.content.ComponentName(this, AlertDismissService::class.java)
         val enabledServices = Settings.Secure.getString(
             contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
-        return enabledServices.contains(service)
+        return enabledServices.contains(cn.flattenToString())
     }
 
     private fun updateLocationText(tv: TextView) {
