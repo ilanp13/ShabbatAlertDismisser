@@ -95,7 +95,7 @@ class AlertDismissService : AccessibilityService() {
      * with FLAG_KEEP_SCREEN_ON — no extra permissions required for accessibility services.
      */
     private fun updateScreenOn() {
-        val wantScreenOn = prefs.getBoolean("keep_screen_on", false) && isActiveNow()
+        val wantScreenOn = prefs.getBoolean("keep_screen_on", false) && isShabbatOrHolidayNow()
         if (wantScreenOn && screenOnView == null) {
             try {
                 val params = WindowManager.LayoutParams(
@@ -130,19 +130,26 @@ class AlertDismissService : AccessibilityService() {
         }
     }
 
-    /** Returns true if auto-dismiss is currently active (mode + Shabbat check). */
+    /** Returns true if auto-dismiss is currently active (respects mode setting). */
     private fun isActiveNow(): Boolean {
         val mode = prefs.getString("mode", "shabbat_only")
         if (mode == "disabled") return false
         if (mode == "always")   return true
-        val lat         = prefs.getFloat("latitude",  31.7683f).toDouble()
-        val lon         = prefs.getFloat("longitude", 35.2137f).toDouble()
-        val candleMins  = prefs.getInt("candle_lighting_minutes", 18)
+        return isShabbatOrHolidayNow()
+    }
+
+    /**
+     * Returns true if it is currently Shabbat or a holiday — always based on
+     * actual halachic times, regardless of the dismiss mode setting.
+     * Used for screen-on so it never stays on outside Shabbat.
+     */
+    private fun isShabbatOrHolidayNow(): Boolean {
+        val lat          = prefs.getFloat("latitude",  31.7683f).toDouble()
+        val lon          = prefs.getFloat("longitude", 35.2137f).toDouble()
+        val candleMins   = prefs.getInt("candle_lighting_minutes", 18)
         val havdalahMins = prefs.getInt("havdalah_minutes", 40)
-        val isShabbat   = isShabbatNow(lat, lon, candleMins, havdalahMins)
-        val isHoliday   = if (mode == "shabbat_holidays")
-            HolidayCalculator.isYomTovToday(candleMins, havdalahMins, lat, lon) else false
-        return isShabbat || isHoliday
+        return isShabbatNow(lat, lon, candleMins, havdalahMins) ||
+               HolidayCalculator.isYomTovToday(candleMins, havdalahMins, lat, lon)
     }
 
     // ── Notification ──────────────────────────────────────────────────────────
