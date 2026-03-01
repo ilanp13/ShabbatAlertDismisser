@@ -45,9 +45,9 @@ class AlertDismissService : AccessibilityService() {
         PreferenceManager.getDefaultSharedPreferences(this)
     }
 
-    // Update notification whenever mode or Hebcal times change
+    // Update notification whenever relevant prefs change
     private val prefChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key in listOf("mode", "hebcal_candle_ms", "hebcal_havdalah_ms")) {
+        if (key in listOf("mode", "hebcal_candle_ms", "hebcal_havdalah_ms", "show_notification")) {
             postStatusNotification()
         }
     }
@@ -89,6 +89,11 @@ class AlertDismissService : AccessibilityService() {
     }
 
     private fun postStatusNotification() {
+        if (!prefs.getBoolean("show_notification", true)) {
+            getSystemService(NotificationManager::class.java).cancel(NOTIF_ID)
+            return
+        }
+
         val mode      = prefs.getString("mode", "shabbat_only")
         val candleMs  = prefs.getLong("hebcal_candle_ms",   0)
         val havMs     = prefs.getLong("hebcal_havdalah_ms", 0)

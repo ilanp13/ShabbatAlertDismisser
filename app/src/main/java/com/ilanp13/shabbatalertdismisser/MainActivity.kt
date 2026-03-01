@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.*
+import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
@@ -98,6 +99,13 @@ class MainActivity : AppCompatActivity() {
         }
         btnUpdateLoc.setOnClickListener {
             requestLocationUpdate(tvLocation, tvShabbatTimes, tvSyncStatus)
+        }
+
+        // ── Persistent notification toggle ────────────────────────────────────
+        val switchNotif = findViewById<SwitchMaterial>(R.id.switchNotification)
+        switchNotif.isChecked = prefs.getBoolean("show_notification", true)
+        switchNotif.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("show_notification", isChecked).apply()
         }
 
         // ── Request notification permission (Android 13+) ────────────────────

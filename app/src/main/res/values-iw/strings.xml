@@ -30,6 +30,7 @@
     <string name="status_always">✅ פעיל — סגירה אוטומטית תמיד</string>
     <string name="status_disabled">⏸ מושבת</string>
     <string name="status_no_accessibility">⚠️ שירות הנגישות לא מופעל — לחץ על הכפתור למטה</string>
+    <string name="notif_switch_label">הצג התראה קבועה</string>
     <string name="notif_channel_name">סטטוס שבת</string>
     <string name="notif_channel_desc">מציג את סטטוס הסגירה האוטומטית וזמני השבת הקרובה</string>
     <string name="notif_body_disabled">⏸ סגירה אוטומטית: כבוי</string>
