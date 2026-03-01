@@ -1,18 +1,30 @@
 package com.ilanp13.shabbatalertdismisser
 
 import android.accessibilityservice.AccessibilityService
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class AlertDismissService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ShabbatAlertDismiss"
+        private const val NOTIF_CHANNEL_ID = "shabbat_status"
+        private const val NOTIF_ID = 1
+        private const val NOTIF_UPDATE_MS = 60_000L
+
         private val CELL_BROADCAST_PACKAGES = setOf(
             "com.android.cellbroadcastreceiver",
             "com.google.android.cellbroadcastreceiver",
@@ -32,6 +44,96 @@ class AlertDismissService : AccessibilityService() {
     private val prefs: SharedPreferences by lazy {
         PreferenceManager.getDefaultSharedPreferences(this)
     }
+
+    // Update notification whenever mode or Hebcal times change
+    private val prefChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in listOf("mode", "hebcal_candle_ms", "hebcal_havdalah_ms")) {
+            postStatusNotification()
+        }
+    }
+
+    private val notifUpdateRunnable = object : Runnable {
+        override fun run() {
+            postStatusNotification()
+            handler.postDelayed(this, NOTIF_UPDATE_MS)
+        }
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    override fun onServiceConnected() {
+        createNotificationChannel()
+        postStatusNotification()
+        handler.postDelayed(notifUpdateRunnable, NOTIF_UPDATE_MS)
+        prefs.registerOnSharedPreferenceChangeListener(prefChangeListener)
+        Log.d(TAG, "Service connected")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        prefs.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
+        handler.removeCallbacks(notifUpdateRunnable)
+        getSystemService(NotificationManager::class.java).cancel(NOTIF_ID)
+        Log.d(TAG, "Service destroyed")
+    }
+
+    // ── Notification ──────────────────────────────────────────────────────────
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            NOTIF_CHANNEL_ID,
+            getString(R.string.notif_channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply { description = getString(R.string.notif_channel_desc) }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    private fun postStatusNotification() {
+        val mode      = prefs.getString("mode", "shabbat_only")
+        val candleMs  = prefs.getLong("hebcal_candle_ms",   0)
+        val havMs     = prefs.getLong("hebcal_havdalah_ms", 0)
+        val now       = System.currentTimeMillis()
+        val fmt       = SimpleDateFormat("EEE HH:mm", Locale.getDefault())
+
+        fun fmtHav(ms: Long) = fmt.format(Date((ms + 30_000L) / 60_000L * 60_000L))
+
+        val body = when (mode) {
+            "disabled" -> getString(R.string.notif_body_disabled)
+            "always"   -> getString(R.string.notif_body_always)
+            else -> {
+                val isShabbat = candleMs > 0 && havMs > 0 && now in candleMs..havMs
+                if (isShabbat) {
+                    getString(R.string.notif_body_active, if (havMs > 0) fmtHav(havMs) else "?")
+                } else {
+                    val starts = if (candleMs > now) fmt.format(Date(candleMs)) else "?"
+                    val ends   = if (havMs   > 0)   fmtHav(havMs)              else "?"
+                    getString(R.string.notif_body_standby, starts, ends)
+                }
+            }
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val notif = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID, notif)
+    }
+
+    // ── Accessibility event ───────────────────────────────────────────────────
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
@@ -76,7 +178,7 @@ class AlertDismissService : AccessibilityService() {
      * falls back to local NOAA sunset calculation otherwise.
      */
     private fun isShabbatNow(lat: Double, lon: Double, candleMins: Int, havdalahMins: Int): Boolean {
-        val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+        val candleMs  = prefs.getLong("hebcal_candle_ms",   0)
         val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
         val now = System.currentTimeMillis()
 
@@ -89,6 +191,8 @@ class AlertDismissService : AccessibilityService() {
         Log.d(TAG, "No valid Hebcal cache, using local calculation")
         return ShabbatCalculator(lat, lon).isShabbatNow(candleMins, havdalahMins)
     }
+
+    // ── Alert dismissal ───────────────────────────────────────────────────────
 
     private fun dismissAlert() {
         val rootNode = rootInActiveWindow ?: run {

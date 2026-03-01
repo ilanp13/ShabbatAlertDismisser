@@ -30,4 +30,10 @@
     <string name="status_always">✅ Active — auto-dismiss always</string>
     <string name="status_disabled">⏸ Disabled</string>
     <string name="status_no_accessibility">⚠️ Accessibility service not enabled — tap the button below</string>
+    <string name="notif_channel_name">Shabbat Status</string>
+    <string name="notif_channel_desc">Shows current auto-dismiss status and upcoming Shabbat times</string>
+    <string name="notif_body_disabled">⏸ Auto-dismiss: OFF</string>
+    <string name="notif_body_always">✅ Auto-dismiss: always ON (including weekdays)</string>
+    <string name="notif_body_active">🕯 Shabbat active — auto-dismissing alerts\nEnds: %s</string>
+    <string name="notif_body_standby">⏰ Standby — next Shabbat\nStarts: %1$s · Ends: %2$s</string>
 </resources>

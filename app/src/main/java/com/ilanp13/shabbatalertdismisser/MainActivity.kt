@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.*
@@ -97,6 +98,14 @@ class MainActivity : AppCompatActivity() {
         }
         btnUpdateLoc.setOnClickListener {
             requestLocationUpdate(tvLocation, tvShabbatTimes, tvSyncStatus)
+        }
+
+        // ── Request notification permission (Android 13+) ────────────────────
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
         }
 
         // ── Initial state ─────────────────────────────────────────────────────
