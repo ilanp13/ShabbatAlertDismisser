@@ -111,11 +111,19 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putBoolean("show_notification", isChecked).apply()
         }
 
-        // ── Keep screen on toggle ─────────────────────────────────────────────
-        val switchScreenOn = findViewById<SwitchMaterial>(R.id.switchScreenOn)
-        switchScreenOn.isChecked = prefs.getBoolean("keep_screen_on", false)
-        switchScreenOn.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("keep_screen_on", isChecked).apply()
+        // ── Keep screen on radio ──────────────────────────────────────────────
+        val radioScreenOn = findViewById<RadioGroup>(R.id.radioScreenOn)
+        radioScreenOn.check(when (prefs.getString("screen_on_mode", "off")) {
+            "shabbat" -> R.id.radioScreenOnShabbat
+            "always"  -> R.id.radioScreenOnAlways
+            else      -> R.id.radioScreenOnOff
+        })
+        radioScreenOn.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("screen_on_mode", when (id) {
+                R.id.radioScreenOnShabbat -> "shabbat"
+                R.id.radioScreenOnAlways  -> "always"
+                else                      -> "off"
+            }).apply()
             updateStatusText(tvStatus)
         }
 
@@ -201,10 +209,14 @@ class MainActivity : AppCompatActivity() {
             mode == "shabbat_holidays"        -> getString(R.string.status_shabbat_holidays)
             else                              -> getString(R.string.status_shabbat_only)
         }
-        val screenOn = prefs.getBoolean("keep_screen_on", false)
-            && isAccessibilityServiceEnabled()
-            && mode != "disabled"
-        tv.text = if (screenOn) "$base\n${getString(R.string.status_screen_on)}" else base
+        val screenOnMode = prefs.getString("screen_on_mode", "off")
+        val screenOnLine = when {
+            !isAccessibilityServiceEnabled() || mode == "disabled" -> null
+            screenOnMode == "shabbat" -> getString(R.string.status_screen_on_shabbat)
+            screenOnMode == "always"  -> getString(R.string.status_screen_on_always)
+            else -> null
+        }
+        tv.text = if (screenOnLine != null) "$base\n$screenOnLine" else base
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {

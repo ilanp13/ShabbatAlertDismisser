@@ -53,7 +53,7 @@ class AlertDismissService : AccessibilityService() {
         if (key in listOf("mode", "hebcal_candle_ms", "hebcal_havdalah_ms", "show_notification")) {
             postStatusNotification()
         }
-        if (key in listOf("mode", "keep_screen_on", "hebcal_candle_ms", "hebcal_havdalah_ms")) {
+        if (key in listOf("mode", "screen_on_mode", "hebcal_candle_ms", "hebcal_havdalah_ms")) {
             updateScreenOn()
         }
     }
@@ -95,7 +95,11 @@ class AlertDismissService : AccessibilityService() {
      * with FLAG_KEEP_SCREEN_ON — no extra permissions required for accessibility services.
      */
     private fun updateScreenOn() {
-        val wantScreenOn = prefs.getBoolean("keep_screen_on", false) && isShabbatOrHolidayNow()
+        val wantScreenOn = when (prefs.getString("screen_on_mode", "off")) {
+            "always"  -> true
+            "shabbat" -> isShabbatOrHolidayNow()
+            else      -> false
+        }
         if (wantScreenOn && screenOnView == null) {
             try {
                 val params = WindowManager.LayoutParams(

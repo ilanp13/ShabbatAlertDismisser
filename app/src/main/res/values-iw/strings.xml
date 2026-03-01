@@ -33,8 +33,13 @@
     <string name="status_screen_on">🔆 המסך יישאר דלוק בשבת</string>
     <string name="status_no_accessibility">⚠️ שירות הנגישות לא מופעל — לחץ על הכפתור למטה</string>
     <string name="battery_info">ℹ️ צריכת סוללה: מינימלית — מבוסס אירועים, ללא סריקת רקע</string>
-    <string name="screen_on_switch_label">שמור מסך דלוק בשבת</string>
-    <string name="screen_on_warning">⚠️ המסך יישאר דלוק לאורך כל השבת — מגביר ניצול סוללה</string>
+    <string name="screen_on_label">שמור מסך דלוק</string>
+    <string name="screen_on_off">כבוי</string>
+    <string name="screen_on_shabbat">בשבת ובחגים</string>
+    <string name="screen_on_always">תמיד (כולל ימי חול)</string>
+    <string name="screen_on_warning">⚠️ המסך יישאר דלוק — מגביר ניצול סוללה</string>
+    <string name="status_screen_on_shabbat">🔆 המסך יישאר דלוק בשבת</string>
+    <string name="status_screen_on_always">🔆 המסך יישאר דלוק תמיד</string>
     <string name="notif_switch_label">הצג התראה קבועה</string>
     <string name="notif_channel_name">סטטוס שבת</string>
     <string name="notif_channel_desc">מציג את סטטוס הסגירה האוטומטית וזמני השבת הקרובה</string>

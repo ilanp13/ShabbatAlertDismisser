@@ -219,13 +219,43 @@
             android:layout_height="wrap_content"
             android:text="@string/notif_switch_label" />
 
-        <!-- Keep screen on toggle -->
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchScreenOn"
+        <!-- Keep screen on -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/screen_on_label"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radioScreenOn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/screen_on_switch_label"
-            android:layout_marginTop="4dp" />
+            android:layout_marginBottom="4dp">
+
+            <RadioButton
+                android:id="@+id/radioScreenOnOff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/screen_on_off"
+                android:minHeight="48dp" />
+
+            <RadioButton
+                android:id="@+id/radioScreenOnShabbat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/screen_on_shabbat"
+                android:minHeight="48dp" />
+
+            <RadioButton
+                android:id="@+id/radioScreenOnAlways"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/screen_on_always"
+                android:minHeight="48dp" />
+
+        </RadioGroup>
 
         <TextView
             android:layout_width="match_parent"
@@ -233,7 +263,7 @@
             android:text="@string/screen_on_warning"
             android:textSize="12sp"
             android:alpha="0.6"
-            android:layout_marginTop="2dp" />
+            android:layout_marginBottom="8dp" />
 
     </LinearLayout>
 </ScrollView>
