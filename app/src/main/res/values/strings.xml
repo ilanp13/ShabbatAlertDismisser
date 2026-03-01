@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shabbat Alert Dismisser</string>
+    <string name="service_description">Automatically dismisses emergency alerts during Shabbat so the full-screen alert does not block your screen.</string>
+    <string name="mode_label">Auto-dismiss mode</string>
+    <string name="mode_shabbat_only">Shabbat only</string>
+    <string name="mode_shabbat_holidays">Shabbat + Jewish holidays</string>
+    <string name="mode_always">Always (including weekdays)</string>
+    <string name="mode_disabled">Disabled</string>
+    <string name="open_accessibility">Open Accessibility Settings</string>
+    <string name="location_title">Location</string>
+    <string name="update_location">Update Location</string>
+    <string name="location_format">Lat: %.4f, Lon: %.4f</string>
+    <string name="location_updated">Location updated</string>
+    <string name="location_failed">Could not get location</string>
+    <string name="shabbat_times_title">Next Shabbat</string>
+    <string name="shabbat_times_format">Starts: %1$s\nEnds: %2$s</string>
+    <string name="shabbat_times_unavailable">Could not calculate times</string>
+    <string name="candle_lighting_label">Candle lighting (minutes before sunset)</string>
+    <string name="havdalah_label">Havdalah (minutes after sunset)</string>
+    <string name="delay_label">Delay before dismissing alert</string>
+    <string name="delay_format">%d seconds</string>
+    <string name="status_shabbat_only">✅ Active — auto-dismiss during Shabbat</string>
+    <string name="status_shabbat_holidays">✅ Active — auto-dismiss during Shabbat &amp; holidays</string>
+    <string name="status_always">✅ Active — auto-dismiss always</string>
+    <string name="status_disabled">⏸ Disabled</string>
+    <string name="status_no_accessibility">⚠️ Accessibility service not enabled — tap the button below</string>
+</resources>
