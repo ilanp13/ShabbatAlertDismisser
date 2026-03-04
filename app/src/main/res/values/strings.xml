@@ -49,5 +49,6 @@
     <string name="notif_body_standby">⏰ Standby — next Shabbat\nStarts: %1$s · Ends: %2$s</string>
     <string name="accessibility_disclosure_title">How This App Works</string>
     <string name="accessibility_disclosure_text">This app uses Android\'s Accessibility Service to detect emergency cell broadcast alerts and automatically dismiss the on-screen alert during configured times.\n\n✓ The siren still plays\n✓ Notifications still arrive\n✓ No alert data is collected or transmitted\n\nFor details, see the Privacy Policy.</string>
-    <string name="accessibility_disclosure_button">Got it</string>
+    <string name="accessibility_disclosure_button_cancel">Cancel</string>
+    <string name="accessibility_disclosure_button_settings">Open Accessibility Settings</string>
 </resources>

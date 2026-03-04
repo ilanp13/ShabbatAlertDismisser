@@ -7,6 +7,9 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.method.LinkMovementMethod
+import android.text.SpannableString
+import android.text.style.URLSpan
 import android.widget.*
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -306,13 +309,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAccessibilityDisclosure() {
-        MaterialAlertDialogBuilder(this)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.accessibility_disclosure_title))
             .setMessage(getString(R.string.accessibility_disclosure_text))
-            .setPositiveButton(getString(R.string.accessibility_disclosure_button)) { _, _ ->
+            .setNegativeButton(getString(R.string.accessibility_disclosure_button_cancel)) { _, _ ->
+                // Just dismiss
+            }
+            .setPositiveButton(getString(R.string.accessibility_disclosure_button_settings)) { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
             .show()
+
+        // Make Privacy Policy text clickable
+        val messageView = dialog.findViewById<TextView>(android.R.id.message)
+        if (messageView != null) {
+            messageView.movementMethod = LinkMovementMethod.getInstance()
+            val text = messageView.text.toString()
+            val spannableString = SpannableString(text)
+            val privacyPolicyStart = text.indexOf("Privacy Policy")
+            if (privacyPolicyStart >= 0) {
+                val privacyLink = object : URLSpan("") {
+                    override fun onClick(widget: android.view.View) {
+                        startActivity(Intent(Intent.ACTION_VIEW).apply {
+                            data = android.net.Uri.parse("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md")
+                        })
+                    }
+                }
+                spannableString.setSpan(
+                    privacyLink,
+                    privacyPolicyStart,
+                    privacyPolicyStart + "Privacy Policy".length,
+                    SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            messageView.text = spannableString
+        }
     }
 
     private fun updateModeRadioButtonsState(radioMode: RadioGroup) {
@@ -322,11 +353,12 @@ class MainActivity : AppCompatActivity() {
             findViewById<RadioButton>(R.id.radioShabbatAndHolidays),
             findViewById<RadioButton>(R.id.radioAlways)
         )
+        // Disable mode selection when accessibility is off, but keep the previous selection visible
         for (btn in buttons) {
             btn.isEnabled = enabled
             btn.alpha = if (enabled) 1.0f else 0.5f
         }
-        // Always disable is always available
+        // "Disabled" mode is always available
         findViewById<RadioButton>(R.id.radioDisabled).isEnabled = true
         findViewById<RadioButton>(R.id.radioDisabled).alpha = 1.0f
     }

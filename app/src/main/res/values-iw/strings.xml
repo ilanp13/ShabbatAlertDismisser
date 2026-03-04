@@ -49,5 +49,6 @@
     <string name="notif_body_standby">⏰ המתנה — שבת הקרובה\nכניסה: %1$s · יציאה: %2$s</string>
     <string name="accessibility_disclosure_title">איך האפליקציה עובדת</string>
     <string name="accessibility_disclosure_text">האפליקציה משתמשת בשירות הנגישות של Android כדי לזהות התראות שידור תאים בחירום וסוגרת את התראה על המסך באופן אוטומטי בזמנים שהוגדרו.\n\n✓ הסירנה עדיין תשמע\n✓ התראות עדיין יגיעו\n✓ אף נתון התראה לא מאוחסן או משודר\n\nלמידע נוסף, ראה את מדיניות הפרטיות.</string>
-    <string name="accessibility_disclosure_button">הבנתי</string>
+    <string name="accessibility_disclosure_button_cancel">ביטול</string>
+    <string name="accessibility_disclosure_button_settings">פתח הגדרות נגישות</string>
 </resources>
