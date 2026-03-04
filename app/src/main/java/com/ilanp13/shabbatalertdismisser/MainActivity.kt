@@ -9,15 +9,27 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.*
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.preference.PreferenceManager
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
 import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
+    private lateinit var appUpdateManager: AppUpdateManager
+    private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
+        if (state.installStatus() == InstallStatus.DOWNLOADED) {
+            showUpdateReadySnackbar()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +64,7 @@ class MainActivity : AppCompatActivity() {
             }).apply()
             updateStatusText(tvStatus)
         }
+        updateModeRadioButtonsState(radioMode)
 
         // ── Delay seekbar (5–60 s) ────────────────────────────────────────────
         val currentDelay = prefs.getInt("delay_seconds", 10)
@@ -95,7 +108,7 @@ class MainActivity : AppCompatActivity() {
 
         // ── Buttons ───────────────────────────────────────────────────────────
         btnAccessibility.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            showAccessibilityDisclosure()
         }
         findViewById<Button>(R.id.btnBatteryOpt).setOnClickListener {
             startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
@@ -135,6 +148,11 @@ class MainActivity : AppCompatActivity() {
                 this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
         }
 
+        // ── In-App Updates ─────────────────────────────────────────────────────
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        appUpdateManager.registerListener(installStateUpdatedListener)
+        checkForAppUpdates()
+
         // ── Initial state ─────────────────────────────────────────────────────
         updateLocationText(tvLocation)
         updateShabbatTimes(tvShabbatTimes)
@@ -145,7 +163,10 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Refresh accessibility status every time we return (e.g. from accessibility settings)
-        updateStatusText(findViewById(R.id.tvStatus))
+        val tvStatus = findViewById<TextView>(R.id.tvStatus)
+        updateStatusText(tvStatus)
+        // Disable mode options if accessibility is no longer enabled
+        updateModeRadioButtonsState(findViewById(R.id.radioMode))
         // Auto-refresh if Hebcal cache has expired (havdalah is in the past)
         if (prefs.getLong("hebcal_havdalah_ms", 0) < System.currentTimeMillis()) {
             syncHebcal(
@@ -153,6 +174,14 @@ class MainActivity : AppCompatActivity() {
                 findViewById(R.id.tvSyncStatus)
             )
         }
+        // Re-register update listener
+        appUpdateManager.registerListener(installStateUpdatedListener)
+        checkForAppUpdates()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        appUpdateManager.unregisterListener(installStateUpdatedListener)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -298,6 +327,55 @@ class MainActivity : AppCompatActivity() {
                 findViewById(R.id.tvSyncStatus)
             )
         }
+    }
+
+    private fun showAccessibilityDisclosure() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.accessibility_disclosure_title))
+            .setMessage(getString(R.string.accessibility_disclosure_text))
+            .setPositiveButton(getString(R.string.accessibility_disclosure_button)) { _, _ ->
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            .show()
+    }
+
+    private fun updateModeRadioButtonsState(radioMode: RadioGroup) {
+        val enabled = isAccessibilityServiceEnabled()
+        val buttons = listOf(
+            findViewById<RadioButton>(R.id.radioShabbatOnly),
+            findViewById<RadioButton>(R.id.radioShabbatAndHolidays),
+            findViewById<RadioButton>(R.id.radioAlways)
+        )
+        for (btn in buttons) {
+            btn.isEnabled = enabled
+            btn.alpha = if (enabled) 1.0f else 0.5f
+        }
+        // Always disable is always available
+        findViewById<RadioButton>(R.id.radioDisabled).isEnabled = true
+        findViewById<RadioButton>(R.id.radioDisabled).alpha = 1.0f
+    }
+
+    private fun checkForAppUpdates() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() ==
+                com.google.android.play.core.install.model.UpdateAvailability.UPDATE_AVAILABLE) {
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    AppUpdateType.FLEXIBLE,
+                    this,
+                    200
+                )
+            }
+        }
+    }
+
+    private fun showUpdateReadySnackbar() {
+        android.widget.Toast.makeText(
+            this,
+            "Update ready. Restarting app...",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+        appUpdateManager.completeUpdate()
     }
 
     abstract class SimpleSpinnerListener : android.widget.AdapterView.OnItemSelectedListener {

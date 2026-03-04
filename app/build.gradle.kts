@@ -57,4 +57,5 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("com.google.android.play:core:1.10.3")
 }
