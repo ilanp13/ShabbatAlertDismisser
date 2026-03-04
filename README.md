@@ -110,3 +110,8 @@ app/src/main/
 ## Disclaimer
 
 This app is designed to dismiss the **screen overlay** after the alert has been displayed — it does not suppress the siren or prevent the notification from arriving. Always follow official safety instructions during an emergency.
+
+## Privacy & Legal
+
+- **[Privacy Policy](PRIVACY_POLICY.md)** — How we handle your data
+- **[Terms of Service](TERMS_OF_SERVICE.md)** — App usage terms
