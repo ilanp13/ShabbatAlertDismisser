@@ -47,4 +47,6 @@
     <string name="notif_body_always">✅ Auto-dismiss: always ON (including weekdays)</string>
     <string name="notif_body_active">🕯 Shabbat active — auto-dismissing alerts\nEnds: %s</string>
     <string name="notif_body_standby">⏰ Standby — next Shabbat\nStarts: %1$s · Ends: %2$s</string>
+    <string name="accessibility_disclosure_title">⚠️ Accessibility Service Disclosure</string>
+    <string name="accessibility_disclosure_text">This app uses Android\'s Accessibility Service to detect emergency cell broadcast alerts and automatically dismiss them during configured times. The app DOES NOT collect, log, or transmit the content of alerts. The siren still plays and notifications still arrive. Learn more in the Privacy Policy.</string>
 </resources>
