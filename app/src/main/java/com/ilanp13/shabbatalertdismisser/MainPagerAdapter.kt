@@ -16,4 +16,8 @@ class MainPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapte
             else -> StatusFragment()
         }
     }
+
+    override fun getItemId(position: Int): Long = position.toLong()
+
+    override fun containsItem(itemId: Long): Boolean = itemId in 0..2
 }
