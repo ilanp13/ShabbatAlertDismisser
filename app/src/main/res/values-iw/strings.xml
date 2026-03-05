@@ -58,6 +58,10 @@
     <string name="language_system">ברירת המחדל של המערכת</string>
     <string name="language_english">English</string>
     <string name="language_hebrew">עברית</string>
+    <string name="theme_label">ערכת עיצוב</string>
+    <string name="theme_system">ברירת המחדל של המערכת</string>
+    <string name="theme_light">בהיר</string>
+    <string name="theme_dark">אפל</string>
     <string name="history_summary_title">שבת זו</string>
     <string name="history_summary_format">סגור %d התראות</string>
     <string name="history_no_dismissals">עדיין לא סגרו התראות</string>

@@ -58,6 +58,10 @@
     <string name="language_system">System default</string>
     <string name="language_english">English</string>
     <string name="language_hebrew">עברית</string>
+    <string name="theme_label">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="history_summary_title">This Shabbat</string>
     <string name="history_summary_format">Dismissed %d alerts</string>
     <string name="history_no_dismissals">No alerts dismissed yet</string>

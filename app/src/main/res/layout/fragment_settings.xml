@@ -243,6 +243,21 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp" />
 
+        <!-- Theme Selector -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/theme_label"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/spinnerTheme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp" />
+
     </LinearLayout>
 
 </ScrollView>

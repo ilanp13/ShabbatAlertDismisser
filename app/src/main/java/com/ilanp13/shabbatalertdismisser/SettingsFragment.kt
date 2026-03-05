@@ -37,6 +37,7 @@ class SettingsFragment : Fragment() {
     private lateinit var switchNotif: SwitchMaterial
     private lateinit var radioScreenOn: RadioGroup
     private lateinit var spinnerLanguage: Spinner
+    private lateinit var spinnerTheme: Spinner
 
     private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(requireContext()) }
 
@@ -64,6 +65,7 @@ class SettingsFragment : Fragment() {
         switchNotif = view.findViewById(R.id.switchNotification)
         radioScreenOn = view.findViewById(R.id.radioScreenOn)
         spinnerLanguage = view.findViewById(R.id.spinnerLanguage)
+        spinnerTheme = view.findViewById(R.id.spinnerTheme)
 
         setupModeRadio()
         setupDelaySeekbar()
@@ -73,6 +75,7 @@ class SettingsFragment : Fragment() {
         setupNotificationSwitch()
         setupScreenOnRadio()
         setupLanguageSpinner()
+        setupThemeSpinner()
 
         updateLocationText()
         updateShabbatTimes()
@@ -217,6 +220,45 @@ class SettingsFragment : Fragment() {
             androidx.core.os.LocaleListCompat.forLanguageTags(langCode)
         }
         AppCompatDelegate.setApplicationLocales(locales)
+    }
+
+    private fun setupThemeSpinner() {
+        val themes = listOf(
+            getString(R.string.theme_system),
+            getString(R.string.theme_light),
+            getString(R.string.theme_dark)
+        )
+        spinnerTheme.adapter = ArrayAdapter(requireContext(),
+            android.R.layout.simple_spinner_dropdown_item,
+            themes)
+
+        val savedTheme = prefs.getString("app_theme", "system") ?: "system"
+        val selection = when (savedTheme) {
+            "light" -> 1
+            "dark" -> 2
+            else -> 0
+        }
+        spinnerTheme.setSelection(selection)
+        spinnerTheme.onItemSelectedListener = object : SimpleSpinnerListener() {
+            override fun onItemSelected(pos: Int) {
+                val themeValue = when (pos) {
+                    1 -> "light"
+                    2 -> "dark"
+                    else -> "system"
+                }
+                prefs.edit().putString("app_theme", themeValue).apply()
+                applyTheme(themeValue)
+            }
+        }
+    }
+
+    private fun applyTheme(themeValue: String) {
+        val mode = when (themeValue) {
+            "light" -> AppCompatDelegate.MODE_NIGHT_NO
+            "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 
     private fun applyMinhag(profile: MinhagProfiles.Profile) {
