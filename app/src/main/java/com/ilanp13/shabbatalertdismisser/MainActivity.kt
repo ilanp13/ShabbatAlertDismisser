@@ -211,8 +211,31 @@ class MainActivity : AppCompatActivity() {
 
         val btnAccessibility = findViewById<Button>(R.id.btnAccessibilitySetup)
         btnAccessibility.setOnClickListener {
-            showAccessibilityDisclosure()
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
+
+        // Make Privacy Policy clickable
+        val disclosureText = findViewById<TextView>(R.id.tvDisclosureText)
+        disclosureText.movementMethod = LinkMovementMethod.getInstance()
+        val text = disclosureText.text.toString()
+        val spannableString = SpannableString(text)
+        val privacyPolicyStart = text.indexOf("Privacy Policy")
+        if (privacyPolicyStart >= 0) {
+            val privacyLink = object : URLSpan("") {
+                override fun onClick(widget: android.view.View) {
+                    startActivity(Intent(Intent.ACTION_VIEW).apply {
+                        data = android.net.Uri.parse("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md")
+                    })
+                }
+            }
+            spannableString.setSpan(
+                privacyLink,
+                privacyPolicyStart,
+                privacyPolicyStart + "Privacy Policy".length,
+                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        disclosureText.text = spannableString
     }
 
     private fun showMainLayout() {
