@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated:** March 4, 2026
+**Last Updated:** March 5, 2026
 
 ## Overview
 
@@ -29,6 +29,19 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 - **What it does:** It monitors accessibility events for emergency alert overlays and taps the dismiss button automatically during configured times.
 - **Data logging:** The app does not log or transmit the content of alerts or any alert metadata to external services.
 - **Persistent storage:** No alert data is recorded or stored.
+
+### Alert Dismissal History
+- **What is stored:** A local log of dismissed alerts is kept on your device only.
+- **Data captured:** Each entry includes:
+  - Timestamp of dismissal (milliseconds since epoch)
+  - Package name of the alert source (e.g., "com.android.cellbroadcastreceiver")
+  - Button text that was tapped (e.g., "OK", "אישור")
+  - Visible text content from the alert window
+- **Storage:** Stored locally in SharedPreferences as a JSON array
+- **Retention:** The app keeps a maximum of 200 recent records; older entries are automatically deleted
+- **No transmission:** This history is never transmitted to any server or external service
+- **Privacy:** You have full visibility and control — you can view the entire history within the app
+- **Clear on uninstall:** All history is deleted when you uninstall the app or clear app data
 
 ## Data Not Collected
 
