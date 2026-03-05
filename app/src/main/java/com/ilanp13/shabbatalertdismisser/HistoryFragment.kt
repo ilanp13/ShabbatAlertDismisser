@@ -21,7 +21,7 @@ class HistoryFragment : Fragment() {
     private lateinit var tvEmptyState: TextView
     private lateinit var adapter: HistoryAdapter
 
-    private var prefs: androidx.preference.SharedPreferences? = null
+    private lateinit var prefs: android.content.SharedPreferences
 
     override fun onCreateView(
         inflater: LayoutInflater,

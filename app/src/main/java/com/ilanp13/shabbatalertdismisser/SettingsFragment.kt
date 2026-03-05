@@ -39,7 +39,7 @@ class SettingsFragment : Fragment() {
     private lateinit var spinnerLanguage: Spinner
     private lateinit var spinnerTheme: Spinner
 
-    private var prefs: androidx.preference.SharedPreferences? = null
+    private lateinit var prefs: android.content.SharedPreferences
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,7 +90,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupModeRadio() {
-        when (prefs?.getString("mode", "shabbat_only")) {
+        when (prefs.getString("mode", "shabbat_only")) {
             "shabbat_only" -> radioMode.check(R.id.radioShabbatOnly)
             "shabbat_holidays" -> radioMode.check(R.id.radioShabbatAndHolidays)
             "always" -> radioMode.check(R.id.radioAlways)
