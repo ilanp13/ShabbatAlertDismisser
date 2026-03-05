@@ -100,11 +100,11 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 ## 📋 Implementation Priority
 
 **Phase 1 (Short-term):**
-1. Improve Shabbat Status Screen layout (no scrolling)
-2. Add Red-Alert API integration for alert history
+1. ✅ Improve Shabbat Status Screen layout (no scrolling) — v1.2.5
+2. ✅ Add Red-Alert API integration for alert history — Current version
 
 **Phase 2 (Medium-term):**
-1. Map view of alerts
+1. ✅ Map view of alerts (+ mini map on Status screen)
 2. User-customizable region filters
 
 **Phase 3 (Long-term):**

@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
+import org.json.JSONArray
 
 class SettingsFragment : Fragment() {
 
@@ -35,6 +36,8 @@ class SettingsFragment : Fragment() {
     private lateinit var radioScreenOn: RadioGroup
     private lateinit var spinnerLanguage: Spinner
     private lateinit var spinnerTheme: Spinner
+    private lateinit var tvSelectedRegions: TextView
+    private lateinit var btnSelectRegions: Button
 
     private lateinit var prefs: android.content.SharedPreferences
 
@@ -63,6 +66,8 @@ class SettingsFragment : Fragment() {
         radioScreenOn = view.findViewById(R.id.radioScreenOn)
         spinnerLanguage = view.findViewById(R.id.spinnerLanguage)
         spinnerTheme = view.findViewById(R.id.spinnerTheme)
+        tvSelectedRegions = view.findViewById(R.id.tvSelectedRegions)
+        btnSelectRegions = view.findViewById(R.id.btnSelectRegions)
 
         setupModeRadio()
         setupDelaySeekbar()
@@ -73,8 +78,10 @@ class SettingsFragment : Fragment() {
         setupScreenOnRadio()
         setupLanguageSpinner()
         setupThemeSpinner()
+        setupRegionPicker()
 
         updateLocationText()
+        updateRegionPickerLabel()
     }
 
     override fun onResume() {
@@ -380,6 +387,238 @@ class SettingsFragment : Fragment() {
             }
             messageView.text = spannableString
         }
+    }
+
+    private fun setupRegionPicker() {
+        btnSelectRegions.setOnClickListener {
+            showRegionPickerDialog()
+        }
+    }
+
+    private fun showRegionPickerDialog() {
+        val allRegions = OrefRegions.all
+        val savedJson = prefs.getString("alert_regions_selected", "[]") ?: "[]"
+        val selectedSet = parseRegionsJson(savedJson).toMutableSet()
+
+        var filteredRegions = allRegions
+        var checkedItems = BooleanArray(filteredRegions.size) { i ->
+            filteredRegions[i] in selectedSet
+        }
+
+        val dialogView = LayoutInflater.from(requireContext()).inflate(
+            android.R.layout.simple_list_item_1, null
+        )
+        val searchEditText = android.widget.EditText(requireContext()).apply {
+            hint = "Search regions..."
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(16, 16, 16, 16)
+            }
+            isFocusable = true
+            isFocusableInTouchMode = true
+        }
+
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.alert_regions_label))
+            .setCustomTitle(
+                android.widget.LinearLayout(requireContext()).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    addView(
+                        android.widget.TextView(requireContext()).apply {
+                            text = getString(R.string.alert_regions_label)
+                            textSize = 20f
+                            setTypeface(null, android.graphics.Typeface.BOLD)
+                            layoutParams = android.widget.LinearLayout.LayoutParams(
+                                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                setMargins(24, 24, 24, 0)
+                            }
+                        }
+                    )
+                    addView(searchEditText)
+                }
+            )
+
+        builder.setMultiChoiceItems(
+            filteredRegions.toTypedArray(),
+            checkedItems
+        ) { _, which, isChecked ->
+            if (isChecked) {
+                selectedSet.add(filteredRegions[which])
+            } else {
+                selectedSet.remove(filteredRegions[which])
+            }
+        }
+            .setNegativeButton(getString(R.string.accessibility_disclosure_button_cancel)) { _, _ ->
+                // Dismiss
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val newJson = selectedSet.toList().toJsonArray()
+                prefs.edit().putString("alert_regions_selected", newJson).apply()
+                updateRegionPickerLabel()
+            }
+
+        dialog = builder.show()
+
+        // Add search functionality
+        searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString().trim()
+                filteredRegions = if (query.isEmpty()) {
+                    allRegions
+                } else {
+                    allRegions.filter { it.contains(query, ignoreCase = true) }
+                }
+
+                checkedItems = BooleanArray(filteredRegions.size) { i ->
+                    filteredRegions[i] in selectedSet
+                }
+
+                // Recreate the dialog with filtered items
+                dialog?.dismiss()
+                showRegionPickerDialogWithQuery(query)
+            }
+
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+    }
+
+    private fun showRegionPickerDialogWithQuery(searchQuery: String) {
+        val allRegions = OrefRegions.all
+        val savedJson = prefs.getString("alert_regions_selected", "[]") ?: "[]"
+        val selectedSet = parseRegionsJson(savedJson).toMutableSet()
+
+        val filteredRegions = if (searchQuery.isEmpty()) {
+            allRegions
+        } else {
+            allRegions.filter { it.contains(searchQuery, ignoreCase = true) }
+        }
+
+        val checkedItems = BooleanArray(filteredRegions.size) { i ->
+            filteredRegions[i] in selectedSet
+        }
+
+        val searchEditText = android.widget.EditText(requireContext()).apply {
+            hint = "Search regions..."
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setText(searchQuery)
+            isFocusable = true
+            isFocusableInTouchMode = true
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(16, 16, 16, 16)
+            }
+        }
+
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.alert_regions_label))
+            .setCustomTitle(
+                android.widget.LinearLayout(requireContext()).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    addView(
+                        android.widget.TextView(requireContext()).apply {
+                            text = getString(R.string.alert_regions_label)
+                            textSize = 20f
+                            setTypeface(null, android.graphics.Typeface.BOLD)
+                            layoutParams = android.widget.LinearLayout.LayoutParams(
+                                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                setMargins(24, 24, 24, 0)
+                            }
+                        }
+                    )
+                    addView(searchEditText)
+                }
+            )
+
+        builder.setMultiChoiceItems(
+            filteredRegions.toTypedArray(),
+            checkedItems
+        ) { _, which, isChecked ->
+            if (isChecked) {
+                selectedSet.add(filteredRegions[which])
+            } else {
+                selectedSet.remove(filteredRegions[which])
+            }
+        }
+            .setNegativeButton(getString(R.string.accessibility_disclosure_button_cancel)) { _, _ ->
+                // Dismiss
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val newJson = selectedSet.toList().toJsonArray()
+                prefs.edit().putString("alert_regions_selected", newJson).apply()
+                updateRegionPickerLabel()
+            }
+
+        dialog = builder.show()
+
+        // Add search functionality
+        searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString().trim()
+                if (query != searchQuery) {
+                    dialog?.dismiss()
+                    showRegionPickerDialogWithQuery(query)
+                }
+            }
+
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+    }
+
+    private fun updateRegionPickerLabel() {
+        val json = prefs.getString("alert_regions_selected", "[]") ?: "[]"
+        val selected = parseRegionsJson(json)
+
+        tvSelectedRegions.text = if (selected.isEmpty()) {
+            getString(R.string.alert_regions_all)
+        } else {
+            getString(R.string.alert_regions_selected_fmt, selected.size)
+        }
+    }
+
+    private fun parseRegionsJson(json: String): List<String> {
+        return try {
+            val array = org.json.JSONArray(json)
+            val regions = mutableListOf<String>()
+            for (i in 0 until array.length()) {
+                regions.add(array.getString(i))
+            }
+            regions
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun List<String>.toJsonArray(): String {
+        val array = org.json.JSONArray()
+        for (region in this) {
+            array.put(region)
+        }
+        return array.toString()
     }
 
     abstract class SimpleSpinnerListener : android.widget.AdapterView.OnItemSelectedListener {

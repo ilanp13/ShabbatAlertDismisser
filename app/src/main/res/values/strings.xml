@@ -54,6 +54,7 @@
     <string name="tab_status">Status</string>
     <string name="tab_settings">Settings</string>
     <string name="tab_history">History</string>
+    <string name="tab_map">Map</string>
     <string name="language_label">App language</string>
     <string name="language_system">System default</string>
     <string name="language_english">English</string>
@@ -65,4 +66,17 @@
     <string name="history_summary_title">All-Time Dismissals</string>
     <string name="history_summary_format">Dismissed %d alerts</string>
     <string name="history_no_dismissals">No alerts dismissed yet</string>
+    <string name="alert_regions_label">Regions to monitor</string>
+    <string name="alert_regions_select_btn">Select regions</string>
+    <string name="alert_regions_all">All regions</string>
+    <string name="alert_regions_selected_fmt">%d regions selected</string>
+    <string name="active_alerts_title">Active Alerts</string>
+    <string name="active_alerts_none">No active alerts</string>
+    <string name="active_alerts_unavailable">Alert service unavailable</string>
+    <string name="refresh_button">Refresh</string>
+    <string name="alert_map_title">Alert Map</string>
+    <string name="alert_map_mini_hint">Tap to open full map</string>
+    <string name="alert_map_no_data">No alerts to display</string>
+    <string name="alert_map_active">Active</string>
+    <string name="alert_map_history">History (24h)</string>
 </resources>

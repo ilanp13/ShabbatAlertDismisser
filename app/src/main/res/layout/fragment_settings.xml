@@ -228,6 +228,30 @@
             android:alpha="0.6"
             android:layout_marginBottom="24dp" />
 
+        <!-- Alert Regions -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/alert_regions_label"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvSelectedRegions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/alert_regions_all" />
+
+        <Button
+            android:id="@+id/btnSelectRegions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/alert_regions_select_btn"
+            android:layout_marginBottom="24dp" />
+
         <!-- Language Selector -->
         <TextView
             android:layout_width="wrap_content"

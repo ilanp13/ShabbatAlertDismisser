@@ -116,6 +116,7 @@ class MainActivity : AppCompatActivity() {
                 0 -> getString(R.string.tab_status)
                 1 -> getString(R.string.tab_settings)
                 2 -> getString(R.string.tab_history)
+                3 -> getString(R.string.tab_map)
                 else -> ""
             }
         }.attach()
@@ -138,6 +139,11 @@ class MainActivity : AppCompatActivity() {
             androidx.core.os.LocaleListCompat.forLanguageTags(langCode)
         }
         AppCompatDelegate.setApplicationLocales(locales)
+    }
+
+    fun navigateToTab(index: Int) {
+        val pager = findViewById<ViewPager2>(R.id.viewPager)
+        pager.setCurrentItem(index, true)
     }
 
 }

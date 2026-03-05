@@ -6,13 +6,14 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 
 class MainPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {
 
-    override fun getItemCount(): Int = 3
+    override fun getItemCount(): Int = 4
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> StatusFragment()
             1 -> SettingsFragment()
             2 -> HistoryFragment()
+            3 -> MapFragment()
             else -> StatusFragment()
         }
     }

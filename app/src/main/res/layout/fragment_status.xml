@@ -56,13 +56,120 @@
             android:textStyle="bold"
             android:layout_marginBottom="4dp" />
 
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_marginBottom="24dp"
+            android:background="?android:attr/windowBackground"
+            android:scrollbarStyle="insideInset">
+
+            <TextView
+                android:id="@+id/tvDismissalCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:padding="8dp"
+                android:text="@string/history_no_dismissals" />
+
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/active_alerts_title"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <ProgressBar
+                android:id="@+id/pbAlertsLoading"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="12dp"
+                android:visibility="gone"
+                android:indeterminate="true" />
+
+            <Button
+                android:id="@+id/btnRefreshAlerts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/refresh_button"
+                android:textSize="12sp"
+                style="?attr/materialButtonOutlinedStyle"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:minWidth="0dp"
+                android:minHeight="40dp" />
+
+        </LinearLayout>
+
         <TextView
-            android:id="@+id/tvDismissalCount"
+            android:id="@+id/tvAlertsUpdatedTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:alpha="0.6"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvActiveAlerts"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/active_alerts_none" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
             android:layout_marginBottom="24dp"
-            android:text="@string/history_no_dismissals" />
+            android:visibility="gone"
+            android:id="@+id/activeAlertsScrollView"
+            android:scrollbarStyle="insideInset">
+
+            <TextView
+                android:id="@+id/tvActiveAlertsRegions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:padding="8dp" />
+
+        </ScrollView>
+
+        <FrameLayout
+            android:id="@+id/miniMapContainer"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="24dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/windowBackground"
+            android:visibility="gone">
+
+            <org.osmdroid.views.MapView
+                android:id="@+id/miniMapView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/alert_map_mini_hint"
+                android:layout_gravity="center"
+                android:textColor="?android:attr/textColorPrimary"
+                android:alpha="0.4"
+                android:textSize="14sp" />
+
+        </FrameLayout>
 
     </LinearLayout>
 

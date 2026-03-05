@@ -54,6 +54,7 @@
     <string name="tab_status">סטטוס</string>
     <string name="tab_settings">הגדרות</string>
     <string name="tab_history">היסטוריה</string>
+    <string name="tab_map">מפה</string>
     <string name="language_label">שפת האפליקציה</string>
     <string name="language_system">ברירת המחדל של המערכת</string>
     <string name="language_english">English</string>
@@ -65,4 +66,17 @@
     <string name="history_summary_title">סה״כ סגירות</string>
     <string name="history_summary_format">סגור %d התראות</string>
     <string name="history_no_dismissals">עדיין לא סגרו התראות</string>
+    <string name="alert_regions_label">אזורים למעקב</string>
+    <string name="alert_regions_select_btn">בחר אזורים</string>
+    <string name="alert_regions_all">כל האזורים</string>
+    <string name="alert_regions_selected_fmt">%d אזורים נבחרו</string>
+    <string name="active_alerts_title">התראות פעילות</string>
+    <string name="active_alerts_none">אין התראות פעילות</string>
+    <string name="active_alerts_unavailable">שירות התראות לא זמין</string>
+    <string name="refresh_button">רענן</string>
+    <string name="alert_map_title">מפת התראות</string>
+    <string name="alert_map_mini_hint">לחץ לפתיחת מפה מלאה</string>
+    <string name="alert_map_no_data">אין התראות להצגה</string>
+    <string name="alert_map_active">פעיל</string>
+    <string name="alert_map_history">היסטוריה (24ש)</string>
 </resources>
