@@ -214,24 +214,35 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
 
-        // Make Privacy Policy clickable
+        // Make Privacy Policy clickable (use Hebrew or English based on device language)
         val disclosureText = findViewById<TextView>(R.id.tvDisclosureText)
         disclosureText.movementMethod = LinkMovementMethod.getInstance()
         val text = disclosureText.text.toString()
         val spannableString = SpannableString(text)
-        val privacyPolicyStart = text.indexOf("Privacy Policy")
+
+        // Detect device language
+        val isHebrew = android.os.LocaleList.getDefault()[0].language == "he"
+        val privacyPolicyUrl = if (isHebrew) {
+            "https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY_HE.md"
+        } else {
+            "https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md"
+        }
+
+        // Find and link the privacy policy text
+        val linkText = if (isHebrew) "מדיניות הפרטיות" else "Privacy Policy"
+        val privacyPolicyStart = text.indexOf(linkText)
         if (privacyPolicyStart >= 0) {
-            val privacyLink = object : URLSpan("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md") {
+            val privacyLink = object : URLSpan(privacyPolicyUrl) {
                 override fun onClick(widget: android.view.View) {
                     startActivity(Intent(Intent.ACTION_VIEW).apply {
-                        data = android.net.Uri.parse("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md")
+                        data = android.net.Uri.parse(privacyPolicyUrl)
                     })
                 }
             }
             spannableString.setSpan(
                 privacyLink,
                 privacyPolicyStart,
-                privacyPolicyStart + "Privacy Policy".length,
+                privacyPolicyStart + linkText.length,
                 0
             )
         }
@@ -373,26 +384,37 @@ class MainActivity : AppCompatActivity() {
             }
             .show()
 
-        // Make Privacy Policy text clickable
+        // Make Privacy Policy text clickable (use Hebrew or English based on device language)
         val messageView = dialog.findViewById<TextView>(android.R.id.message)
         if (messageView != null) {
             messageView.movementMethod = LinkMovementMethod.getInstance()
             val text = messageView.text.toString()
             val spannableString = SpannableString(text)
-            val privacyPolicyStart = text.indexOf("Privacy Policy")
+
+            // Detect device language
+            val isHebrew = android.os.LocaleList.getDefault()[0].language == "he"
+            val privacyPolicyUrl = if (isHebrew) {
+                "https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY_HE.md"
+            } else {
+                "https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md"
+            }
+
+            // Find and link the privacy policy text
+            val linkText = if (isHebrew) "מדיניות הפרטיות" else "Privacy Policy"
+            val privacyPolicyStart = text.indexOf(linkText)
             if (privacyPolicyStart >= 0) {
-                val privacyLink = object : URLSpan("") {
+                val privacyLink = object : URLSpan(privacyPolicyUrl) {
                     override fun onClick(widget: android.view.View) {
                         startActivity(Intent(Intent.ACTION_VIEW).apply {
-                            data = android.net.Uri.parse("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md")
+                            data = android.net.Uri.parse(privacyPolicyUrl)
                         })
                     }
                 }
                 spannableString.setSpan(
                     privacyLink,
                     privacyPolicyStart,
-                    privacyPolicyStart + "Privacy Policy".length,
-                    SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                    privacyPolicyStart + linkText.length,
+                    0
                 )
             }
             messageView.text = spannableString
