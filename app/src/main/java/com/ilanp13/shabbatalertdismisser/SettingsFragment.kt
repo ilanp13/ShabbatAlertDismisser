@@ -39,7 +39,7 @@ class SettingsFragment : Fragment() {
     private lateinit var spinnerLanguage: Spinner
     private lateinit var spinnerTheme: Spinner
 
-    private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(requireContext()) }
+    private var prefs: androidx.preference.SharedPreferences? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,6 +51,8 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         radioMode = view.findViewById(R.id.radioMode)
         tvLocation = view.findViewById(R.id.tvLocation)
@@ -88,7 +90,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupModeRadio() {
-        when (prefs.getString("mode", "shabbat_only")) {
+        when (prefs?.getString("mode", "shabbat_only")) {
             "shabbat_only" -> radioMode.check(R.id.radioShabbatOnly)
             "shabbat_holidays" -> radioMode.check(R.id.radioShabbatAndHolidays)
             "always" -> radioMode.check(R.id.radioAlways)

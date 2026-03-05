@@ -20,7 +20,7 @@ class StatusFragment : Fragment() {
     private lateinit var tvSyncStatus: TextView
     private lateinit var tvDismissalCount: TextView
 
-    private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(requireContext()) }
+    private var prefs: androidx.preference.SharedPreferences? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,6 +32,7 @@ class StatusFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         tvStatus = view.findViewById(R.id.tvStatus)
         tvShabbatTimes = view.findViewById(R.id.tvShabbatTimes)
         tvSyncStatus = view.findViewById(R.id.tvSyncStatus)

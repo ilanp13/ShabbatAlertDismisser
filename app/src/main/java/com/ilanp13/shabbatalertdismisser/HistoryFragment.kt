@@ -21,7 +21,7 @@ class HistoryFragment : Fragment() {
     private lateinit var tvEmptyState: TextView
     private lateinit var adapter: HistoryAdapter
 
-    private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(requireContext()) }
+    private var prefs: androidx.preference.SharedPreferences? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,6 +33,7 @@ class HistoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         recyclerView = view.findViewById(R.id.recyclerHistory)
         tvHistoryCount = view.findViewById(R.id.tvHistoryCount)
