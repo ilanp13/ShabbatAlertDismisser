@@ -24,16 +24,13 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 class SettingsFragment : Fragment() {
 
     private lateinit var radioMode: RadioGroup
-    private lateinit var tvStatus: TextView
     private lateinit var tvLocation: TextView
-    private lateinit var tvShabbatTimes: TextView
     private lateinit var seekDelay: SeekBar
     private lateinit var tvDelay: TextView
     private lateinit var btnAccessibility: Button
     private lateinit var btnUpdateLoc: Button
     private lateinit var spinnerMinhag: Spinner
     private lateinit var radioEndShabbat: RadioGroup
-    private lateinit var tvSyncStatus: TextView
     private lateinit var switchNotif: SwitchMaterial
     private lateinit var radioScreenOn: RadioGroup
     private lateinit var spinnerLanguage: Spinner
@@ -56,14 +53,12 @@ class SettingsFragment : Fragment() {
 
         radioMode = view.findViewById(R.id.radioMode)
         tvLocation = view.findViewById(R.id.tvLocation)
-        tvShabbatTimes = view.findViewById(R.id.tvShabbatTimes)
         seekDelay = view.findViewById(R.id.seekDelay)
         tvDelay = view.findViewById(R.id.tvDelay)
         btnAccessibility = view.findViewById(R.id.btnAccessibility)
         btnUpdateLoc = view.findViewById(R.id.btnUpdateLocation)
         spinnerMinhag = view.findViewById(R.id.spinnerMinhag)
         radioEndShabbat = view.findViewById(R.id.radioEndShabbat)
-        tvSyncStatus = view.findViewById(R.id.tvSyncStatus)
         switchNotif = view.findViewById(R.id.switchNotification)
         radioScreenOn = view.findViewById(R.id.radioScreenOn)
         spinnerLanguage = view.findViewById(R.id.spinnerLanguage)
@@ -80,8 +75,6 @@ class SettingsFragment : Fragment() {
         setupThemeSpinner()
 
         updateLocationText()
-        updateShabbatTimes()
-        updateSyncStatusText()
     }
 
     override fun onResume() {
@@ -278,21 +271,13 @@ class SettingsFragment : Fragment() {
         val useRt = prefs.getBoolean("use_rabenu_tam", false)
         val havMins = if (useRt) profile.rtMins else profile.graMins
 
-        tvSyncStatus.text = getString(R.string.sync_status_syncing)
-
         Thread {
             val window = HebcalService.fetch(lat, lon, profile.candleMins, havMins)
-            view?.post {
-                if (window != null) {
-                    prefs.edit()
-                        .putLong("hebcal_candle_ms", window.candleMs)
-                        .putLong("hebcal_havdalah_ms", window.havdalahMs)
-                        .apply()
-                    tvSyncStatus.text = getString(R.string.sync_status_synced)
-                } else {
-                    tvSyncStatus.text = getString(R.string.sync_status_offline)
-                }
-                updateShabbatTimes()
+            if (window != null) {
+                prefs.edit()
+                    .putLong("hebcal_candle_ms", window.candleMs)
+                    .putLong("hebcal_havdalah_ms", window.havdalahMs)
+                    .apply()
             }
         }.start()
     }
@@ -303,44 +288,6 @@ class SettingsFragment : Fragment() {
             prefs.getFloat("longitude", 35.2137f))
     }
 
-    private fun updateShabbatTimes() {
-        val candleMs = prefs.getLong("hebcal_candle_ms", 0)
-        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
-        val now = System.currentTimeMillis()
-
-        if (candleMs > 0 && havdalahMs > now - 7 * 86_400_000L) {
-            val fmt = java.text.SimpleDateFormat("EEEE HH:mm", java.util.Locale.getDefault())
-            val havdalahDisplayMs = ((havdalahMs + 30_000L) / 60_000L) * 60_000L
-            tvShabbatTimes.text = getString(R.string.shabbat_times_format,
-                fmt.format(java.util.Date(candleMs)),
-                fmt.format(java.util.Date(havdalahDisplayMs)))
-            return
-        }
-
-        val lat = prefs.getFloat("latitude", 31.7683f).toDouble()
-        val lon = prefs.getFloat("longitude", 35.2137f).toDouble()
-        val candle = prefs.getInt("candle_lighting_minutes", 18)
-        val havdala = prefs.getInt("havdalah_minutes", 40)
-        val times = ShabbatCalculator(lat, lon).getShabbatTimes(candle, havdala)
-        if (times != null) {
-            val fmt = java.text.SimpleDateFormat("EEEE HH:mm", java.util.Locale.getDefault())
-            val havdalahMs = ((times.second.time.time + 30_000L) / 60_000L) * 60_000L
-            tvShabbatTimes.text = getString(R.string.shabbat_times_format,
-                fmt.format(times.first.time),
-                fmt.format(java.util.Date(havdalahMs)))
-        } else {
-            tvShabbatTimes.text = getString(R.string.shabbat_times_unavailable)
-        }
-    }
-
-    private fun updateSyncStatusText() {
-        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
-        tvSyncStatus.text = if (havdalahMs > System.currentTimeMillis() - 7 * 86_400_000L) {
-            getString(R.string.sync_status_synced)
-        } else {
-            getString(R.string.sync_status_offline)
-        }
-    }
 
     private fun requestLocationUpdate() {
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
