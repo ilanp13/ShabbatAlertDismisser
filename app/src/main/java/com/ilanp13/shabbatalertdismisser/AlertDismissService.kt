@@ -16,6 +16,8 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -285,12 +287,16 @@ class AlertDismissService : AccessibilityService() {
             return
         }
 
+        val packageName = rootNode.packageName?.toString() ?: "unknown"
+        val windowText = captureWindowText(rootNode)
+
         try {
             for (buttonText in DISMISS_BUTTON_TEXTS) {
                 val nodes = rootNode.findAccessibilityNodeInfosByText(buttonText)
                 for (node in nodes) {
                     if (tryClick(node)) {
                         Log.d(TAG, "Dismissed via button: $buttonText")
+                        saveHistoryRecord(packageName, buttonText, windowText)
                         return
                     }
                 }
@@ -298,14 +304,56 @@ class AlertDismissService : AccessibilityService() {
 
             if (findAndClickButton(rootNode)) {
                 Log.d(TAG, "Dismissed via fallback button search")
+                saveHistoryRecord(packageName, "fallback", windowText)
                 return
             }
 
             Log.d(TAG, "No button found, trying BACK action")
             performGlobalAction(GLOBAL_ACTION_BACK)
+            saveHistoryRecord(packageName, "back", windowText)
 
         } finally {
             rootNode.recycle()
+        }
+    }
+
+    private fun captureWindowText(node: AccessibilityNodeInfo): String {
+        val texts = mutableListOf<String>()
+        collectText(node, texts)
+        return texts.joinToString(" ").trim()
+    }
+
+    private fun collectText(node: AccessibilityNodeInfo, texts: MutableList<String>) {
+        node.text?.let { if (it.isNotBlank()) texts.add(it.toString()) }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectText(child, texts)
+        }
+    }
+
+    private fun saveHistoryRecord(packageName: String, buttonText: String, windowText: String) {
+        try {
+            val historyJson = prefs.getString("dismiss_history", "[]") ?: "[]"
+            val array = JSONArray(historyJson)
+
+            val record = JSONObject().apply {
+                put("timestampMs", System.currentTimeMillis())
+                put("packageName", packageName)
+                put("buttonText", buttonText)
+                put("windowText", windowText)
+            }
+
+            array.put(record)
+
+            // Keep only last 200 records
+            while (array.length() > 200) {
+                array.remove(0)
+            }
+
+            prefs.edit().putString("dismiss_history", array.toString()).apply()
+            Log.d(TAG, "History record saved, total: ${array.length()}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to save history record: ${e.message}")
         }
     }
 

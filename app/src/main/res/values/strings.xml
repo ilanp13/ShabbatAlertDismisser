@@ -51,4 +51,14 @@
     <string name="accessibility_disclosure_text">This app uses Android\'s Accessibility Service to detect emergency cell broadcast alerts and automatically dismiss the on-screen alert during configured times.\n\n✓ The siren still plays\n✓ Notifications still arrive\n✓ No alert data is collected or transmitted\n\nFor details, see the Privacy Policy.</string>
     <string name="accessibility_disclosure_button_cancel">Cancel</string>
     <string name="accessibility_disclosure_button_settings">Open Accessibility Settings</string>
+    <string name="tab_status">Status</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_history">History</string>
+    <string name="language_label">App language</string>
+    <string name="language_system">System default</string>
+    <string name="language_english">English</string>
+    <string name="language_hebrew">עברית</string>
+    <string name="history_summary_title">This Shabbat</string>
+    <string name="history_summary_format">Dismissed %d alerts</string>
+    <string name="history_no_dismissals">No alerts dismissed yet</string>
 </resources>

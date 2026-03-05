@@ -51,4 +51,14 @@
     <string name="accessibility_disclosure_text">האפליקציה משתמשת בשירות הנגישות של Android כדי לזהות התראות שידור תאים בחירום וסוגרת את התראה על המסך באופן אוטומטי בזמנים שהוגדרו.\n\n✓ הסירנה עדיין תשמע\n✓ התראות עדיין יגיעו\n✓ אף נתון התראה לא מאוחסן או משודר\n\nלמידע נוסף, ראה את מדיניות הפרטיות.</string>
     <string name="accessibility_disclosure_button_cancel">ביטול</string>
     <string name="accessibility_disclosure_button_settings">פתח הגדרות נגישות</string>
+    <string name="tab_status">סטטוס</string>
+    <string name="tab_settings">הגדרות</string>
+    <string name="tab_history">היסטוריה</string>
+    <string name="language_label">שפת האפליקציה</string>
+    <string name="language_system">ברירת המחדל של המערכת</string>
+    <string name="language_english">English</string>
+    <string name="language_hebrew">עברית</string>
+    <string name="history_summary_title">שבת זו</string>
+    <string name="history_summary_format">סגור %d התראות</string>
+    <string name="history_no_dismissals">עדיין לא סגרו התראות</string>
 </resources>
