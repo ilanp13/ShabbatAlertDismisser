@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
         val spannableString = SpannableString(text)
         val privacyPolicyStart = text.indexOf("Privacy Policy")
         if (privacyPolicyStart >= 0) {
-            val privacyLink = object : URLSpan("") {
+            val privacyLink = object : URLSpan("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md") {
                 override fun onClick(widget: android.view.View) {
                     startActivity(Intent(Intent.ACTION_VIEW).apply {
                         data = android.net.Uri.parse("https://github.com/ilanp13/ShabbatAlertDismisser/blob/main/PRIVACY_POLICY.md")
@@ -232,7 +232,7 @@ class MainActivity : AppCompatActivity() {
                 privacyLink,
                 privacyPolicyStart,
                 privacyPolicyStart + "Privacy Policy".length,
-                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                0
             )
         }
         disclosureText.text = spannableString
