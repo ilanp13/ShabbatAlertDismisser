@@ -25,141 +25,39 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        val radioMode        = findViewById<RadioGroup>(R.id.radioMode)
-        val tvStatus         = findViewById<TextView>(R.id.tvStatus)
-        val tvLocation       = findViewById<TextView>(R.id.tvLocation)
-        val tvShabbatTimes   = findViewById<TextView>(R.id.tvShabbatTimes)
-        val seekDelay        = findViewById<SeekBar>(R.id.seekDelay)
-        val tvDelay          = findViewById<TextView>(R.id.tvDelay)
-        val btnAccessibility = findViewById<Button>(R.id.btnAccessibility)
-        val btnUpdateLoc     = findViewById<Button>(R.id.btnUpdateLocation)
-        val spinnerMinhag    = findViewById<Spinner>(R.id.spinnerMinhag)
-        val radioEndShabbat  = findViewById<RadioGroup>(R.id.radioEndShabbat)
-        val tvSyncStatus     = findViewById<TextView>(R.id.tvSyncStatus)
-
-        // ── Mode radio ────────────────────────────────────────────────────────
-        when (prefs.getString("mode", "shabbat_only")) {
-            "shabbat_only"      -> radioMode.check(R.id.radioShabbatOnly)
-            "shabbat_holidays"  -> radioMode.check(R.id.radioShabbatAndHolidays)
-            "always"            -> radioMode.check(R.id.radioAlways)
-            "disabled"          -> radioMode.check(R.id.radioDisabled)
+        // Show setup or main layout based on accessibility status
+        if (!isAccessibilityServiceEnabled()) {
+            showSetupLayout()
+        } else {
+            showMainLayout()
         }
-        radioMode.setOnCheckedChangeListener { _, id ->
-            prefs.edit().putString("mode", when (id) {
-                R.id.radioShabbatOnly         -> "shabbat_only"
-                R.id.radioShabbatAndHolidays  -> "shabbat_holidays"
-                R.id.radioAlways              -> "always"
-                R.id.radioDisabled            -> "disabled"
-                else                          -> "shabbat_only"
-            }).apply()
-            updateStatusText(tvStatus)
-        }
-        updateModeRadioButtonsState(radioMode)
-
-        // ── Delay seekbar (5–60 s) ────────────────────────────────────────────
-        val currentDelay = prefs.getInt("delay_seconds", 10)
-        seekDelay.progress = currentDelay - 5
-        tvDelay.text = getString(R.string.delay_format, currentDelay)
-        seekDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                val s = progress + 5
-                tvDelay.text = getString(R.string.delay_format, s)
-                prefs.edit().putInt("delay_seconds", s).apply()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        // ── Minhag spinner ────────────────────────────────────────────────────
-        val profiles = MinhagProfiles.all
-        spinnerMinhag.adapter = ArrayAdapter(this,
-            android.R.layout.simple_spinner_dropdown_item,
-            profiles.map { it.display })
-        val savedKey = prefs.getString("minhag_key", "ashkenaz") ?: "ashkenaz"
-        spinnerMinhag.setSelection(profiles.indexOfFirst { it.key == savedKey }.coerceAtLeast(0))
-        spinnerMinhag.onItemSelectedListener = object : SimpleSpinnerListener() {
-            override fun onItemSelected(pos: Int) {
-                val profile = profiles[pos]
-                prefs.edit().putString("minhag_key", profile.key).apply()
-                applyMinhag(profile)
-                syncHebcal(tvShabbatTimes, tvSyncStatus)
-            }
-        }
-
-        // ── End-of-Shabbat: Gra or Rabenu Tam ────────────────────────────────
-        radioEndShabbat.check(
-            if (prefs.getBoolean("use_rabenu_tam", false)) R.id.radioRabenTam else R.id.radioGra
-        )
-        radioEndShabbat.setOnCheckedChangeListener { _, id ->
-            prefs.edit().putBoolean("use_rabenu_tam", id == R.id.radioRabenTam).apply()
-            applyMinhag(MinhagProfiles.byKey(prefs.getString("minhag_key", "ashkenaz") ?: "ashkenaz"))
-            syncHebcal(tvShabbatTimes, tvSyncStatus)
-        }
-
-        // ── Buttons ───────────────────────────────────────────────────────────
-        btnAccessibility.setOnClickListener {
-            showAccessibilityDisclosure()
-        }
-        findViewById<Button>(R.id.btnBatteryOpt).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        }
-        btnUpdateLoc.setOnClickListener {
-            requestLocationUpdate(tvLocation, tvShabbatTimes, tvSyncStatus)
-        }
-
-        // ── Persistent notification toggle ────────────────────────────────────
-        val switchNotif = findViewById<SwitchMaterial>(R.id.switchNotification)
-        switchNotif.isChecked = prefs.getBoolean("show_notification", true)
-        switchNotif.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("show_notification", isChecked).apply()
-        }
-
-        // ── Keep screen on radio ──────────────────────────────────────────────
-        val radioScreenOn = findViewById<RadioGroup>(R.id.radioScreenOn)
-        radioScreenOn.check(when (prefs.getString("screen_on_mode", "off")) {
-            "shabbat" -> R.id.radioScreenOnShabbat
-            "always"  -> R.id.radioScreenOnAlways
-            else      -> R.id.radioScreenOnOff
-        })
-        radioScreenOn.setOnCheckedChangeListener { _, id ->
-            prefs.edit().putString("screen_on_mode", when (id) {
-                R.id.radioScreenOnShabbat -> "shabbat"
-                R.id.radioScreenOnAlways  -> "always"
-                else                      -> "off"
-            }).apply()
-            updateStatusText(tvStatus)
-        }
-
-        // ── Request notification permission (Android 13+) ────────────────────
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
-        }
-
-        // ── Initial state ─────────────────────────────────────────────────────
-        updateLocationText(tvLocation)
-        updateShabbatTimes(tvShabbatTimes)
-        updateStatusText(tvStatus)
-        updateSyncStatusText(tvSyncStatus)
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh accessibility status every time we return (e.g. from accessibility settings)
-        val tvStatus = findViewById<TextView>(R.id.tvStatus)
-        updateStatusText(tvStatus)
-        // Disable mode options if accessibility is no longer enabled
-        updateModeRadioButtonsState(findViewById(R.id.radioMode))
-        // Auto-refresh if Hebcal cache has expired (havdalah is in the past)
-        if (prefs.getLong("hebcal_havdalah_ms", 0) < System.currentTimeMillis()) {
-            syncHebcal(
-                findViewById(R.id.tvShabbatTimes),
-                findViewById(R.id.tvSyncStatus)
-            )
+        // Check if accessibility status changed and swap layouts if needed
+        if (isAccessibilityServiceEnabled()) {
+            if (findViewById<RadioGroup>(R.id.radioMode) == null) {
+                // Currently showing setup layout, switch to main
+                showMainLayout()
+            } else {
+                // Already on main layout
+                val tvStatus = findViewById<TextView>(R.id.tvStatus)
+                updateStatusText(tvStatus)
+                updateModeRadioButtonsState(findViewById(R.id.radioMode))
+                if (prefs.getLong("hebcal_havdalah_ms", 0) < System.currentTimeMillis()) {
+                    syncHebcal(
+                        findViewById(R.id.tvShabbatTimes),
+                        findViewById(R.id.tvSyncStatus)
+                    )
+                }
+            }
+        } else {
+            if (findViewById<RadioGroup>(R.id.radioMode) != null) {
+                // Currently showing main layout, switch to setup
+                showSetupLayout()
+            }
         }
     }
 
@@ -306,6 +204,138 @@ class MainActivity : AppCompatActivity() {
                 findViewById(R.id.tvSyncStatus)
             )
         }
+    }
+
+    private fun showSetupLayout() {
+        setContentView(R.layout.activity_setup)
+
+        val btnAccessibility = findViewById<Button>(R.id.btnAccessibilitySetup)
+        btnAccessibility.setOnClickListener {
+            showAccessibilityDisclosure()
+        }
+    }
+
+    private fun showMainLayout() {
+        setContentView(R.layout.activity_main)
+
+        val radioMode        = findViewById<RadioGroup>(R.id.radioMode)
+        val tvStatus         = findViewById<TextView>(R.id.tvStatus)
+        val tvLocation       = findViewById<TextView>(R.id.tvLocation)
+        val tvShabbatTimes   = findViewById<TextView>(R.id.tvShabbatTimes)
+        val seekDelay        = findViewById<SeekBar>(R.id.seekDelay)
+        val tvDelay          = findViewById<TextView>(R.id.tvDelay)
+        val btnAccessibility = findViewById<Button>(R.id.btnAccessibility)
+        val btnUpdateLoc     = findViewById<Button>(R.id.btnUpdateLocation)
+        val spinnerMinhag    = findViewById<Spinner>(R.id.spinnerMinhag)
+        val radioEndShabbat  = findViewById<RadioGroup>(R.id.radioEndShabbat)
+        val tvSyncStatus     = findViewById<TextView>(R.id.tvSyncStatus)
+
+        // ── Mode radio ────────────────────────────────────────────────────────
+        when (prefs.getString("mode", "shabbat_only")) {
+            "shabbat_only"      -> radioMode.check(R.id.radioShabbatOnly)
+            "shabbat_holidays"  -> radioMode.check(R.id.radioShabbatAndHolidays)
+            "always"            -> radioMode.check(R.id.radioAlways)
+            "disabled"          -> radioMode.check(R.id.radioDisabled)
+        }
+        radioMode.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("mode", when (id) {
+                R.id.radioShabbatOnly         -> "shabbat_only"
+                R.id.radioShabbatAndHolidays  -> "shabbat_holidays"
+                R.id.radioAlways              -> "always"
+                R.id.radioDisabled            -> "disabled"
+                else                          -> "shabbat_only"
+            }).apply()
+            updateStatusText(tvStatus)
+        }
+        updateModeRadioButtonsState(radioMode)
+
+        // ── Delay seekbar (5–60 s) ────────────────────────────────────────────
+        val currentDelay = prefs.getInt("delay_seconds", 10)
+        seekDelay.progress = currentDelay - 5
+        tvDelay.text = getString(R.string.delay_format, currentDelay)
+        seekDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                val s = progress + 5
+                tvDelay.text = getString(R.string.delay_format, s)
+                prefs.edit().putInt("delay_seconds", s).apply()
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+
+        // ── Minhag spinner ────────────────────────────────────────────────────
+        val profiles = MinhagProfiles.all
+        spinnerMinhag.adapter = ArrayAdapter(this,
+            android.R.layout.simple_spinner_dropdown_item,
+            profiles.map { it.display })
+        val savedKey = prefs.getString("minhag_key", "ashkenaz") ?: "ashkenaz"
+        spinnerMinhag.setSelection(profiles.indexOfFirst { it.key == savedKey }.coerceAtLeast(0))
+        spinnerMinhag.onItemSelectedListener = object : SimpleSpinnerListener() {
+            override fun onItemSelected(pos: Int) {
+                val profile = profiles[pos]
+                prefs.edit().putString("minhag_key", profile.key).apply()
+                applyMinhag(profile)
+                syncHebcal(tvShabbatTimes, tvSyncStatus)
+            }
+        }
+
+        // ── End-of-Shabbat: Gra or Rabenu Tam ────────────────────────────────
+        radioEndShabbat.check(
+            if (prefs.getBoolean("use_rabenu_tam", false)) R.id.radioRabenTam else R.id.radioGra
+        )
+        radioEndShabbat.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putBoolean("use_rabenu_tam", id == R.id.radioRabenTam).apply()
+            applyMinhag(MinhagProfiles.byKey(prefs.getString("minhag_key", "ashkenaz") ?: "ashkenaz"))
+            syncHebcal(tvShabbatTimes, tvSyncStatus)
+        }
+
+        // ── Buttons ───────────────────────────────────────────────────────────
+        btnAccessibility.setOnClickListener {
+            showAccessibilityDisclosure()
+        }
+        findViewById<Button>(R.id.btnBatteryOpt).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        }
+        btnUpdateLoc.setOnClickListener {
+            requestLocationUpdate(tvLocation, tvShabbatTimes, tvSyncStatus)
+        }
+
+        // ── Persistent notification toggle ────────────────────────────────────
+        val switchNotif = findViewById<SwitchMaterial>(R.id.switchNotification)
+        switchNotif.isChecked = prefs.getBoolean("show_notification", true)
+        switchNotif.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("show_notification", isChecked).apply()
+        }
+
+        // ── Keep screen on radio ──────────────────────────────────────────────
+        val radioScreenOn = findViewById<RadioGroup>(R.id.radioScreenOn)
+        radioScreenOn.check(when (prefs.getString("screen_on_mode", "off")) {
+            "shabbat" -> R.id.radioScreenOnShabbat
+            "always"  -> R.id.radioScreenOnAlways
+            else      -> R.id.radioScreenOnOff
+        })
+        radioScreenOn.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("screen_on_mode", when (id) {
+                R.id.radioScreenOnShabbat -> "shabbat"
+                R.id.radioScreenOnAlways  -> "always"
+                else                      -> "off"
+            }).apply()
+            updateStatusText(tvStatus)
+        }
+
+        // ── Request notification permission (Android 13+) ────────────────────
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+        }
+
+        // ── Initial state ─────────────────────────────────────────────────────
+        updateLocationText(tvLocation)
+        updateShabbatTimes(tvShabbatTimes)
+        updateStatusText(tvStatus)
+        updateSyncStatusText(tvSyncStatus)
     }
 
     private fun showAccessibilityDisclosure() {

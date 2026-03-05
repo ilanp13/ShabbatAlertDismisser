@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    android:background="?android:colorBackground"
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <!-- App Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="32dp"
+        android:gravity="center" />
+
+    <!-- Status Message -->
+    <TextView
+        android:id="@+id/tvSetupStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/status_no_accessibility"
+        android:textSize="16sp"
+        android:layout_marginBottom="24dp"
+        android:gravity="center" />
+
+    <!-- Accessibility Button -->
+    <Button
+        android:id="@+id/btnAccessibilitySetup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/open_accessibility"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Disclosure Info -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/accessibility_disclosure_title"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/accessibility_disclosure_text"
+        android:textSize="13sp"
+        android:lineSpacingMultiplier="1.3"
+        android:alpha="0.8" />
+
+</LinearLayout>
