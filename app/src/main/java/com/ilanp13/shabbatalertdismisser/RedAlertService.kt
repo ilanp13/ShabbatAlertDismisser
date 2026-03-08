@@ -12,7 +12,8 @@ object RedAlertService {
     data class ActiveAlert(
         val title: String,
         val regions: List<String>,
-        val description: String
+        val description: String,
+        val type: String = ""  // e.g., "missiles", "event", etc.
     )
 
     sealed class FetchResult {
@@ -68,6 +69,7 @@ object RedAlertService {
             val obj = JSONObject(json)
             val title = obj.optString("title", "")
             val description = obj.optString("desc", "")
+            val type = obj.optString("type", "")  // e.g., "Missiles", "Event", "Test"
             val dataArray = obj.optJSONArray("data")
 
             val regions = mutableListOf<String>()
@@ -78,7 +80,7 @@ object RedAlertService {
             }
 
             if (title.isNotEmpty() && regions.isNotEmpty()) {
-                ActiveAlert(title, regions, description)
+                ActiveAlert(title, regions, description, type)
             } else {
                 null
             }
