@@ -424,20 +424,24 @@ class StatusFragment : Fragment() {
             // Clear the cache completely
             prefs.edit().putString("alert_cache", "[]").apply()
 
-            // Fetch latest alert
+            // Fetch latest active alert
             val result = RedAlertService.fetch()
-
             when (result) {
                 is RedAlertService.FetchResult.Success -> {
                     val alert = result.alert
                     if (alert != null) {
-                        // Save to cache without filtering
                         AlertCacheService.save(requireContext(), alert)
                     }
                 }
                 is RedAlertService.FetchResult.Unavailable -> {
-                    // API error
+                    // API error - continue anyway
                 }
+            }
+
+            // Fetch historical alerts from the last 24 hours
+            val historyAlerts = RedAlertService.fetchHistory()
+            for (alert in historyAlerts) {
+                AlertCacheService.save(requireContext(), alert)
             }
 
             handler.post {
@@ -449,7 +453,6 @@ class StatusFragment : Fragment() {
                 updateAlertTimestamp()
 
                 // After clearing and fetching, reload and display cached alerts
-                // This shows everything without region filtering
                 loadCachedAlerts()
 
                 if (cachedAlertsList.isNotEmpty()) {
@@ -457,8 +460,6 @@ class StatusFragment : Fragment() {
                     displayCachedAlert(0)
                     miniMapContainer.visibility = View.VISIBLE
                     activeAlertsScrollView.visibility = View.VISIBLE
-
-                    // Don't start cycler here - will be started automatically if conditions are met
                 } else {
                     // No alerts after clear & refresh
                     tvActiveAlerts.text = getString(R.string.active_alerts_none)
