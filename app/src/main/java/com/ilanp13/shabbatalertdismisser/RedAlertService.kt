@@ -182,6 +182,7 @@ object RedAlertService {
         return try {
             val title = obj.optString("title", "")
             val description = obj.optString("desc", "")
+            val alertDate = obj.optString("alertDate", "")
 
             // Type can come from "type" field or "category" field
             val type = obj.optString("type", obj.optString("category", ""))
@@ -194,12 +195,14 @@ object RedAlertService {
 
             // Try cities array first
             if (citiesArray != null) {
+                Log.d(TAG, "Parsing cities array with ${citiesArray.length()} items")
                 for (i in 0 until citiesArray.length()) {
                     regions.add(citiesArray.getString(i))
                 }
             }
             // If no cities, try data array
             else if (dataArray != null) {
+                Log.d(TAG, "Parsing data array with ${dataArray.length()} items")
                 for (i in 0 until dataArray.length()) {
                     regions.add(dataArray.getString(i))
                 }
@@ -208,18 +211,31 @@ object RedAlertService {
             else {
                 val dataStr = obj.optString("data", "")
                 if (dataStr.isNotEmpty()) {
+                    Log.d(TAG, "Parsing data string: $dataStr")
                     // Split by comma if needed
                     regions.addAll(dataStr.split(",").map { it.trim() }.filter { it.isNotEmpty() })
                 }
             }
 
+            Log.d(TAG, "Alert: title=$title, date=$alertDate, type=$type, regions=$regions")
+
             if (title.isNotEmpty() && regions.isNotEmpty()) {
-                ActiveAlert(title, regions, description, type)
+                // Check if regions exist in coordinates
+                val validRegions = regions.filter { OrefRegionCoords.coords.containsKey(it) }
+                Log.d(TAG, "Valid regions with coordinates: $validRegions out of $regions")
+
+                if (validRegions.isNotEmpty()) {
+                    ActiveAlert(title, validRegions, description, type)
+                } else {
+                    Log.w(TAG, "No regions found in OrefRegionCoords: $regions")
+                    null
+                }
             } else {
+                Log.d(TAG, "Alert missing title or regions: title=$title, regions=$regions")
                 null
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Parse alert object failed: ${e.message}")
+            Log.w(TAG, "Parse alert object failed: ${e.message}", e)
             null
         }
     }
