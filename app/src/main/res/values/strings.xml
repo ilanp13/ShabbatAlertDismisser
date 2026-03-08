@@ -103,4 +103,5 @@
     <string name="cycler_always">Always</string>
     <string name="cycler_duration_label">Display duration per alert</string>
     <string name="cycler_duration_format">Duration: %d seconds</string>
+    <string name="filter_note_all_tabs">💡 Type filters (from Map tab) apply to all alerts shown here</string>
 </resources>

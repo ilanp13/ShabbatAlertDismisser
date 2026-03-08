@@ -39,6 +39,8 @@ class StatusFragment : Fragment() {
     private lateinit var miniMapContainer: android.widget.LinearLayout
     private lateinit var btnClearAlerts: Button
     private lateinit var btnRefetch24h: Button
+    private lateinit var btnPrevAlert: Button
+    private lateinit var btnNextAlert: Button
 
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
@@ -94,8 +96,8 @@ class StatusFragment : Fragment() {
         }
 
         // Previous/Next buttons for cycling through cached alerts
-        val btnPrevAlert = view.findViewById<Button>(R.id.btnPrevAlert)
-        val btnNextAlert = view.findViewById<Button>(R.id.btnNextAlert)
+        btnPrevAlert = view.findViewById(R.id.btnPrevAlert)
+        btnNextAlert = view.findViewById(R.id.btnNextAlert)
 
         btnPrevAlert.setOnClickListener {
             cyclePreviousAlert()
@@ -343,17 +345,22 @@ class StatusFragment : Fragment() {
                         // Save to cache
                         AlertCacheService.save(requireContext(), alert)
 
-                        // Filter alert regions by selected regions
-                        if (selectedRegions.isEmpty()) {
-                            // All regions selected - show alert
-                            alert
+                        // Filter by alert type
+                        if (!AlertTypeFilter.shouldShow(requireContext(), alert.type)) {
+                            null  // Alert type is filtered out
                         } else {
-                            // Filter to matching regions
-                            val filtered = alert.regions.filter { it in selectedRegions }
-                            if (filtered.isNotEmpty()) {
-                                alert.copy(regions = filtered)
+                            // Filter alert regions by selected regions
+                            if (selectedRegions.isEmpty()) {
+                                // All regions selected - show alert
+                                alert
                             } else {
-                                null
+                                // Filter to matching regions
+                                val filtered = alert.regions.filter { it in selectedRegions }
+                                if (filtered.isNotEmpty()) {
+                                    alert.copy(regions = filtered)
+                                } else {
+                                    null
+                                }
                             }
                         }
                     } else {
@@ -690,7 +697,15 @@ class StatusFragment : Fragment() {
 
     private fun loadCachedAlerts() {
         cachedAlertsList = AlertCacheService.getLast24Hours(requireContext())
+            .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
             .sortedByDescending { it.timestampMs }
         currentCachedAlertIndex = 0
+        updateCycleButtonStates()
+    }
+
+    private fun updateCycleButtonStates() {
+        val hasAlerts = cachedAlertsList.size > 1
+        btnPrevAlert.isEnabled = hasAlerts
+        btnNextAlert.isEnabled = hasAlerts
     }
 }

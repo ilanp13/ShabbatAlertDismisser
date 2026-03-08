@@ -80,6 +80,16 @@
         android:visibility="gone" />
 
     <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:text="@string/filter_note_all_tabs"
+        android:textSize="10sp"
+        android:alpha="0.6" />
+
+    <TextView
         android:id="@+id/tvEmptyState"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

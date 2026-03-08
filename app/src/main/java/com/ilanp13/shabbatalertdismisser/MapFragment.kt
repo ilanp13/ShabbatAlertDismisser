@@ -31,7 +31,6 @@ class MapFragment : Fragment() {
     private lateinit var cbEvent: CheckBox
     private lateinit var cbEarthquake: CheckBox
     private lateinit var cbTsunami: CheckBox
-    private var selectedAlertTypes = setOf("missiles", "aircraft", "event", "earthquake", "tsunami")
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -81,27 +80,28 @@ class MapFragment : Fragment() {
         if (cbEvent.isChecked) types.add("event")
         if (cbEarthquake.isChecked) types.add("earthquake")
         if (cbTsunami.isChecked) types.add("tsunami")
-        selectedAlertTypes = types
+        AlertTypeFilter.setSelectedTypes(requireContext(), types)
     }
 
     private fun loadFilterPreferences() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val savedTypes = prefs.getStringSet("map_alert_type_filter", null)
-        if (savedTypes != null) {
-            selectedAlertTypes = savedTypes
-        }
+        val selectedTypes = AlertTypeFilter.getSelectedTypes(requireContext())
 
         // Update checkbox states
-        cbMissiles.isChecked = selectedAlertTypes.contains("missiles")
-        cbAircraft.isChecked = selectedAlertTypes.contains("aircraft")
-        cbEvent.isChecked = selectedAlertTypes.contains("event")
-        cbEarthquake.isChecked = selectedAlertTypes.contains("earthquake")
-        cbTsunami.isChecked = selectedAlertTypes.contains("tsunami")
+        cbMissiles.isChecked = selectedTypes.contains("missiles")
+        cbAircraft.isChecked = selectedTypes.contains("aircraft")
+        cbEvent.isChecked = selectedTypes.contains("event")
+        cbEarthquake.isChecked = selectedTypes.contains("earthquake")
+        cbTsunami.isChecked = selectedTypes.contains("tsunami")
     }
 
     private fun saveFilterPreferences() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        prefs.edit().putStringSet("map_alert_type_filter", selectedAlertTypes).apply()
+        val types = mutableSetOf<String>()
+        if (cbMissiles.isChecked) types.add("missiles")
+        if (cbAircraft.isChecked) types.add("aircraft")
+        if (cbEvent.isChecked) types.add("event")
+        if (cbEarthquake.isChecked) types.add("earthquake")
+        if (cbTsunami.isChecked) types.add("tsunami")
+        AlertTypeFilter.setSelectedTypes(requireContext(), types)
     }
 
     private fun setupMap() {
@@ -255,15 +255,7 @@ class MapFragment : Fragment() {
     }
 
     private fun shouldShowAlertType(type: String): Boolean {
-        val normalized = type.lowercase()
-        return when {
-            normalized.contains("missile") || normalized.contains("rocket") -> selectedAlertTypes.contains("missiles")
-            normalized.contains("aircraft") -> selectedAlertTypes.contains("aircraft")
-            normalized.contains("event") -> selectedAlertTypes.contains("event")
-            normalized.contains("earthquake") -> selectedAlertTypes.contains("earthquake")
-            normalized.contains("tsunami") -> selectedAlertTypes.contains("tsunami")
-            else -> true  // Show unknown types by default
-        }
+        return AlertTypeFilter.shouldShow(requireContext(), type)
     }
 
     private fun getAlertTypeColor(type: String): Int {

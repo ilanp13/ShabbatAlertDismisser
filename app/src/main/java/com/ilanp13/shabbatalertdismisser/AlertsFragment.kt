@@ -80,8 +80,9 @@ class AlertsFragment : Fragment() {
     }
 
     private fun loadAlerts() {
-        // Show full 24h cache history
+        // Show full 24h cache history, filtered by selected alert types
         val cachedAlerts = AlertCacheService.getLast24Hours(requireContext())
+            .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
         val sortedAlerts = cachedAlerts.sortedByDescending { it.timestampMs }
         adapter.submitList(sortedAlerts)
         updateEmptyState(sortedAlerts.isEmpty())

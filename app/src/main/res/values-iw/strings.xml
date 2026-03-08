@@ -103,4 +103,5 @@
     <string name="cycler_always">תמיד</string>
     <string name="cycler_duration_label">משך הצגה לכל התראה</string>
     <string name="cycler_duration_format">משך: %d שניות</string>
+    <string name="filter_note_all_tabs">💡 סינוני הסוג (מלשונית המפה) חלים על כל ההתראות המוצגות כאן</string>
 </resources>

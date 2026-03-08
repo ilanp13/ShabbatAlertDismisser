@@ -65,52 +65,76 @@ object RedAlertService {
      * Uses the alertsHistoryJson endpoint which can return multiple historical alerts.
      */
     fun fetchHistory(): List<ActiveAlert> {
-        return try {
-            // Try the primary endpoint first
-            val url = URL("https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json")
-            Log.d(TAG, "Fetching alert history from: $url")
+        // Try multiple endpoint variations
+        val endpoints = listOf(
+            "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json",
+            "https://www.oref.org.il/WarningMessages/AlertsHistoryJson/Alerts.json",
+            "https://www.oref.org.il/alerts/history",
+            "https://www.oref.org.il/api/alerts/history"
+        )
 
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 10_000
-            conn.readTimeout = 10_000
-            conn.setRequestProperty("Referer", "https://www.oref.org.il/")
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-            conn.setRequestProperty("X-Requested-With", "XMLHttpRequest")
+        for (endpoint in endpoints) {
+            try {
+                val url = URL(endpoint)
+                Log.d(TAG, "Attempting to fetch history from: $url")
 
-            val responseCode = conn.responseCode
-            Log.d(TAG, "History response code: $responseCode")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.connectTimeout = 10_000
+                conn.readTimeout = 10_000
+                conn.setRequestProperty("Referer", "https://www.oref.org.il/")
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                conn.setRequestProperty("X-Requested-With", "XMLHttpRequest")
 
-            if (responseCode != 200) {
-                Log.w(TAG, "History endpoint returned status $responseCode")
-                return emptyList()
-            }
+                val responseCode = conn.responseCode
+                Log.d(TAG, "History response code for $endpoint: $responseCode")
 
-            val body = conn.inputStream.bufferedReader().readText()
-            conn.disconnect()
+                if (responseCode != 200) {
+                    Log.w(TAG, "Endpoint $endpoint returned status $responseCode, trying next...")
+                    conn.disconnect()
+                    continue
+                }
 
-            Log.d(TAG, "History response length: ${body.length}, first 500 chars: ${body.take(500)}")
+                val body = conn.inputStream.bufferedReader().readText()
+                conn.disconnect()
 
-            if (body.isEmpty() || body.trim() == "{}") {
-                Log.d(TAG, "Empty history response")
-                return emptyList()
-            }
+                Log.d(TAG, "History response length: ${body.length}")
+                Log.d(TAG, "History response (first 500 chars): ${body.take(500)}")
 
-            // Try parsing as array first
-            val result = try {
-                parseHistoryArray(body)
+                if (body.isEmpty() || body.trim() == "{}" || body.trim() == "[]") {
+                    Log.d(TAG, "Empty history response from $endpoint, trying next...")
+                    continue
+                }
+
+                // Try parsing as array first
+                val result = try {
+                    parseHistoryArray(body)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to parse as array: ${e.message}")
+                    try {
+                        // If it's a single object, wrap it in array and parse
+                        val wrapped = "[$body]"
+                        parseHistoryArray(wrapped)
+                    } catch (e2: Exception) {
+                        Log.w(TAG, "Also failed to parse as wrapped object: ${e2.message}")
+                        emptyList()
+                    }
+                }
+
+                if (result.isNotEmpty()) {
+                    Log.d(TAG, "SUCCESS: Parsed ${result.size} historical alerts from $endpoint")
+                    return result
+                } else {
+                    Log.d(TAG, "Endpoint $endpoint returned no results, trying next...")
+                    continue
+                }
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to parse as array, trying as object: ${e.message}")
-                // If it's a single object, wrap it in array and parse
-                val wrapped = "[$body]"
-                parseHistoryArray(wrapped)
+                Log.w(TAG, "Fetch history from $endpoint failed: ${e.message}")
+                continue
             }
-
-            Log.d(TAG, "Parsed ${result.size} historical alerts")
-            result
-        } catch (e: Exception) {
-            Log.w(TAG, "Fetch history failed: ${e.message}", e)
-            emptyList()
         }
+
+        Log.w(TAG, "All history fetch endpoints failed")
+        return emptyList()
     }
 
     private fun parseHistoryArray(json: String): List<ActiveAlert> {
