@@ -4,11 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.json.JSONArray
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -19,6 +21,7 @@ class HistoryFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var tvHistoryCount: TextView
     private lateinit var tvEmptyState: TextView
+    private lateinit var btnClearHistory: Button
     private lateinit var adapter: HistoryAdapter
 
     private lateinit var prefs: android.content.SharedPreferences
@@ -38,10 +41,15 @@ class HistoryFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerHistory)
         tvHistoryCount = view.findViewById(R.id.tvHistoryCount)
         tvEmptyState = view.findViewById(R.id.tvEmptyState)
+        btnClearHistory = view.findViewById(R.id.btnClearHistory)
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         adapter = HistoryAdapter()
         recyclerView.adapter = adapter
+
+        btnClearHistory.setOnClickListener {
+            showClearHistoryDialog()
+        }
 
         loadHistory()
     }
@@ -86,6 +94,24 @@ class HistoryFragment : Fragment() {
         } else {
             getString(R.string.history_summary_format, count)
         }
+    }
+
+    private fun showClearHistoryDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.clear_history_title))
+            .setMessage(getString(R.string.clear_history_message))
+            .setPositiveButton(getString(R.string.clear_history_confirm)) { _, _ ->
+                clearHistory()
+            }
+            .setNegativeButton(getString(R.string.clear_history_cancel)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun clearHistory() {
+        prefs.edit().putString("dismiss_history", "[]").apply()
+        loadHistory()
     }
 
     inner class HistoryAdapter : androidx.recyclerview.widget.ListAdapter<DismissRecord, HistoryAdapter.ViewHolder>(

@@ -24,8 +24,10 @@ import java.util.Locale
 class StatusFragment : Fragment() {
 
     private lateinit var tvStatus: TextView
+    private lateinit var tvShabbatTimesTitle: TextView
     private lateinit var tvShabbatTimes: TextView
     private lateinit var tvSyncStatus: TextView
+    private lateinit var tvShabbatParasha: TextView
     private lateinit var tvDismissalCount: TextView
     private lateinit var tvActiveAlerts: TextView
     private lateinit var tvActiveAlertsRegions: TextView
@@ -34,13 +36,15 @@ class StatusFragment : Fragment() {
     private lateinit var pbAlertsLoading: android.widget.ProgressBar
     private lateinit var tvAlertsUpdatedTime: TextView
     private lateinit var miniMapView: MapView
-    private lateinit var miniMapContainer: FrameLayout
+    private lateinit var miniMapContainer: android.widget.LinearLayout
 
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
     private var alertsPollRunnable: Runnable? = null
     private var timestampUpdateRunnable: Runnable? = null
     private var lastAlertUpdateMs = 0L
+    private var cachedAlertsList = listOf<AlertCacheService.CachedAlert>()
+    private var currentCachedAlertIndex = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,8 +58,10 @@ class StatusFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         tvStatus = view.findViewById(R.id.tvStatus)
+        tvShabbatTimesTitle = view.findViewById(R.id.tvShabbatTimesTitle)
         tvShabbatTimes = view.findViewById(R.id.tvShabbatTimes)
         tvSyncStatus = view.findViewById(R.id.tvSyncStatus)
+        tvShabbatParasha = view.findViewById(R.id.tvShabbatParasha)
         tvDismissalCount = view.findViewById(R.id.tvDismissalCount)
         tvActiveAlerts = view.findViewById(R.id.tvActiveAlerts)
         tvActiveAlertsRegions = view.findViewById(R.id.tvActiveAlertsRegions)
@@ -73,6 +79,18 @@ class StatusFragment : Fragment() {
             updateActiveAlerts()
         }
 
+        // Previous/Next buttons for cycling through cached alerts
+        val btnPrevAlert = view.findViewById<Button>(R.id.btnPrevAlert)
+        val btnNextAlert = view.findViewById<Button>(R.id.btnNextAlert)
+
+        btnPrevAlert.setOnClickListener {
+            cyclePreviousAlert()
+        }
+
+        btnNextAlert.setOnClickListener {
+            cycleNextAlert()
+        }
+
         // Tap on mini map container to navigate to full map
         miniMapContainer.setOnClickListener {
             (activity as? MainActivity)?.navigateToTab(3)
@@ -81,25 +99,65 @@ class StatusFragment : Fragment() {
 
     private fun setupMiniMap() {
         // Configure osmdroid
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         Configuration.getInstance().apply {
-            load(requireContext(), PreferenceManager.getDefaultSharedPreferences(requireContext()))
+            load(requireContext(), prefs)
             userAgentValue = requireContext().packageName
+            // Ensure cache directory exists
+            osmdroidBasePath = requireContext().cacheDir
         }
 
-        // Setup mini map (non-interactive)
+        // Setup mini map (non-interactive, focused on Israel)
         miniMapView.setTileSource(TileSourceFactory.MAPNIK)
         miniMapView.isEnabled = false
         miniMapView.setMultiTouchControls(false)
         miniMapView.isClickable = false
         miniMapView.isFocusable = false
+        miniMapView.setDestroyMode(false)  // Prevent destroying on detach
 
-        // Center on Israel, zoom 7
+        // Center on Israel with optimal zoom level
+        // Zoom 9 shows entire Israel with good detail
         val controller = miniMapView.controller
-        controller.setZoom(7.0)
-        controller.setCenter(GeoPoint(31.5, 35.0))
+        controller.setZoom(9.0)
+        controller.setCenter(GeoPoint(31.25, 35.05))
+
+        // Add current location marker (blue dot)
+        addCurrentLocationMarker()
 
         // Start hidden
         miniMapContainer.visibility = View.GONE
+    }
+
+    private fun addCurrentLocationMarker() {
+        try {
+            val lat = prefs.getFloat("latitude", 31.7683f).toDouble()
+            val lon = prefs.getFloat("longitude", 35.2137f).toDouble()
+
+            // Clear existing location markers
+            miniMapView.overlays.removeAll { it is org.osmdroid.views.overlay.Marker }
+
+            // Add blue dot for current location
+            val locationMarker = org.osmdroid.views.overlay.Marker(miniMapView)
+            locationMarker.position = GeoPoint(lat, lon)
+            locationMarker.title = "Current Location"
+            locationMarker.setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_CENTER)
+
+            // Create a blue circle drawable for current location
+            val paint = android.graphics.Paint().apply {
+                color = android.graphics.Color.BLUE
+                style = android.graphics.Paint.Style.FILL
+                isAntiAlias = true
+            }
+            val bitmap = android.graphics.Bitmap.createBitmap(20, 20, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bitmap)
+            canvas.drawCircle(10f, 10f, 8f, paint)
+
+            locationMarker.icon = android.graphics.drawable.BitmapDrawable(resources, bitmap)
+            miniMapView.overlays.add(locationMarker)
+            miniMapView.invalidate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onResume() {
@@ -148,6 +206,14 @@ class StatusFragment : Fragment() {
             tvShabbatTimes.text = getString(R.string.shabbat_times_format,
                 fmt.format(Date(candleMs)),
                 fmt.format(Date(havdalahDisplayMs)))
+            // Set title based on whether we're in Shabbat
+            val isInShabbat = now in candleMs..havdalahMs
+            tvShabbatTimesTitle.text = if (isInShabbat) {
+                getString(R.string.shabbat_times_current)
+            } else {
+                getString(R.string.shabbat_times_next)
+            }
+            updateParashaDisplay()
             return
         }
 
@@ -164,6 +230,17 @@ class StatusFragment : Fragment() {
                 fmt.format(Date(havdalahMs)))
         } else {
             tvShabbatTimes.text = getString(R.string.shabbat_times_unavailable)
+        }
+        tvShabbatTimesTitle.text = getString(R.string.shabbat_times_next)
+        updateParashaDisplay()
+    }
+
+    private fun updateParashaDisplay() {
+        val parasha = prefs.getString("hebcal_parasha", null)
+        tvShabbatParasha.text = if (parasha.isNullOrEmpty()) {
+            getString(R.string.parasha_unavailable)
+        } else {
+            parasha
         }
     }
 
@@ -290,13 +367,29 @@ class StatusFragment : Fragment() {
                         // Service unavailable (network error)
                         tvActiveAlerts.text = getString(R.string.active_alerts_unavailable)
                         activeAlertsScrollView.visibility = View.GONE
-                        miniMapContainer.visibility = View.GONE
+                        // Show map with cached alerts if available
+                        val cachedAlerts = AlertCacheService.getLast24Hours(requireContext())
+                        if (cachedAlerts.isNotEmpty()) {
+                            miniMapContainer.visibility = View.VISIBLE
+                        } else {
+                            miniMapContainer.visibility = View.GONE
+                        }
                     }
                     else -> {
-                        // No alerts in selected regions (API working, but no active alerts)
-                        tvActiveAlerts.text = getString(R.string.active_alerts_none)
-                        activeAlertsScrollView.visibility = View.GONE
-                        miniMapContainer.visibility = View.GONE
+                        // No active alerts (API working, but no current alerts)
+                        loadCachedAlerts()
+                        miniMapContainer.visibility = View.VISIBLE  // Always show map
+
+                        if (cachedAlertsList.isNotEmpty()) {
+                            // Show most recent cached alert
+                            displayCachedAlert(0)
+                        } else {
+                            // No cached alerts at all
+                            tvActiveAlerts.text = getString(R.string.active_alerts_none)
+                            activeAlertsScrollView.visibility = View.GONE
+                            miniMapView.overlays.clear()
+                            miniMapView.invalidate()
+                        }
                     }
                 }
             }
@@ -342,6 +435,36 @@ class StatusFragment : Fragment() {
         miniMapView.invalidate()
     }
 
+    private fun updateMiniMapFromCached(alert: AlertCacheService.CachedAlert) {
+        // Clear existing overlays
+        miniMapView.overlays.removeAll { it is org.osmdroid.views.overlay.ItemizedIconOverlay<*> }
+
+        // Add orange markers for cached alert regions
+        val items = mutableListOf<org.osmdroid.views.overlay.OverlayItem>()
+        for (region in alert.regions) {
+            val coords = OrefRegionCoords.coords[region]
+            if (coords != null) {
+                val point = GeoPoint(coords.first, coords.second)
+                val item = org.osmdroid.views.overlay.OverlayItem(region, alert.title, point)
+                items.add(item)
+            }
+        }
+
+        if (items.isNotEmpty()) {
+            val overlay = org.osmdroid.views.overlay.ItemizedIconOverlay(
+                items,
+                object : org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener<org.osmdroid.views.overlay.OverlayItem> {
+                    override fun onItemSingleTapUp(index: Int, item: org.osmdroid.views.overlay.OverlayItem): Boolean = true
+                    override fun onItemLongPress(index: Int, item: org.osmdroid.views.overlay.OverlayItem): Boolean = false
+                },
+                requireContext()
+            )
+            miniMapView.overlays.add(overlay)
+        }
+
+        miniMapView.invalidate()
+    }
+
     private fun getSelectedRegions(): List<String> {
         val json = prefs.getString("alert_regions_selected", "[]") ?: "[]"
         return try {
@@ -354,5 +477,38 @@ class StatusFragment : Fragment() {
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    private fun cyclePreviousAlert() {
+        if (cachedAlertsList.isEmpty()) return
+        currentCachedAlertIndex = if (currentCachedAlertIndex > 0) {
+            currentCachedAlertIndex - 1
+        } else {
+            cachedAlertsList.size - 1
+        }
+        displayCachedAlert(currentCachedAlertIndex)
+    }
+
+    private fun cycleNextAlert() {
+        if (cachedAlertsList.isEmpty()) return
+        currentCachedAlertIndex = (currentCachedAlertIndex + 1) % cachedAlertsList.size
+        displayCachedAlert(currentCachedAlertIndex)
+    }
+
+    private fun displayCachedAlert(index: Int) {
+        if (index < 0 || index >= cachedAlertsList.size) return
+        val alert = cachedAlertsList[index]
+        val fmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        val timeStr = fmt.format(Date(alert.timestampMs))
+        tvActiveAlerts.text = "[$timeStr] ${alert.title}"
+        tvActiveAlertsRegions.text = alert.regions.joinToString(", ")
+        activeAlertsScrollView.visibility = View.VISIBLE
+        updateMiniMapFromCached(alert)
+    }
+
+    private fun loadCachedAlerts() {
+        cachedAlertsList = AlertCacheService.getLast24Hours(requireContext())
+            .sortedByDescending { it.timestampMs }
+        currentCachedAlertIndex = 0
     }
 }

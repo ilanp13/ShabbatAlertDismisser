@@ -117,6 +117,7 @@ class MainActivity : AppCompatActivity() {
                 1 -> getString(R.string.tab_settings)
                 2 -> getString(R.string.tab_history)
                 3 -> getString(R.string.tab_map)
+                4 -> getString(R.string.tab_alerts)
                 else -> ""
             }
         }.attach()

@@ -281,10 +281,14 @@ class SettingsFragment : Fragment() {
         Thread {
             val window = HebcalService.fetch(lat, lon, profile.candleMins, havMins)
             if (window != null) {
-                prefs.edit()
+                val editor = prefs.edit()
                     .putLong("hebcal_candle_ms", window.candleMs)
                     .putLong("hebcal_havdalah_ms", window.havdalahMs)
-                    .apply()
+                    .putLong("hebcal_cache_timestamp_ms", System.currentTimeMillis())
+                if (!window.parasha.isNullOrEmpty()) {
+                    editor.putString("hebcal_parasha", window.parasha)
+                }
+                editor.apply()
             }
         }.start()
     }

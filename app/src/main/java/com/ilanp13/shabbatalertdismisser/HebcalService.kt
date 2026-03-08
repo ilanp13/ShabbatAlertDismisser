@@ -11,7 +11,7 @@ object HebcalService {
 
     private const val TAG = "HebcalService"
 
-    data class ShabbatWindow(val candleMs: Long, val havdalahMs: Long)
+    data class ShabbatWindow(val candleMs: Long, val havdalahMs: Long, val parasha: String? = null)
 
     /**
      * Fetches the next Shabbat's candle-lighting and havdalah times from Hebcal.
@@ -49,16 +49,23 @@ object HebcalService {
         val items = JSONObject(json).getJSONArray("items")
         var candleMs = 0L
         var havdalahMs = 0L
+        var parasha: String? = null
 
         for (i in 0 until items.length()) {
             val item = items.getJSONObject(i)
             when (item.optString("category")) {
                 "candles"  -> candleMs  = parseDate(item.getString("date"))
                 "havdalah" -> havdalahMs = parseDate(item.getString("date"))
+                "parashat" -> {
+                    val hebrewText = item.optString("hebrew")
+                    if (hebrewText.isNotEmpty()) {
+                        parasha = hebrewText
+                    }
+                }
             }
         }
 
-        return if (candleMs > 0 && havdalahMs > 0) ShabbatWindow(candleMs, havdalahMs) else null
+        return if (candleMs > 0 && havdalahMs > 0) ShabbatWindow(candleMs, havdalahMs, parasha) else null
     }
 
     private fun parseDate(s: String): Long =

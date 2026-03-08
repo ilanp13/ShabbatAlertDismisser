@@ -1,176 +1,266 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:orientation="vertical"
+    android:background="?android:colorBackground">
 
-    <LinearLayout
+    <!-- Top: Full width scrollable content (without Active Alerts) -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="start">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/shabbat_times_title"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/tvShabbatTimes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/tvSyncStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/history_summary_title"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_marginBottom="24dp"
-            android:background="?android:attr/windowBackground"
-            android:scrollbarStyle="insideInset">
-
-            <TextView
-                android:id="@+id/tvDismissalCount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:padding="8dp"
-                android:text="@string/history_no_dismissals" />
-
-        </ScrollView>
+        android:layout_height="0dp"
+        android:layout_weight="0.35"
+        android:padding="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="4dp">
+            android:orientation="vertical"
+            android:gravity="start">
 
             <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/active_alerts_title"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <ProgressBar
-                android:id="@+id/pbAlertsLoading"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="12dp"
-                android:visibility="gone"
-                android:indeterminate="true" />
-
-            <Button
-                android:id="@+id/btnRefreshAlerts"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/refresh_button"
+                android:text="@string/app_name"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/tvShabbatTimesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/shabbat_times_title"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvShabbatTimes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:textSize="12sp"
-                style="?attr/materialButtonOutlinedStyle"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:minWidth="0dp"
-                android:minHeight="40dp" />
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvSyncStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/shabbat_parasha_label"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="2dp"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvShabbatParasha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/history_summary_title"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDismissalCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/history_no_dismissals" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvAlertsUpdatedTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="11sp"
-            android:alpha="0.6"
-            android:layout_marginBottom="4dp"
-            android:visibility="gone" />
+    </ScrollView>
 
-        <TextView
-            android:id="@+id/tvActiveAlerts"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/active_alerts_none" />
+    <!-- Bottom: Split 50/50 - Left: Active Alerts, Right: Map -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.65"
+        android:orientation="horizontal"
+        android:background="?android:attr/windowBackground">
 
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginBottom="24dp"
-            android:visibility="gone"
-            android:id="@+id/activeAlertsScrollView"
-            android:scrollbarStyle="insideInset">
+        <!-- Left: Active Alerts with buttons at top -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.5"
+            android:orientation="vertical"
+            android:padding="12dp">
 
-            <TextView
-                android:id="@+id/tvActiveAlertsRegions"
+            <!-- Top buttons row -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:padding="8dp" />
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="8dp">
 
-        </ScrollView>
+                <Button
+                    android:id="@+id/btnPrevAlert"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="← Previous"
+                    android:textSize="10sp"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp"
+                    android:layout_marginEnd="8dp" />
 
-        <FrameLayout
+                <Button
+                    android:id="@+id/btnNextAlert"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Next →"
+                    android:textSize="10sp"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp" />
+
+            </LinearLayout>
+
+            <!-- Scrollable content -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/active_alerts_title"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:id="@+id/tvAlertsUpdatedTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="9sp"
+                        android:alpha="0.6"
+                        android:layout_marginBottom="4dp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvActiveAlerts"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:layout_marginBottom="4dp"
+                        android:text="@string/active_alerts_none" />
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:id="@+id/activeAlertsScrollView"
+                        android:scrollbarStyle="insideInset">
+
+                        <TextView
+                            android:id="@+id/tvActiveAlertsRegions"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="11sp"
+                            android:padding="4dp" />
+
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </ScrollView>
+
+        </LinearLayout>
+
+        <!-- Right: Map with buttons at top -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.5"
+            android:orientation="vertical"
+            android:visibility="gone"
             android:id="@+id/miniMapContainer"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginBottom="24dp"
-            android:layout_marginTop="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?android:attr/windowBackground"
-            android:visibility="gone">
+            android:background="?android:attr/windowBackground">
 
+            <!-- Top buttons row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:padding="8dp">
+
+                <ProgressBar
+                    android:id="@+id/pbAlertsLoading"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone"
+                    android:indeterminate="true" />
+
+                <Button
+                    android:id="@+id/btnRefreshAlerts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/refresh_button"
+                    android:textSize="10sp"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp" />
+
+            </LinearLayout>
+
+            <!-- Map -->
             <org.osmdroid.views.MapView
                 android:id="@+id/miniMapView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/alert_map_mini_hint"
-                android:layout_gravity="center"
-                android:textColor="?android:attr/textColorPrimary"
-                android:alpha="0.4"
-                android:textSize="14sp" />
-
-        </FrameLayout>
+        </LinearLayout>
 
     </LinearLayout>
 
-</ScrollView>
+</LinearLayout>

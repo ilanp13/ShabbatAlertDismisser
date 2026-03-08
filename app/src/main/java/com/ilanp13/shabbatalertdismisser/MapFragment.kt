@@ -45,18 +45,22 @@ class MapFragment : Fragment() {
 
     private fun setupMap() {
         // Configure osmdroid
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         Configuration.getInstance().apply {
-            load(requireContext(), PreferenceManager.getDefaultSharedPreferences(requireContext()))
+            load(requireContext(), prefs)
             userAgentValue = requireContext().packageName
+            // Ensure cache directory exists
+            osmdroidBasePath = requireContext().cacheDir
         }
 
         // Setup map tiles
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
+        mapView.setDestroyMode(false)  // Prevent destroying on detach
 
-        // Center on Israel (lat 31.5, lon 35.0, zoom 8)
+        // Center on Israel (lat 31.5, lon 35.0, zoom 9.5)
         val controller = mapView.controller
-        controller.setZoom(8.0)
+        controller.setZoom(9.5)
         controller.setCenter(GeoPoint(31.5, 35.0))
 
         // Add compass overlay
@@ -100,9 +104,11 @@ class MapFragment : Fragment() {
     ) {
         // Build list of markers: (point, region, isActive, alpha)
         val markers = mutableListOf<Tuple4<GeoPoint, String, Boolean, Float>>()
+        var mostRecentAlert: String? = null
 
         // Add active alert markers (red, 🔴)
         if (activeAlert != null) {
+            mostRecentAlert = "${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())} - ${activeAlert.title}"
             for (region in activeAlert.regions) {
                 val coords = OrefRegionCoords.coords[region]
                 if (coords != null) {
@@ -119,6 +125,11 @@ class MapFragment : Fragment() {
             val agePercent = (ageMs.toDouble() / (24 * 60 * 60 * 1000L)).coerceIn(0.0, 1.0)
             // Fade from 1.0 (new) to 0.3 (24h old)
             val alpha = (1.0 - agePercent * 0.7).toFloat()
+
+            // Use first history alert as display if no active alert
+            if (mostRecentAlert == null) {
+                mostRecentAlert = "${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(cached.timestampMs))} - ${cached.title}"
+            }
 
             for (region in cached.regions) {
                 val coords = OrefRegionCoords.coords[region]
@@ -159,6 +170,16 @@ class MapFragment : Fragment() {
                         paint.alpha = (alpha * 255).toInt()
                         canvas?.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
                     }
+                }
+
+                // Draw alert info text at top
+                if (mostRecentAlert != null) {
+                    paint.color = Color.BLACK
+                    paint.textSize = 16f
+                    paint.style = Paint.Style.FILL
+                    paint.alpha = 255
+                    val yPos = 40f
+                    canvas?.drawText(mostRecentAlert, 20f, yPos, paint)
                 }
             }
         }
