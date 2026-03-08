@@ -93,6 +93,7 @@
     <string name="alert_history_24h_title">היסטוריה התראות (24 שעות)</string>
     <string name="alert_refresh_button">רענן</string>
     <string name="clear_button">מחק</string>
+    <string name="refetch_24h_button">טען 24 שעות</string>
     <string name="alert_clear_refresh_button">מחק ורענן</string>
     <string name="alert_no_alerts">אין התראות ב-24 השעות האחרונות</string>
     <string name="alert_refresh_timestamp">רוענן בפעם האחרונה: %s</string>

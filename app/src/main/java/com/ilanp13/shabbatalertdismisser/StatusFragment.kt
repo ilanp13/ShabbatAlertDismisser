@@ -38,6 +38,7 @@ class StatusFragment : Fragment() {
     private lateinit var miniMapView: MapView
     private lateinit var miniMapContainer: android.widget.LinearLayout
     private lateinit var btnClearAlerts: Button
+    private lateinit var btnRefetch24h: Button
 
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
@@ -75,6 +76,7 @@ class StatusFragment : Fragment() {
         miniMapContainer = view.findViewById(R.id.miniMapContainer)
         miniMapView = view.findViewById(R.id.miniMapView)
         btnClearAlerts = view.findViewById(R.id.btnClearAlerts)
+        btnRefetch24h = view.findViewById(R.id.btnRefetch24h)
 
         // Setup mini map
         setupMiniMap()
@@ -85,6 +87,10 @@ class StatusFragment : Fragment() {
 
         btnClearAlerts.setOnClickListener {
             clearAlerts()
+        }
+
+        btnRefetch24h.setOnClickListener {
+            refetch24h()
         }
 
         // Previous/Next buttons for cycling through cached alerts
@@ -429,6 +435,51 @@ class StatusFragment : Fragment() {
             miniMapView.overlays.clear()
             miniMapView.invalidate()
         }
+    }
+
+    private fun refetch24h() {
+        pbAlertsLoading.visibility = View.VISIBLE
+        btnRefreshAlerts.isEnabled = false
+        btnClearAlerts.isEnabled = false
+        btnRefetch24h.isEnabled = false
+
+        Thread {
+            // Clear the cache completely
+            prefs.edit().putString("alert_cache", "[]").apply()
+
+            // Fetch historical alerts from the last 24 hours
+            val historyAlerts = RedAlertService.fetchHistory()
+            for (alert in historyAlerts) {
+                AlertCacheService.save(requireContext(), alert)
+            }
+
+            handler.post {
+                pbAlertsLoading.visibility = View.GONE
+                btnRefreshAlerts.isEnabled = true
+                btnClearAlerts.isEnabled = true
+                btnRefetch24h.isEnabled = true
+
+                lastAlertUpdateMs = System.currentTimeMillis()
+                updateAlertTimestamp()
+
+                // Reload and display cached alerts
+                loadCachedAlerts()
+
+                if (cachedAlertsList.isNotEmpty()) {
+                    displayCachedAlert(0)
+                    miniMapContainer.visibility = View.VISIBLE
+                    activeAlertsScrollView.visibility = View.VISIBLE
+                    if (shouldStartCycler()) {
+                        startAutoCycle()
+                    }
+                } else {
+                    tvActiveAlerts.text = getString(R.string.active_alerts_none)
+                    activeAlertsScrollView.visibility = View.GONE
+                    miniMapView.overlays.clear()
+                    miniMapView.invalidate()
+                }
+            }
+        }.start()
     }
 
     private fun updateAlertTimestamp() {

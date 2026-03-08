@@ -20,7 +20,8 @@ class AlertsFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var btnRefreshAlerts: Button
-    private lateinit var btnClearRefreshAlerts: Button
+    private lateinit var btnClearAlerts: Button
+    private lateinit var btnRefetch24h: Button
     private lateinit var pbAlertsLoading: ProgressBar
     private lateinit var tvEmptyState: TextView
     private lateinit var tvLastRefreshed: TextView
@@ -43,7 +44,8 @@ class AlertsFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.recyclerAlerts)
         btnRefreshAlerts = view.findViewById(R.id.btnRefreshAlerts)
-        btnClearRefreshAlerts = view.findViewById(R.id.btnClearRefreshAlerts)
+        btnClearAlerts = view.findViewById(R.id.btnClearAlerts)
+        btnRefetch24h = view.findViewById(R.id.btnRefetch24h)
         pbAlertsLoading = view.findViewById(R.id.pbAlertsLoading)
         tvEmptyState = view.findViewById(R.id.tvEmptyState)
         tvLastRefreshed = view.findViewById(R.id.tvLastRefreshed)
@@ -56,8 +58,12 @@ class AlertsFragment : Fragment() {
             refreshAlerts()
         }
 
-        btnClearRefreshAlerts.setOnClickListener {
-            clearAndRefreshAlerts()
+        btnClearAlerts.setOnClickListener {
+            clearAlerts()
+        }
+
+        btnRefetch24h.setOnClickListener {
+            refetch24h()
         }
 
         loadAlerts()
@@ -84,7 +90,8 @@ class AlertsFragment : Fragment() {
     private fun refreshAlerts() {
         pbAlertsLoading.visibility = View.VISIBLE
         btnRefreshAlerts.isEnabled = false
-        btnClearRefreshAlerts.isEnabled = false
+        btnClearAlerts.isEnabled = false
+        btnRefetch24h.isEnabled = false
 
         Thread {
             val result = RedAlertService.fetch()
@@ -95,7 +102,6 @@ class AlertsFragment : Fragment() {
                         // Real alert from API - save to cache
                         AlertCacheService.save(requireContext(), result.alert)
                     }
-                    // Load all cached alerts (both real and test)
                 }
                 is RedAlertService.FetchResult.Unavailable -> {
                     // API error - keep existing cache
@@ -105,7 +111,8 @@ class AlertsFragment : Fragment() {
             handler.post {
                 pbAlertsLoading.visibility = View.GONE
                 btnRefreshAlerts.isEnabled = true
-                btnClearRefreshAlerts.isEnabled = true
+                btnClearAlerts.isEnabled = true
+                btnRefetch24h.isEnabled = true
                 lastRefreshMs = System.currentTimeMillis()
                 updateLastRefreshedTime()
                 loadAlerts()
@@ -113,27 +120,34 @@ class AlertsFragment : Fragment() {
         }.start()
     }
 
-    private fun clearAndRefreshAlerts() {
+    private fun clearAlerts() {
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+        prefs.edit().putString("alert_cache", "[]").apply()
+        loadAlerts()
+    }
+
+    private fun refetch24h() {
         pbAlertsLoading.visibility = View.VISIBLE
         btnRefreshAlerts.isEnabled = false
-        btnClearRefreshAlerts.isEnabled = false
+        btnClearAlerts.isEnabled = false
+        btnRefetch24h.isEnabled = false
 
         Thread {
             // Clear the cache
             val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
             prefs.edit().putString("alert_cache", "[]").apply()
 
-            // Fetch latest alerts
-            val result = RedAlertService.fetch()
-            if (result is RedAlertService.FetchResult.Success && result.alert != null) {
-                // Real alert from API - save to cache
-                AlertCacheService.save(requireContext(), result.alert)
+            // Fetch historical alerts from the last 24 hours
+            val historyAlerts = RedAlertService.fetchHistory()
+            for (alert in historyAlerts) {
+                AlertCacheService.save(requireContext(), alert)
             }
 
             handler.post {
                 pbAlertsLoading.visibility = View.GONE
                 btnRefreshAlerts.isEnabled = true
-                btnClearRefreshAlerts.isEnabled = true
+                btnClearAlerts.isEnabled = true
+                btnRefetch24h.isEnabled = true
                 lastRefreshMs = System.currentTimeMillis()
                 updateLastRefreshedTime()
                 loadAlerts()

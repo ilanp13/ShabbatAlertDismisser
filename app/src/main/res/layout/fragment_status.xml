@@ -243,23 +243,36 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/clear_button"
-                    android:textSize="10sp"
+                    android:textSize="9sp"
                     style="?attr/materialButtonOutlinedStyle"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
                     android:minWidth="0dp"
                     android:minHeight="32dp"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginEnd="4dp" />
 
                 <Button
                     android:id="@+id/btnRefreshAlerts"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/refresh_button"
-                    android:textSize="10sp"
+                    android:textSize="9sp"
                     style="?attr/materialButtonOutlinedStyle"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnRefetch24h"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/refetch_24h_button"
+                    android:textSize="9sp"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
                     android:minWidth="0dp"
                     android:minHeight="32dp" />
 

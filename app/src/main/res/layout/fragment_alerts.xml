@@ -22,36 +22,49 @@
 
         <ProgressBar
             android:id="@+id/pbAlertsLoading"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="12dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="8dp"
             android:visibility="gone"
             android:indeterminate="true" />
 
         <Button
-            android:id="@+id/btnClearRefreshAlerts"
+            android:id="@+id/btnClearAlerts"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/alert_clear_refresh_button"
-            android:textSize="11sp"
+            android:text="@string/clear_button"
+            android:textSize="10sp"
             style="?attr/materialButtonOutlinedStyle"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="4dp"
             android:minWidth="0dp"
-            android:minHeight="40dp" />
+            android:minHeight="36dp" />
 
         <Button
             android:id="@+id/btnRefreshAlerts"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/alert_refresh_button"
-            android:textSize="12sp"
+            android:text="@string/refresh_button"
+            android:textSize="10sp"
             style="?attr/materialButtonOutlinedStyle"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_marginEnd="4dp"
             android:minWidth="0dp"
-            android:minHeight="40dp" />
+            android:minHeight="36dp" />
+
+        <Button
+            android:id="@+id/btnRefetch24h"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/refetch_24h_button"
+            android:textSize="10sp"
+            style="?attr/materialButtonOutlinedStyle"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:minWidth="0dp"
+            android:minHeight="36dp" />
 
     </LinearLayout>
 
