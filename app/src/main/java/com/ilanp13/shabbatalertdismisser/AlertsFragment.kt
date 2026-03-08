@@ -60,23 +60,6 @@ class AlertsFragment : Fragment() {
             clearAndRefreshAlerts()
         }
 
-        // Initialize with test data if cache is empty (for development)
-        val existingAlerts = AlertCacheService.getLast24Hours(requireContext())
-        if (existingAlerts.isEmpty()) {
-            val testAlert1 = RedAlertService.ActiveAlert(
-                "Test Alert - North",
-                listOf("חיפה", "תל אביב", "נתניה"),
-                "This is a test alert for development"
-            )
-            val testAlert2 = RedAlertService.ActiveAlert(
-                "Test Alert - South",
-                listOf("באר שבע", "אשקלון"),
-                "This is another test alert for development"
-            )
-            AlertCacheService.save(requireContext(), testAlert1)
-            AlertCacheService.save(requireContext(), testAlert2)
-        }
-
         loadAlerts()
     }
 
