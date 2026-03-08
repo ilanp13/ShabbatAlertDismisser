@@ -34,6 +34,9 @@ class SettingsFragment : Fragment() {
     private lateinit var radioEndShabbat: RadioGroup
     private lateinit var switchNotif: SwitchMaterial
     private lateinit var radioScreenOn: RadioGroup
+    private lateinit var radioCyclerMode: RadioGroup
+    private lateinit var seekCyclerDuration: SeekBar
+    private lateinit var tvCyclerDuration: TextView
     private lateinit var spinnerLanguage: Spinner
     private lateinit var spinnerTheme: Spinner
     private lateinit var tvSelectedRegions: TextView
@@ -64,6 +67,9 @@ class SettingsFragment : Fragment() {
         radioEndShabbat = view.findViewById(R.id.radioEndShabbat)
         switchNotif = view.findViewById(R.id.switchNotification)
         radioScreenOn = view.findViewById(R.id.radioScreenOn)
+        radioCyclerMode = view.findViewById(R.id.radioCyclerMode)
+        seekCyclerDuration = view.findViewById(R.id.seekCyclerDuration)
+        tvCyclerDuration = view.findViewById(R.id.tvCyclerDuration)
         spinnerLanguage = view.findViewById(R.id.spinnerLanguage)
         spinnerTheme = view.findViewById(R.id.spinnerTheme)
         tvSelectedRegions = view.findViewById(R.id.tvSelectedRegions)
@@ -76,6 +82,7 @@ class SettingsFragment : Fragment() {
         setupButtons()
         setupNotificationSwitch()
         setupScreenOnRadio()
+        setupCyclerSettings()
         setupLanguageSpinner()
         setupThemeSpinner()
         setupRegionPicker()
@@ -183,6 +190,36 @@ class SettingsFragment : Fragment() {
                 else -> "off"
             }).apply()
         }
+    }
+
+    private fun setupCyclerSettings() {
+        // Setup cycler mode radio group
+        radioCyclerMode.check(when (prefs.getString("cycler_mode", "off")) {
+            "shabbat" -> R.id.radioCyclerShabbat
+            "always" -> R.id.radioCyclerAlways
+            else -> R.id.radioCyclerOff
+        })
+        radioCyclerMode.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("cycler_mode", when (id) {
+                R.id.radioCyclerShabbat -> "shabbat"
+                R.id.radioCyclerAlways -> "always"
+                else -> "off"
+            }).apply()
+        }
+
+        // Setup cycler duration seekbar (3-10 seconds, default 5)
+        val currentDuration = prefs.getInt("cycler_duration_seconds", 5)
+        seekCyclerDuration.progress = currentDuration - 3
+        tvCyclerDuration.text = getString(R.string.cycler_duration_format, currentDuration)
+        seekCyclerDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                val s = progress + 3
+                tvCyclerDuration.text = getString(R.string.cycler_duration_format, s)
+                prefs.edit().putInt("cycler_duration_seconds", s).apply()
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
     }
 
     private fun setupLanguageSpinner() {

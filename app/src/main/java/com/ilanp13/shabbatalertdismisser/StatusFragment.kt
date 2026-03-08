@@ -45,6 +45,8 @@ class StatusFragment : Fragment() {
     private var lastAlertUpdateMs = 0L
     private var cachedAlertsList = listOf<AlertCacheService.CachedAlert>()
     private var currentCachedAlertIndex = 0
+    private var autoCycleRunnable: Runnable? = null
+    private var autoCycleDurationMs = 5000L  // Default 5 seconds
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -167,13 +169,18 @@ class StatusFragment : Fragment() {
         updateShabbatTimes()
         updateSyncStatus()
         updateDismissalCount()
+        loadCyclerSettings()
         startAlertPolling()
+        if (cachedAlertsList.isNotEmpty() && shouldStartCycler()) {
+            startAutoCycle()
+        }
     }
 
     override fun onPause() {
         super.onPause()
         miniMapView.onPause()
         stopAlertPolling()
+        stopAutoCycle()
     }
 
     private fun updateStatus() {
@@ -377,12 +384,16 @@ class StatusFragment : Fragment() {
                     }
                     else -> {
                         // No active alerts (API working, but no current alerts)
+                        stopAutoCycle()
                         loadCachedAlerts()
                         miniMapContainer.visibility = View.VISIBLE  // Always show map
 
                         if (cachedAlertsList.isNotEmpty()) {
                             // Show most recent cached alert
                             displayCachedAlert(0)
+                            if (shouldStartCycler()) {
+                                startAutoCycle()  // Start cycling through alerts if enabled
+                            }
                         } else {
                             // No cached alerts at all
                             tvActiveAlerts.text = getString(R.string.active_alerts_none)
@@ -500,10 +511,49 @@ class StatusFragment : Fragment() {
         val alert = cachedAlertsList[index]
         val fmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         val timeStr = fmt.format(Date(alert.timestampMs))
-        tvActiveAlerts.text = "[$timeStr] ${alert.title}"
+        val indexStr = if (cachedAlertsList.size > 1) " (${index + 1}/${cachedAlertsList.size})" else ""
+        tvActiveAlerts.text = "[$timeStr] ${alert.title}$indexStr"
         tvActiveAlertsRegions.text = alert.regions.joinToString(", ")
         activeAlertsScrollView.visibility = View.VISIBLE
         updateMiniMapFromCached(alert)
+    }
+
+    private fun loadCyclerSettings() {
+        // Load cycler duration from preferences (3-10 seconds, default 5)
+        val durationSeconds = prefs.getInt("cycler_duration_seconds", 5)
+        autoCycleDurationMs = (durationSeconds * 1000).toLong()
+    }
+
+    private fun shouldStartCycler(): Boolean {
+        val cyclerMode = prefs.getString("cycler_mode", "off") ?: "off"
+        if (cyclerMode == "off") return false
+        if (cyclerMode == "always") return true
+        // For "shabbat" mode, check if we're during Shabbat
+        if (cyclerMode == "shabbat") {
+            val now = System.currentTimeMillis()
+            val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+            val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
+            return now in candleMs..havdalahMs
+        }
+        return false
+    }
+
+    private fun startAutoCycle() {
+        stopAutoCycle()
+        if (cachedAlertsList.size <= 1) return  // No point cycling with 0-1 alerts
+
+        autoCycleRunnable = object : Runnable {
+            override fun run() {
+                cycleNextAlert()
+                handler.postDelayed(this, autoCycleDurationMs)
+            }
+        }
+        autoCycleRunnable?.let { handler.postDelayed(it, autoCycleDurationMs) }
+    }
+
+    private fun stopAutoCycle() {
+        autoCycleRunnable?.let { handler.removeCallbacks(it) }
+        autoCycleRunnable = null
     }
 
     private fun loadCachedAlerts() {

@@ -95,4 +95,10 @@
     <string name="alert_clear_refresh_button">Clear &amp; Refresh</string>
     <string name="alert_no_alerts">No alerts in the last 24 hours</string>
     <string name="alert_refresh_timestamp">Last refreshed: %s</string>
+    <string name="cycler_label">Alert Cycler</string>
+    <string name="cycler_off">Off</string>
+    <string name="cycler_shabbat">Shabbat &amp; Holidays</string>
+    <string name="cycler_always">Always</string>
+    <string name="cycler_duration_label">Display duration per alert</string>
+    <string name="cycler_duration_format">Duration: %d seconds</string>
 </resources>

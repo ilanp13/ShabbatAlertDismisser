@@ -252,6 +252,65 @@
             android:text="@string/alert_regions_select_btn"
             android:layout_marginBottom="24dp" />
 
+        <!-- Alert Cycler -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cycler_label"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radioCyclerMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/radioCyclerOff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cycler_off"
+                android:minHeight="48dp" />
+
+            <RadioButton
+                android:id="@+id/radioCyclerShabbat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cycler_shabbat"
+                android:minHeight="48dp" />
+
+            <RadioButton
+                android:id="@+id/radioCyclerAlways"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cycler_always"
+                android:minHeight="48dp" />
+
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cycler_duration_label"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/seekCyclerDuration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="7"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvCyclerDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
         <!-- Language Selector -->
         <TextView
             android:layout_width="wrap_content"

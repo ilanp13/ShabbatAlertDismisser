@@ -95,4 +95,10 @@
     <string name="alert_clear_refresh_button">מחק ורענן</string>
     <string name="alert_no_alerts">אין התראות ב-24 השעות האחרונות</string>
     <string name="alert_refresh_timestamp">רוענן בפעם האחרונה: %s</string>
+    <string name="cycler_label">מחזור התראות</string>
+    <string name="cycler_off">כבוי</string>
+    <string name="cycler_shabbat">שבת וחגים</string>
+    <string name="cycler_always">תמיד</string>
+    <string name="cycler_duration_label">משך הצגה לכל התראה</string>
+    <string name="cycler_duration_format">משך: %d שניות</string>
 </resources>
