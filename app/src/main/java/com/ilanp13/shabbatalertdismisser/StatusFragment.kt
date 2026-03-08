@@ -448,8 +448,12 @@ class StatusFragment : Fragment() {
             prefs.edit().putString("alert_cache", "[]").apply()
 
             // Fetch historical alerts from the last 24 hours
+            android.util.Log.d("StatusFragment", "Refetch 24h: Fetching history alerts...")
             val historyAlerts = RedAlertService.fetchHistory()
+            android.util.Log.d("StatusFragment", "Refetch 24h: Got ${historyAlerts.size} history alerts")
+
             for (alert in historyAlerts) {
+                android.util.Log.d("StatusFragment", "Refetch 24h: Saving alert: ${alert.title} with ${alert.regions.size} regions")
                 AlertCacheService.save(requireContext(), alert)
             }
 
@@ -464,6 +468,7 @@ class StatusFragment : Fragment() {
 
                 // Reload and display cached alerts
                 loadCachedAlerts()
+                android.util.Log.d("StatusFragment", "Refetch 24h: Loaded ${cachedAlertsList.size} cached alerts")
 
                 if (cachedAlertsList.isNotEmpty()) {
                     displayCachedAlert(0)
@@ -475,7 +480,7 @@ class StatusFragment : Fragment() {
                 } else {
                     tvActiveAlerts.text = getString(R.string.active_alerts_none)
                     activeAlertsScrollView.visibility = View.GONE
-                    miniMapView.overlays.clear()
+                    miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
                     miniMapView.invalidate()
                 }
             }
@@ -492,63 +497,112 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateMiniMap(alert: RedAlertService.ActiveAlert) {
-        // Clear existing overlays
-        miniMapView.overlays.removeAll { it is org.osmdroid.views.overlay.ItemizedIconOverlay<*> }
+        // Clear existing overlays (except compass)
+        miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
 
-        // Add red markers for active alert regions
-        val items = mutableListOf<org.osmdroid.views.overlay.OverlayItem>()
-        for (region in alert.regions) {
-            val coords = OrefRegionCoords.coords[region]
-            if (coords != null) {
-                val point = GeoPoint(coords.first, coords.second)
-                val item = org.osmdroid.views.overlay.OverlayItem(region, alert.title, point)
-                items.add(item)
+        // Use custom overlay to draw colored markers based on alert type
+        val overlay = object : org.osmdroid.views.overlay.Overlay() {
+            override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
+                if (shadow || canvas == null || mapView == null) return
+
+                val pj = mapView.projection ?: return
+                val paint = android.graphics.Paint().apply { isAntiAlias = true }
+
+                // Get color based on alert type
+                val color = getAlertTypeColor(alert.type)
+
+                // Draw markers for each region
+                for (region in alert.regions) {
+                    val coords = OrefRegionCoords.coords[region]
+                    if (coords != null) {
+                        val point = GeoPoint(coords.first, coords.second)
+                        val screenPos = pj.toPixels(point, null)
+
+                        // Draw colored circle (larger for active alerts)
+                        paint.color = color
+                        paint.style = android.graphics.Paint.Style.FILL
+                        paint.alpha = 255
+                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
+
+                        // White border
+                        paint.color = android.graphics.Color.WHITE
+                        paint.style = android.graphics.Paint.Style.STROKE
+                        paint.strokeWidth = 2f
+                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
+                    }
+                }
+
+                // Draw title at top
+                paint.color = android.graphics.Color.BLACK
+                paint.textSize = 14f
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.alpha = 255
+                canvas.drawText(alert.title, 20f, 35f, paint)
             }
         }
 
-        if (items.isNotEmpty()) {
-            val overlay = org.osmdroid.views.overlay.ItemizedIconOverlay(
-                items,
-                object : org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener<org.osmdroid.views.overlay.OverlayItem> {
-                    override fun onItemSingleTapUp(index: Int, item: org.osmdroid.views.overlay.OverlayItem): Boolean = true
-                    override fun onItemLongPress(index: Int, item: org.osmdroid.views.overlay.OverlayItem): Boolean = false
-                },
-                requireContext()
-            )
-            miniMapView.overlays.add(overlay)
-        }
-
+        miniMapView.overlays.add(overlay)
         miniMapView.invalidate()
     }
 
     private fun updateMiniMapFromCached(alert: AlertCacheService.CachedAlert) {
-        // Clear existing overlays
-        miniMapView.overlays.removeAll { it is org.osmdroid.views.overlay.ItemizedIconOverlay<*> }
+        // Clear existing overlays (except compass)
+        miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
 
-        // Add orange markers for cached alert regions
-        val items = mutableListOf<org.osmdroid.views.overlay.OverlayItem>()
-        for (region in alert.regions) {
-            val coords = OrefRegionCoords.coords[region]
-            if (coords != null) {
-                val point = GeoPoint(coords.first, coords.second)
-                val item = org.osmdroid.views.overlay.OverlayItem(region, alert.title, point)
-                items.add(item)
+        // Use custom overlay to draw colored markers based on alert type
+        val overlay = object : org.osmdroid.views.overlay.Overlay() {
+            override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
+                if (shadow || canvas == null || mapView == null) return
+
+                val pj = mapView.projection ?: return
+                val paint = android.graphics.Paint().apply { isAntiAlias = true }
+
+                // Get color based on alert type
+                val color = getAlertTypeColor(alert.type)
+
+                // Draw markers for each region
+                for (region in alert.regions) {
+                    val coords = OrefRegionCoords.coords[region]
+                    if (coords != null) {
+                        val point = GeoPoint(coords.first, coords.second)
+                        val screenPos = pj.toPixels(point, null)
+
+                        // Draw colored circle
+                        paint.color = color
+                        paint.style = android.graphics.Paint.Style.FILL
+                        paint.alpha = 200
+                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
+
+                        // White border
+                        paint.color = android.graphics.Color.WHITE
+                        paint.style = android.graphics.Paint.Style.STROKE
+                        paint.strokeWidth = 2f
+                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
+                    }
+                }
+
+                // Draw title at top
+                paint.color = android.graphics.Color.BLACK
+                paint.textSize = 14f
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.alpha = 255
+                canvas.drawText(alert.title, 20f, 35f, paint)
             }
         }
 
-        if (items.isNotEmpty()) {
-            val overlay = org.osmdroid.views.overlay.ItemizedIconOverlay(
-                items,
-                object : org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener<org.osmdroid.views.overlay.OverlayItem> {
-                    override fun onItemSingleTapUp(index: Int, item: org.osmdroid.views.overlay.OverlayItem): Boolean = true
-                    override fun onItemLongPress(index: Int, item: org.osmdroid.views.overlay.OverlayItem): Boolean = false
-                },
-                requireContext()
-            )
-            miniMapView.overlays.add(overlay)
-        }
-
+        miniMapView.overlays.add(overlay)
         miniMapView.invalidate()
+    }
+
+    private fun getAlertTypeColor(type: String): Int {
+        return when {
+            type.contains("Missiles", ignoreCase = true) || type.contains("Rocket", ignoreCase = true) -> android.graphics.Color.RED
+            type.contains("Aircraft", ignoreCase = true) -> android.graphics.Color.parseColor("#FF9500") // Orange
+            type.contains("Event-Over", ignoreCase = true) -> android.graphics.Color.GREEN
+            type.contains("Earthquake", ignoreCase = true) -> android.graphics.Color.parseColor("#9C27B0") // Purple
+            type.contains("Tsunami", ignoreCase = true) -> android.graphics.Color.BLUE
+            else -> android.graphics.Color.parseColor("#FF9800") // Default orange
+        }
     }
 
     private fun getSelectedRegions(): List<String> {
