@@ -239,6 +239,19 @@
                     android:indeterminate="true" />
 
                 <Button
+                    android:id="@+id/btnClearRefreshAlerts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/alert_clear_refresh_button"
+                    android:textSize="10sp"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
                     android:id="@+id/btnRefreshAlerts"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

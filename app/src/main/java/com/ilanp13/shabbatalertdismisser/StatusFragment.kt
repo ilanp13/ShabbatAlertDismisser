@@ -37,6 +37,7 @@ class StatusFragment : Fragment() {
     private lateinit var tvAlertsUpdatedTime: TextView
     private lateinit var miniMapView: MapView
     private lateinit var miniMapContainer: android.widget.LinearLayout
+    private lateinit var btnClearRefreshAlerts: Button
 
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
@@ -73,12 +74,17 @@ class StatusFragment : Fragment() {
         tvAlertsUpdatedTime = view.findViewById(R.id.tvAlertsUpdatedTime)
         miniMapContainer = view.findViewById(R.id.miniMapContainer)
         miniMapView = view.findViewById(R.id.miniMapView)
+        btnClearRefreshAlerts = view.findViewById(R.id.btnClearRefreshAlerts)
 
         // Setup mini map
         setupMiniMap()
 
         btnRefreshAlerts.setOnClickListener {
             updateActiveAlerts()
+        }
+
+        btnClearRefreshAlerts.setOnClickListener {
+            clearAndRefreshAlerts()
         }
 
         // Previous/Next buttons for cycling through cached alerts
@@ -407,6 +413,82 @@ class StatusFragment : Fragment() {
         }.start()
     }
 
+    private fun clearAndRefreshAlerts() {
+        pbAlertsLoading.visibility = View.VISIBLE
+        btnRefreshAlerts.isEnabled = false
+        btnClearRefreshAlerts.isEnabled = false
+
+        Thread {
+            // Clear the cache
+            prefs.edit().putString("alert_cache", "[]").apply()
+
+            // Fetch latest alerts
+            val result = RedAlertService.fetch()
+            val selectedRegions = getSelectedRegions()
+
+            val displayAlert = when (result) {
+                is RedAlertService.FetchResult.Success -> {
+                    val alert = result.alert
+                    if (alert != null) {
+                        // Save to cache
+                        AlertCacheService.save(requireContext(), alert)
+
+                        // Filter alert regions by selected regions
+                        if (selectedRegions.isEmpty()) {
+                            alert
+                        } else {
+                            val filtered = alert.regions.filter { it in selectedRegions }
+                            if (filtered.isNotEmpty()) {
+                                alert.copy(regions = filtered)
+                            } else {
+                                null
+                            }
+                        }
+                    } else {
+                        null
+                    }
+                }
+                is RedAlertService.FetchResult.Unavailable -> null
+            }
+
+            handler.post {
+                pbAlertsLoading.visibility = View.GONE
+                btnRefreshAlerts.isEnabled = true
+                btnClearRefreshAlerts.isEnabled = true
+
+                lastAlertUpdateMs = System.currentTimeMillis()
+                updateAlertTimestamp()
+
+                when {
+                    displayAlert != null -> {
+                        tvActiveAlerts.text = displayAlert.title
+                        tvActiveAlertsRegions.text = displayAlert.regions.joinToString(", ")
+                        activeAlertsScrollView.visibility = View.VISIBLE
+                        updateMiniMap(displayAlert)
+                        miniMapContainer.visibility = View.VISIBLE
+                    }
+                    else -> {
+                        stopAutoCycle()
+                        loadCachedAlerts()
+                        miniMapContainer.visibility = View.VISIBLE
+
+                        if (cachedAlertsList.isNotEmpty()) {
+                            displayCachedAlert(0)
+                            if (shouldStartCycler()) {
+                                startAutoCycle()
+                            }
+                        } else {
+                            tvActiveAlerts.text = getString(R.string.active_alerts_none)
+                            activeAlertsScrollView.visibility = View.GONE
+                            miniMapView.overlays.clear()
+                            miniMapView.invalidate()
+                        }
+                    }
+                }
+            }
+        }.start()
+    }
+
     private fun updateAlertTimestamp() {
         if (lastAlertUpdateMs > 0) {
             val now = System.currentTimeMillis()
@@ -525,6 +607,9 @@ class StatusFragment : Fragment() {
     }
 
     private fun shouldStartCycler(): Boolean {
+        // Only cycle if there's more than 1 alert
+        if (cachedAlertsList.size <= 1) return false
+
         val cyclerMode = prefs.getString("cycler_mode", "off") ?: "off"
         if (cyclerMode == "off") return false
         if (cyclerMode == "always") return true
