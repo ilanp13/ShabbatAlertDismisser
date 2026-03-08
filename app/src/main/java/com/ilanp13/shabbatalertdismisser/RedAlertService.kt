@@ -81,9 +81,18 @@ object RedAlertService {
             val body = conn.inputStream.bufferedReader().readText()
             conn.disconnect()
 
-            parseHistoryArray(body)
+            Log.d(TAG, "History response body: $body")
+
+            if (body.isEmpty()) {
+                Log.d(TAG, "Empty history response")
+                return emptyList()
+            }
+
+            val result = parseHistoryArray(body)
+            Log.d(TAG, "Parsed ${result.size} historical alerts")
+            result
         } catch (e: Exception) {
-            Log.w(TAG, "Fetch history failed: ${e.message}")
+            Log.w(TAG, "Fetch history failed: ${e.message}", e)
             emptyList()
         }
     }

@@ -37,7 +37,7 @@ class StatusFragment : Fragment() {
     private lateinit var tvAlertsUpdatedTime: TextView
     private lateinit var miniMapView: MapView
     private lateinit var miniMapContainer: android.widget.LinearLayout
-    private lateinit var btnClearRefreshAlerts: Button
+    private lateinit var btnClearAlerts: Button
 
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
@@ -74,7 +74,7 @@ class StatusFragment : Fragment() {
         tvAlertsUpdatedTime = view.findViewById(R.id.tvAlertsUpdatedTime)
         miniMapContainer = view.findViewById(R.id.miniMapContainer)
         miniMapView = view.findViewById(R.id.miniMapView)
-        btnClearRefreshAlerts = view.findViewById(R.id.btnClearRefreshAlerts)
+        btnClearAlerts = view.findViewById(R.id.btnClearAlerts)
 
         // Setup mini map
         setupMiniMap()
@@ -83,8 +83,8 @@ class StatusFragment : Fragment() {
             updateActiveAlerts()
         }
 
-        btnClearRefreshAlerts.setOnClickListener {
-            clearAndRefreshAlerts()
+        btnClearAlerts.setOnClickListener {
+            clearAlerts()
         }
 
         // Previous/Next buttons for cycling through cached alerts
@@ -415,60 +415,20 @@ class StatusFragment : Fragment() {
         }.start()
     }
 
-    private fun clearAndRefreshAlerts() {
-        pbAlertsLoading.visibility = View.VISIBLE
-        btnRefreshAlerts.isEnabled = false
-        btnClearRefreshAlerts.isEnabled = false
+    private fun clearAlerts() {
+        // Clear cache immediately on UI thread
+        prefs.edit().putString("alert_cache", "[]").apply()
 
-        Thread {
-            // Clear the cache completely
-            prefs.edit().putString("alert_cache", "[]").apply()
+        // Reload and update UI
+        loadCachedAlerts()
+        stopAutoCycle()
 
-            // Fetch latest active alert
-            val result = RedAlertService.fetch()
-            when (result) {
-                is RedAlertService.FetchResult.Success -> {
-                    val alert = result.alert
-                    if (alert != null) {
-                        AlertCacheService.save(requireContext(), alert)
-                    }
-                }
-                is RedAlertService.FetchResult.Unavailable -> {
-                    // API error - continue anyway
-                }
-            }
-
-            // Fetch historical alerts from the last 24 hours
-            val historyAlerts = RedAlertService.fetchHistory()
-            for (alert in historyAlerts) {
-                AlertCacheService.save(requireContext(), alert)
-            }
-
-            handler.post {
-                pbAlertsLoading.visibility = View.GONE
-                btnRefreshAlerts.isEnabled = true
-                btnClearRefreshAlerts.isEnabled = true
-
-                lastAlertUpdateMs = System.currentTimeMillis()
-                updateAlertTimestamp()
-
-                // After clearing and fetching, reload and display cached alerts
-                loadCachedAlerts()
-
-                if (cachedAlertsList.isNotEmpty()) {
-                    // Show the most recent alert
-                    displayCachedAlert(0)
-                    miniMapContainer.visibility = View.VISIBLE
-                    activeAlertsScrollView.visibility = View.VISIBLE
-                } else {
-                    // No alerts after clear & refresh
-                    tvActiveAlerts.text = getString(R.string.active_alerts_none)
-                    activeAlertsScrollView.visibility = View.GONE
-                    miniMapView.overlays.clear()
-                    miniMapView.invalidate()
-                }
-            }
-        }.start()
+        if (cachedAlertsList.isEmpty()) {
+            tvActiveAlerts.text = getString(R.string.active_alerts_none)
+            activeAlertsScrollView.visibility = View.GONE
+            miniMapView.overlays.clear()
+            miniMapView.invalidate()
+        }
     }
 
     private fun updateAlertTimestamp() {
