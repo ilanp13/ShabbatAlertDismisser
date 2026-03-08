@@ -102,11 +102,7 @@ object RedAlertService {
                 conn.disconnect()
 
                 Log.d(TAG, "Response length: ${body.length} bytes")
-                if (body.length < 200) {
-                    Log.d(TAG, "Full response: $body")
-                } else {
-                    Log.d(TAG, "Response start: ${body.take(300)}")
-                }
+                Log.d(TAG, "Full response: $body")  // Log everything to debug
 
                 if (body.isEmpty() || body.trim() == "{}" || body.trim() == "[]") {
                     Log.d(TAG, "Empty/blank response")
@@ -186,13 +182,34 @@ object RedAlertService {
         return try {
             val title = obj.optString("title", "")
             val description = obj.optString("desc", "")
-            val type = obj.optString("type", "")
+
+            // Type can come from "type" field or "category" field
+            val type = obj.optString("type", obj.optString("category", ""))
+
+            // Regions can come from "cities" array or "data" field
             val citiesArray = obj.optJSONArray("cities")
+            val dataArray = obj.optJSONArray("data")
 
             val regions = mutableListOf<String>()
+
+            // Try cities array first
             if (citiesArray != null) {
                 for (i in 0 until citiesArray.length()) {
                     regions.add(citiesArray.getString(i))
+                }
+            }
+            // If no cities, try data array
+            else if (dataArray != null) {
+                for (i in 0 until dataArray.length()) {
+                    regions.add(dataArray.getString(i))
+                }
+            }
+            // If data is a string (comma-separated regions)
+            else {
+                val dataStr = obj.optString("data", "")
+                if (dataStr.isNotEmpty()) {
+                    // Split by comma if needed
+                    regions.addAll(dataStr.split(",").map { it.trim() }.filter { it.isNotEmpty() })
                 }
             }
 
