@@ -424,36 +424,23 @@ class StatusFragment : Fragment() {
         btnClearRefreshAlerts.isEnabled = false
 
         Thread {
-            // Clear the cache
+            // Clear the cache completely
             prefs.edit().putString("alert_cache", "[]").apply()
 
-            // Fetch latest alerts
+            // Fetch latest alert
             val result = RedAlertService.fetch()
-            val selectedRegions = getSelectedRegions()
 
-            val displayAlert = when (result) {
+            when (result) {
                 is RedAlertService.FetchResult.Success -> {
                     val alert = result.alert
                     if (alert != null) {
-                        // Save to cache
+                        // Save to cache without filtering
                         AlertCacheService.save(requireContext(), alert)
-
-                        // Filter alert regions by selected regions
-                        if (selectedRegions.isEmpty()) {
-                            alert
-                        } else {
-                            val filtered = alert.regions.filter { it in selectedRegions }
-                            if (filtered.isNotEmpty()) {
-                                alert.copy(regions = filtered)
-                            } else {
-                                null
-                            }
-                        }
-                    } else {
-                        null
                     }
                 }
-                is RedAlertService.FetchResult.Unavailable -> null
+                is RedAlertService.FetchResult.Unavailable -> {
+                    // API error
+                }
             }
 
             handler.post {
@@ -464,31 +451,23 @@ class StatusFragment : Fragment() {
                 lastAlertUpdateMs = System.currentTimeMillis()
                 updateAlertTimestamp()
 
-                when {
-                    displayAlert != null -> {
-                        tvActiveAlerts.text = displayAlert.title
-                        tvActiveAlertsRegions.text = displayAlert.regions.joinToString(", ")
-                        activeAlertsScrollView.visibility = View.VISIBLE
-                        updateMiniMap(displayAlert)
-                        miniMapContainer.visibility = View.VISIBLE
-                    }
-                    else -> {
-                        stopAutoCycle()
-                        loadCachedAlerts()
-                        miniMapContainer.visibility = View.VISIBLE
+                // After clearing and fetching, reload and display cached alerts
+                // This shows everything without region filtering
+                loadCachedAlerts()
 
-                        if (cachedAlertsList.isNotEmpty()) {
-                            displayCachedAlert(0)
-                            if (shouldStartCycler()) {
-                                startAutoCycle()
-                            }
-                        } else {
-                            tvActiveAlerts.text = getString(R.string.active_alerts_none)
-                            activeAlertsScrollView.visibility = View.GONE
-                            miniMapView.overlays.clear()
-                            miniMapView.invalidate()
-                        }
-                    }
+                if (cachedAlertsList.isNotEmpty()) {
+                    // Show the most recent alert
+                    displayCachedAlert(0)
+                    miniMapContainer.visibility = View.VISIBLE
+                    activeAlertsScrollView.visibility = View.VISIBLE
+
+                    // Don't start cycler here - will be started automatically if conditions are met
+                } else {
+                    // No alerts after clear & refresh
+                    tvActiveAlerts.text = getString(R.string.active_alerts_none)
+                    activeAlertsScrollView.visibility = View.GONE
+                    miniMapView.overlays.clear()
+                    miniMapView.invalidate()
                 }
             }
         }.start()
