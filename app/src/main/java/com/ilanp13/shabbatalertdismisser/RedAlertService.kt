@@ -65,31 +65,39 @@ object RedAlertService {
      * Uses the alertsHistoryJson endpoint which can return multiple historical alerts.
      */
     fun fetchHistory(): List<ActiveAlert> {
-        // Try multiple endpoint variations
+        Log.d(TAG, "====== FETCHHISTORY START ======")
+
+        // Try multiple endpoint variations with different patterns
         val endpoints = listOf(
+            // Original pattern variations
             "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json",
             "https://www.oref.org.il/WarningMessages/AlertsHistoryJson/Alerts.json",
+            // Alternative paths
             "https://www.oref.org.il/alerts/history",
-            "https://www.oref.org.il/api/alerts/history"
+            "https://www.oref.org.il/api/alerts/history",
+            // With query parameters
+            "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json?hours=24",
+            "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json?days=1"
         )
 
-        for (endpoint in endpoints) {
+        for ((index, endpoint) in endpoints.withIndex()) {
+            Log.d(TAG, "[$index/${endpoints.size}] Attempting: $endpoint")
+
             try {
                 val url = URL(endpoint)
-                Log.d(TAG, "Attempting to fetch history from: $url")
-
                 val conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 10_000
-                conn.readTimeout = 10_000
+                conn.connectTimeout = 15_000
+                conn.readTimeout = 15_000
                 conn.setRequestProperty("Referer", "https://www.oref.org.il/")
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)")
+                conn.setRequestProperty("Accept", "application/json")
                 conn.setRequestProperty("X-Requested-With", "XMLHttpRequest")
 
                 val responseCode = conn.responseCode
-                Log.d(TAG, "History response code for $endpoint: $responseCode")
+                Log.d(TAG, "Response code: $responseCode")
 
-                if (responseCode != 200) {
-                    Log.w(TAG, "Endpoint $endpoint returned status $responseCode, trying next...")
+                if (responseCode !in 200..299) {
+                    Log.w(TAG, "Bad status $responseCode, skipping")
                     conn.disconnect()
                     continue
                 }
@@ -97,43 +105,64 @@ object RedAlertService {
                 val body = conn.inputStream.bufferedReader().readText()
                 conn.disconnect()
 
-                Log.d(TAG, "History response length: ${body.length}")
-                Log.d(TAG, "History response (first 500 chars): ${body.take(500)}")
+                Log.d(TAG, "Response length: ${body.length} bytes")
+                if (body.length < 200) {
+                    Log.d(TAG, "Full response: $body")
+                } else {
+                    Log.d(TAG, "Response start: ${body.take(300)}")
+                }
 
                 if (body.isEmpty() || body.trim() == "{}" || body.trim() == "[]") {
-                    Log.d(TAG, "Empty history response from $endpoint, trying next...")
+                    Log.d(TAG, "Empty/blank response")
                     continue
                 }
 
                 // Try parsing as array first
                 val result = try {
+                    Log.d(TAG, "Trying to parse as JSON array...")
                     parseHistoryArray(body)
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse as array: ${e.message}")
+                    Log.w(TAG, "Array parse failed: ${e.message}")
                     try {
-                        // If it's a single object, wrap it in array and parse
+                        // If it's a single object, wrap it in array
+                        Log.d(TAG, "Trying to wrap as array...")
                         val wrapped = "[$body]"
                         parseHistoryArray(wrapped)
                     } catch (e2: Exception) {
-                        Log.w(TAG, "Also failed to parse as wrapped object: ${e2.message}")
-                        emptyList()
+                        Log.w(TAG, "Wrapped parse also failed: ${e2.message}")
+                        // Try parsing as object with "data" field
+                        try {
+                            Log.d(TAG, "Trying to parse as object with data field...")
+                            val obj = JSONObject(body)
+                            val dataArray = obj.optJSONArray("data")
+                            if (dataArray != null) {
+                                parseHistoryArray(dataArray.toString())
+                            } else {
+                                Log.w(TAG, "No data field found")
+                                emptyList()
+                            }
+                        } catch (e3: Exception) {
+                            Log.w(TAG, "Data field parse failed: ${e3.message}")
+                            emptyList()
+                        }
                     }
                 }
 
                 if (result.isNotEmpty()) {
-                    Log.d(TAG, "SUCCESS: Parsed ${result.size} historical alerts from $endpoint")
+                    Log.d(TAG, "✓ SUCCESS: Got ${result.size} alerts from this endpoint")
+                    Log.d(TAG, "====== FETCHHISTORY END (SUCCESS) ======")
                     return result
                 } else {
-                    Log.d(TAG, "Endpoint $endpoint returned no results, trying next...")
-                    continue
+                    Log.d(TAG, "No results from this endpoint")
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Fetch history from $endpoint failed: ${e.message}")
-                continue
+                Log.w(TAG, "Exception: ${e.javaClass.simpleName}: ${e.message}")
+                e.printStackTrace()
             }
         }
 
-        Log.w(TAG, "All history fetch endpoints failed")
+        Log.w(TAG, "✗ All endpoints exhausted, returning empty")
+        Log.d(TAG, "====== FETCHHISTORY END (FAILED) ======")
         return emptyList()
     }
 

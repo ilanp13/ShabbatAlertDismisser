@@ -459,9 +459,11 @@ class StatusFragment : Fragment() {
             val historyAlerts = RedAlertService.fetchHistory()
             android.util.Log.d("StatusFragment", "Refetch 24h: Got ${historyAlerts.size} history alerts")
 
+            var fetchedNewAlerts = false
             for (alert in historyAlerts) {
                 android.util.Log.d("StatusFragment", "Refetch 24h: Saving alert: ${alert.title} with ${alert.regions.size} regions")
                 AlertCacheService.save(requireContext(), alert)
+                fetchedNewAlerts = true
             }
 
             handler.post {
@@ -477,7 +479,16 @@ class StatusFragment : Fragment() {
                 loadCachedAlerts()
                 android.util.Log.d("StatusFragment", "Refetch 24h: Loaded ${cachedAlertsList.size} cached alerts")
 
-                if (cachedAlertsList.isNotEmpty()) {
+                // Show feedback to user
+                if (!fetchedNewAlerts) {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        "History API not available (geo-restricted). Build history by polling.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                    tvActiveAlerts.text = "⚠️ History endpoint unavailable - cache cleared. Alerts will build up as they occur."
+                    activeAlertsScrollView.visibility = View.VISIBLE
+                } else if (cachedAlertsList.isNotEmpty()) {
                     displayCachedAlert(0)
                     miniMapContainer.visibility = View.VISIBLE
                     activeAlertsScrollView.visibility = View.VISIBLE

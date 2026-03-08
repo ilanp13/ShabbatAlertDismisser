@@ -140,8 +140,10 @@ class AlertsFragment : Fragment() {
 
             // Fetch historical alerts from the last 24 hours
             val historyAlerts = RedAlertService.fetchHistory()
+            var fetchedNewAlerts = false
             for (alert in historyAlerts) {
                 AlertCacheService.save(requireContext(), alert)
+                fetchedNewAlerts = true
             }
 
             handler.post {
@@ -151,6 +153,16 @@ class AlertsFragment : Fragment() {
                 btnRefetch24h.isEnabled = true
                 lastRefreshMs = System.currentTimeMillis()
                 updateLastRefreshedTime()
+
+                // Show feedback to user
+                if (!fetchedNewAlerts) {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        "History API not available (geo-restricted). Alerts will build up from polling.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+
                 loadAlerts()
             }
         }.start()
