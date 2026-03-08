@@ -123,19 +123,18 @@ class StatusFragment : Fragment() {
             osmdroidBasePath = requireContext().cacheDir
         }
 
-        // Setup mini map (non-interactive, focused on Israel)
+        // Setup mini map (interactive - allow pinch zoom and pan)
         miniMapView.setTileSource(TileSourceFactory.MAPNIK)
-        miniMapView.isEnabled = false
-        miniMapView.setMultiTouchControls(false)
-        miniMapView.isClickable = false
-        miniMapView.isFocusable = false
+        miniMapView.setMultiTouchControls(true)  // Enable pinch zoom
+        miniMapView.isClickable = true
+        miniMapView.isFocusable = true
         miniMapView.setDestroyMode(false)  // Prevent destroying on detach
 
-        // Center on Israel with optimal zoom level
-        // Zoom 9 shows entire Israel with good detail
+        // Center on Israel with optimal zoom level to show entire country
+        // Zoom 8 shows entire Israel including Eilat at bottom
         val controller = miniMapView.controller
-        controller.setZoom(9.0)
-        controller.setCenter(GeoPoint(31.25, 35.05))
+        controller.setZoom(8.0)
+        controller.setCenter(GeoPoint(31.5, 35.0))
 
         // Add current location marker (blue dot)
         addCurrentLocationMarker()

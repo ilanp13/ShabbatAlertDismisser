@@ -67,17 +67,13 @@ object RedAlertService {
     fun fetchHistory(): List<ActiveAlert> {
         Log.d(TAG, "====== FETCHHISTORY START ======")
 
-        // Try multiple endpoint variations with different patterns
+        // Correct endpoint found by inspecting oref.org.il alerts-history page
         val endpoints = listOf(
-            // Original pattern variations
-            "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json",
-            "https://www.oref.org.il/WarningMessages/AlertsHistoryJson/Alerts.json",
-            // Alternative paths
-            "https://www.oref.org.il/alerts/history",
-            "https://www.oref.org.il/api/alerts/history",
-            // With query parameters
-            "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json?hours=24",
-            "https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json?days=1"
+            // Primary endpoint (correct path)
+            "https://www.oref.org.il/warningMessages/alert/History/AlertsHistory.json",
+            // Fallback variations
+            "https://www.oref.org.il/WarningMessages/Alert/History/AlertsHistory.json",
+            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json"
         )
 
         for ((index, endpoint) in endpoints.withIndex()) {
