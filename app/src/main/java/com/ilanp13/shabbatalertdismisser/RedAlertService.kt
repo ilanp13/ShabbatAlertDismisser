@@ -66,29 +66,45 @@ object RedAlertService {
      */
     fun fetchHistory(): List<ActiveAlert> {
         return try {
-            val url = URL("https://www.oref.org.il/WarningMessages/alertsHistoryJson/Alerts.json")
+            // Try the primary endpoint first
+            val url = URL("https://www.oref.org.il/WarningMessages/alertsHistoryJson/alerts.json")
             Log.d(TAG, "Fetching alert history from: $url")
 
             val conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
             conn.setRequestProperty("Referer", "https://www.oref.org.il/")
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
             conn.setRequestProperty("X-Requested-With", "XMLHttpRequest")
 
             val responseCode = conn.responseCode
             Log.d(TAG, "History response code: $responseCode")
 
+            if (responseCode != 200) {
+                Log.w(TAG, "History endpoint returned status $responseCode")
+                return emptyList()
+            }
+
             val body = conn.inputStream.bufferedReader().readText()
             conn.disconnect()
 
-            Log.d(TAG, "History response body: $body")
+            Log.d(TAG, "History response length: ${body.length}, first 500 chars: ${body.take(500)}")
 
-            if (body.isEmpty()) {
+            if (body.isEmpty() || body.trim() == "{}") {
                 Log.d(TAG, "Empty history response")
                 return emptyList()
             }
 
-            val result = parseHistoryArray(body)
+            // Try parsing as array first
+            val result = try {
+                parseHistoryArray(body)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to parse as array, trying as object: ${e.message}")
+                // If it's a single object, wrap it in array and parse
+                val wrapped = "[$body]"
+                parseHistoryArray(wrapped)
+            }
+
             Log.d(TAG, "Parsed ${result.size} historical alerts")
             result
         } catch (e: Exception) {
