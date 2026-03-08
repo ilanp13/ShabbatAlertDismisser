@@ -76,6 +76,9 @@ class StatusFragment : Fragment() {
         miniMapView = view.findViewById(R.id.miniMapView)
         btnClearRefreshAlerts = view.findViewById(R.id.btnClearRefreshAlerts)
 
+        // Initialize demo alerts if cache is empty (for development/testing)
+        initializeDemoAlerts()
+
         // Setup mini map
         setupMiniMap()
 
@@ -370,6 +373,8 @@ class StatusFragment : Fragment() {
 
                 when {
                     displayAlert != null -> {
+                        // Active alerts found - stop cycling and show them
+                        stopAutoCycle()
                         tvActiveAlerts.text = displayAlert.title
                         tvActiveAlertsRegions.text = displayAlert.regions.joinToString(", ")
                         activeAlertsScrollView.visibility = View.VISIBLE
@@ -598,6 +603,25 @@ class StatusFragment : Fragment() {
         tvActiveAlertsRegions.text = alert.regions.joinToString(", ")
         activeAlertsScrollView.visibility = View.VISIBLE
         updateMiniMapFromCached(alert)
+    }
+
+    private fun initializeDemoAlerts() {
+        // Initialize with demo alerts if cache is empty (for development/testing)
+        val existingAlerts = AlertCacheService.getLast24Hours(requireContext())
+        if (existingAlerts.isEmpty()) {
+            val testAlert1 = RedAlertService.ActiveAlert(
+                "Test Alert - North",
+                listOf("חיפה", "תל אביב", "נתניה"),
+                "This is a test alert for development"
+            )
+            val testAlert2 = RedAlertService.ActiveAlert(
+                "Test Alert - South",
+                listOf("באר שבע", "אשקלון"),
+                "This is another test alert for development"
+            )
+            AlertCacheService.save(requireContext(), testAlert1)
+            AlertCacheService.save(requireContext(), testAlert2)
+        }
     }
 
     private fun loadCyclerSettings() {
