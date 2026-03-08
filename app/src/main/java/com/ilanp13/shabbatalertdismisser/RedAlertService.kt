@@ -67,13 +67,13 @@ object RedAlertService {
     fun fetchHistory(): List<ActiveAlert> {
         Log.d(TAG, "====== FETCHHISTORY START ======")
 
-        // Correct endpoint found by inspecting oref.org.il alerts-history page
+        // Correct endpoint with hours=24 parameter to get full 24-hour history
         val endpoints = listOf(
-            // Primary endpoint (correct path)
-            "https://www.oref.org.il/warningMessages/alert/History/AlertsHistory.json",
+            // Primary endpoint with hours parameter
+            "https://www.oref.org.il/warningMessages/alert/History/AlertsHistory.json?hours=24",
             // Fallback variations
-            "https://www.oref.org.il/WarningMessages/Alert/History/AlertsHistory.json",
-            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json"
+            "https://www.oref.org.il/WarningMessages/Alert/History/AlertsHistory.json?hours=24",
+            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json?hours=24"
         )
 
         for ((index, endpoint) in endpoints.withIndex()) {
@@ -207,13 +207,26 @@ object RedAlertService {
                     regions.add(dataArray.getString(i))
                 }
             }
-            // If data is a string (comma-separated regions)
+            // If data is a string (could be comma-separated, space-separated, or single region)
             else {
                 val dataStr = obj.optString("data", "")
+                Log.d(TAG, "RAW data string: '$dataStr'")
                 if (dataStr.isNotEmpty()) {
-                    Log.d(TAG, "Parsing data string: $dataStr")
-                    // Split by comma if needed
-                    regions.addAll(dataStr.split(",").map { it.trim() }.filter { it.isNotEmpty() })
+                    // Try comma separation first
+                    if (dataStr.contains(",")) {
+                        Log.d(TAG, "Splitting by comma")
+                        regions.addAll(dataStr.split(",").map { it.trim() }.filter { it.isNotEmpty() })
+                    }
+                    // Try space separation
+                    else if (dataStr.contains(" ")) {
+                        Log.d(TAG, "Splitting by space")
+                        regions.addAll(dataStr.split(" ").map { it.trim() }.filter { it.isNotEmpty() })
+                    }
+                    // Single region
+                    else {
+                        Log.d(TAG, "Single region: $dataStr")
+                        regions.add(dataStr.trim())
+                    }
                 }
             }
 
