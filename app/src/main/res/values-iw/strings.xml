@@ -105,4 +105,18 @@
     <string name="cycler_duration_format">משך: %d שניות</string>
     <string name="filter_note_all_tabs">💡 סינוני הסוג (מלשונית המפה) חלים על כל ההתראות המוצגות כאן</string>
     <string name="alert_refetch_info">💡 טעינה מחדש מנקה את הזיכרון. ההיסטוריה נבנתה מהסקר החי. השתמש בעדכון לקבלת התראות נוכחיות.</string>
+    <string name="region_display_mode_label">הצג התראות מ-</string>
+    <string name="region_display_all">כל האזורים (נבחרים מודגשים)</string>
+    <string name="region_display_selected_only">אזורים נבחרים בלבד</string>
+    <string name="shabbat_banner">🕯️ שבת שלום 🕯️\nסוגר התראות אוטומטית · יציאה %s</string>
+    <string name="shabbat_banner_always">🕯️ מצב שבת פעיל 🕯️\nסוגר התראות אוטומטית</string>
+    <string name="threat_warning">⚠️ אזהרה — איום אפשרי</string>
+    <string name="threat_alarm">🚨 אזעקה — היכנסו למקלט!</string>
+    <string name="threat_regions">אזורים: %s</string>
+    <string name="threat_since">מאז %s</string>
+    <string name="threat_dismiss">סגור</string>
+    <string name="threat_dismiss_title">סגור איום?</string>
+    <string name="threat_dismiss_message">בטוח? סגור רק אם האירוע הסתיים.</string>
+    <string name="threat_dismiss_confirm">סגור</string>
+    <string name="threat_dismiss_cancel">ביטול</string>
 </resources>

@@ -3,14 +3,15 @@ package com.ilanp13.shabbatalertdismisser
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ProgressBar
-import androidx.core.content.ContextCompat
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -29,8 +30,14 @@ class MapFragment : Fragment() {
     private lateinit var cbMissiles: CheckBox
     private lateinit var cbAircraft: CheckBox
     private lateinit var cbEvent: CheckBox
-    private lateinit var cbEarthquake: CheckBox
-    private lateinit var cbTsunami: CheckBox
+    private lateinit var btnMapPrev: Button
+    private lateinit var btnMapNext: Button
+    private lateinit var tvMapCounter: TextView
+
+    // Cycling state
+    private var activeAlert: RedAlertService.ActiveAlert? = null
+    private var alertsByMinute = listOf<List<AlertCacheService.CachedAlert>>()
+    private var currentGroupIndex = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,84 +54,80 @@ class MapFragment : Fragment() {
         cbMissiles = view.findViewById(R.id.cbMissiles)
         cbAircraft = view.findViewById(R.id.cbAircraft)
         cbEvent = view.findViewById(R.id.cbEvent)
-        cbEarthquake = view.findViewById(R.id.cbEarthquake)
-        cbTsunami = view.findViewById(R.id.cbTsunami)
+        btnMapPrev = view.findViewById(R.id.btnMapPrev)
+        btnMapNext = view.findViewById(R.id.btnMapNext)
+        tvMapCounter = view.findViewById(R.id.tvMapCounter)
 
-        // Load filter preferences
         loadFilterPreferences()
-
-        // Setup checkbox listeners
         setupFilterListeners()
-
+        setupNavigationButtons()
         setupMap()
         loadAlerts()
+    }
+
+    private fun setupNavigationButtons() {
+        btnMapPrev.setOnClickListener {
+            if (alertsByMinute.isEmpty()) return@setOnClickListener
+            currentGroupIndex = if (currentGroupIndex > 0) currentGroupIndex - 1 else alertsByMinute.size - 1
+            displayCurrentGroup()
+        }
+        btnMapNext.setOnClickListener {
+            if (alertsByMinute.isEmpty()) return@setOnClickListener
+            currentGroupIndex = (currentGroupIndex + 1) % alertsByMinute.size
+            displayCurrentGroup()
+        }
     }
 
     private fun setupFilterListeners() {
         val listener = View.OnClickListener {
             updateSelectedTypes()
             saveFilterPreferences()
-            loadAlerts()  // Reload alerts with new filter
+            loadAlerts()
         }
         cbMissiles.setOnClickListener(listener)
         cbAircraft.setOnClickListener(listener)
         cbEvent.setOnClickListener(listener)
-        cbEarthquake.setOnClickListener(listener)
-        cbTsunami.setOnClickListener(listener)
     }
 
     private fun updateSelectedTypes() {
         val types = mutableSetOf<String>()
-        if (cbMissiles.isChecked) types.add("missiles")
+        if (cbMissiles.isChecked) types.add("missile")
         if (cbAircraft.isChecked) types.add("aircraft")
         if (cbEvent.isChecked) types.add("event")
-        if (cbEarthquake.isChecked) types.add("earthquake")
-        if (cbTsunami.isChecked) types.add("tsunami")
         AlertTypeFilter.setSelectedTypes(requireContext(), types)
     }
 
     private fun loadFilterPreferences() {
         val selectedTypes = AlertTypeFilter.getSelectedTypes(requireContext())
-
-        // Update checkbox states
-        cbMissiles.isChecked = selectedTypes.contains("missiles")
+        cbMissiles.isChecked = selectedTypes.contains("missile")
         cbAircraft.isChecked = selectedTypes.contains("aircraft")
         cbEvent.isChecked = selectedTypes.contains("event")
-        cbEarthquake.isChecked = selectedTypes.contains("earthquake")
-        cbTsunami.isChecked = selectedTypes.contains("tsunami")
     }
 
     private fun saveFilterPreferences() {
         val types = mutableSetOf<String>()
-        if (cbMissiles.isChecked) types.add("missiles")
+        if (cbMissiles.isChecked) types.add("missile")
         if (cbAircraft.isChecked) types.add("aircraft")
         if (cbEvent.isChecked) types.add("event")
-        if (cbEarthquake.isChecked) types.add("earthquake")
-        if (cbTsunami.isChecked) types.add("tsunami")
         AlertTypeFilter.setSelectedTypes(requireContext(), types)
     }
 
     private fun setupMap() {
-        // Configure osmdroid
         val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         Configuration.getInstance().apply {
             load(requireContext(), prefs)
             userAgentValue = requireContext().packageName
-            // Ensure cache directory exists
             osmdroidBasePath = requireContext().cacheDir
         }
 
-        // Setup map tiles
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
-        mapView.setDestroyMode(false)  // Prevent destroying on detach
+        mapView.setDestroyMode(false)
 
-        // Center on Israel (lat 31.5, lon 35.0, zoom 9.5)
         val controller = mapView.controller
         controller.setZoom(9.5)
         controller.setCenter(GeoPoint(31.5, 35.0))
 
-        // Add compass overlay
         val compass = CompassOverlay(requireContext(), mapView)
         compass.enableCompass()
         mapView.overlays.add(compass)
@@ -135,19 +138,25 @@ class MapFragment : Fragment() {
 
         Thread {
             try {
-                // Fetch active alerts
                 val activeResult = RedAlertService.fetch()
-                val activeAlert = when (activeResult) {
+                val fetchedActive = when (activeResult) {
                     is RedAlertService.FetchResult.Success -> activeResult.alert
                     is RedAlertService.FetchResult.Unavailable -> null
                 }
 
-                // Get cached history (last 24 hours)
                 val historyAlerts = AlertCacheService.getLast24Hours(requireContext())
+                    .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
+                    .sortedByDescending { it.timestampMs }
 
-                // Post to UI thread
+                // Tiered grouping: 1min (recent) → 10min → 30min (old)
+                val minuteGroups = AlertCacheService.groupByTimeBucket(historyAlerts)
+
                 requireActivity().runOnUiThread {
-                    placeMarkers(activeAlert, historyAlerts)
+                    activeAlert = if (fetchedActive != null && shouldShowAlertType(fetchedActive.type)) fetchedActive else null
+                    alertsByMinute = minuteGroups
+                    currentGroupIndex = 0
+                    updateNavigationState()
+                    displayCurrentGroup()
                     pbMapLoading.visibility = View.GONE
                 }
             } catch (e: Exception) {
@@ -159,92 +168,162 @@ class MapFragment : Fragment() {
         }.start()
     }
 
-    private fun placeMarkers(
-        activeAlert: RedAlertService.ActiveAlert?,
-        historyAlerts: List<AlertCacheService.CachedAlert>
-    ) {
-        // Build list of markers: (point, region, isActive, alpha, type, color)
-        val markers = mutableListOf<Tuple6<GeoPoint, String, Boolean, Float, String, Int>>()
-        var mostRecentAlert: String? = null
+    private fun updateNavigationState() {
+        val totalGroups = alertsByMinute.size + (if (activeAlert != null) 1 else 0)
+        val hasMultiple = totalGroups > 1
+        btnMapPrev.isEnabled = hasMultiple
+        btnMapNext.isEnabled = hasMultiple
+    }
 
-        // Add active alert markers (colored based on type)
-        if (activeAlert != null && shouldShowAlertType(activeAlert.type)) {
-            mostRecentAlert = "${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())} - ${activeAlert.title}"
-            val color = getAlertTypeColor(activeAlert.type)
-            for (region in activeAlert.regions) {
-                val coords = OrefRegionCoords.coords[region]
-                if (coords != null) {
-                    val point = GeoPoint(coords.first, coords.second)
-                    markers.add(Tuple6(point, region, true, 1.0f, activeAlert.type, color))
-                }
-            }
+    private fun displayCurrentGroup() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val hasActive = activeAlert != null
+        val totalGroups = alertsByMinute.size + (if (hasActive) 1 else 0)
+
+        if (totalGroups == 0) {
+            tvMapCounter.text = "No alerts"
+            drawMarkersOnMap(emptyList(), false, null)
+            return
         }
 
-        // Add history markers (colored based on type) with fading opacity
-        for (cached in historyAlerts) {
-            if (!shouldShowAlertType(cached.type)) continue
+        // Index 0 = active alert (if exists), then history groups
+        val displayIndex = currentGroupIndex % totalGroups
+        val isShowingActive = hasActive && displayIndex == 0
+        val historyIndex = if (hasActive) displayIndex - 1 else displayIndex
 
-            val now = System.currentTimeMillis()
-            val ageMs = now - cached.timestampMs
-            val agePercent = (ageMs.toDouble() / (24 * 60 * 60 * 1000L)).coerceIn(0.0, 1.0)
-            // Fade from 1.0 (new) to 0.3 (24h old)
-            val alpha = (1.0 - agePercent * 0.7).toFloat()
+        if (isShowingActive) {
+            val alert = activeAlert!!
+            tvMapCounter.text = "NOW - ${alert.title} (1/$totalGroups)"
 
-            // Use first history alert as display if no active alert
-            if (mostRecentAlert == null) {
-                mostRecentAlert = "${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(cached.timestampMs))} - ${cached.title}"
+            // Convert active alert regions to display data
+            val color = getAlertTypeColor(alert.type)
+            val selectedRegions = getSelectedRegions(prefs)
+            val markers = alert.regions.mapNotNull { region ->
+                val coords = OrefRegionCoords.coords[region] ?: return@mapNotNull null
+                MarkerData(GeoPoint(coords.first, coords.second), region, color, 1.0f, selectedRegions.contains(region))
             }
+            drawMarkersOnMap(markers, true, "NOW  ${alert.title}")
+        } else if (historyIndex in alertsByMinute.indices) {
+            val group = alertsByMinute[historyIndex]
+            val header = AlertCacheService.formatGroupHeader(group)
+            val countStr = if (group.size > 1) " [${group.size}]" else ""
+            tvMapCounter.text = "$header$countStr (${displayIndex + 1}/$totalGroups)"
 
-            val color = getAlertTypeColor(cached.type)
-            for (region in cached.regions) {
-                val coords = OrefRegionCoords.coords[region]
-                if (coords != null) {
-                    val point = GeoPoint(coords.first, coords.second)
-                    markers.add(Tuple6(point, region, false, alpha, cached.type, color))
+            val selectedRegions = getSelectedRegions(prefs)
+            val markers = group.flatMap { alert ->
+                val color = getAlertTypeColor(alert.type)
+                alert.regions.mapNotNull { region ->
+                    val coords = OrefRegionCoords.coords[region] ?: return@mapNotNull null
+                    MarkerData(GeoPoint(coords.first, coords.second), region, color, 0.85f, selectedRegions.contains(region))
                 }
             }
+            drawMarkersOnMap(markers, false, "$header$countStr")
         }
+    }
 
-        // Create overlay with custom drawer
+    private fun getSelectedRegions(prefs: android.content.SharedPreferences): Set<String> {
+        val json = prefs.getString("alert_regions_selected", "[]") ?: "[]"
+        return try {
+            val array = org.json.JSONArray(json)
+            val set = mutableSetOf<String>()
+            for (i in 0 until array.length()) set.add(array.getString(i))
+            set
+        } catch (_: Exception) { emptySet() }
+    }
+
+    private data class MarkerData(
+        val point: GeoPoint,
+        val region: String,
+        val color: Int,
+        val alpha: Float,
+        val isSelectedRegion: Boolean
+    )
+
+    private fun drawMarkersOnMap(markers: List<MarkerData>, isActive: Boolean, headerText: String?) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
+        val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+
+        // Group by location for stacking
+        val byLocation = markers.groupBy { "${it.point.latitude},${it.point.longitude}" }
+
         val overlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun draw(canvas: Canvas?, mapView: MapView?, shadow: Boolean) {
-                if (shadow) return
-
-                val pj = mapView?.projection ?: return
+                if (shadow || canvas == null || mapView == null) return
+                val pj = mapView.projection ?: return
                 val paint = Paint().apply { isAntiAlias = true }
 
-                // Draw all markers
-                for ((point, region, isActive, alpha, type, color) in markers) {
-                    val screenPos = pj.toPixels(point, null)
+                // Draw current location marker (blue dot) - always visible
+                val userPoint = GeoPoint(userLat, userLon)
+                val userScreen = pj.toPixels(userPoint, null)
+                paint.color = Color.BLUE
+                paint.style = Paint.Style.FILL
+                paint.alpha = 255
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 8f, paint)
+                paint.color = Color.WHITE
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 3f
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 8f, paint)
 
-                    if (isActive) {
-                        // Colored circle for active alert
-                        paint.color = color
+                // Draw alert markers
+                for ((_, locationMarkers) in byLocation) {
+                    if (locationMarkers.isEmpty()) continue
+                    val screenPos = pj.toPixels(locationMarkers[0].point, null)
+                    val bx = screenPos.x.toFloat()
+                    val by = screenPos.y.toFloat()
+
+                    for ((index, m) in locationMarkers.withIndex()) {
+                        val ox = (index % 3) * 6f - 6f
+                        val oy = (index / 3) * 6f
+                        val radius = if (isActive) 12f else 10f
+
+                        // Draw marker
+                        paint.color = m.color
                         paint.style = Paint.Style.FILL
-                        paint.alpha = 255
-                        canvas?.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
+                        paint.alpha = (m.alpha * 255).toInt()
+                        canvas.drawCircle(bx + ox, by + oy, radius, paint)
+
+                        // Selected region highlight: thicker yellow border
+                        if (m.isSelectedRegion) {
+                            paint.color = Color.YELLOW
+                            paint.style = Paint.Style.STROKE
+                            paint.strokeWidth = 3f
+                            paint.alpha = 255
+                            canvas.drawCircle(bx + ox, by + oy, radius + 2f, paint)
+                        }
+
                         // White border
                         paint.color = Color.WHITE
                         paint.style = Paint.Style.STROKE
                         paint.strokeWidth = 2f
-                        canvas?.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
-                    } else {
-                        // Colored circle for history with fade
-                        paint.color = color
+                        paint.alpha = 255
+                        canvas.drawCircle(bx + ox, by + oy, radius, paint)
+                    }
+
+                    // Count badge
+                    if (locationMarkers.size > 1) {
+                        paint.color = Color.BLACK
+                        paint.textSize = 14f
                         paint.style = Paint.Style.FILL
-                        paint.alpha = (alpha * 255).toInt()
-                        canvas?.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
+                        paint.alpha = 255
+                        canvas.drawText(locationMarkers.size.toString(), bx + 10f, by - 10f, paint)
                     }
                 }
 
-                // Draw alert info text at top
-                if (mostRecentAlert != null) {
-                    paint.color = Color.BLACK
-                    paint.textSize = 16f
+                // Draw header text (bigger, bold, colored for active)
+                if (headerText != null) {
+                    // Background strip
+                    paint.color = if (isActive) Color.parseColor("#CC000000") else Color.parseColor("#CC333333")
+                    paint.style = Paint.Style.FILL
+                    canvas.drawRect(0f, 0f, canvas.width.toFloat(), 56f, paint)
+
+                    paint.color = if (isActive) Color.RED else Color.WHITE
+                    paint.textSize = 30f
                     paint.style = Paint.Style.FILL
                     paint.alpha = 255
-                    val yPos = 40f
-                    canvas?.drawText(mostRecentAlert, 20f, yPos, paint)
+                    paint.typeface = if (isActive) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                    canvas.drawText(headerText, 16f, 42f, paint)
+                    paint.typeface = Typeface.DEFAULT
                 }
             }
         }
@@ -259,23 +338,18 @@ class MapFragment : Fragment() {
     }
 
     private fun getAlertTypeColor(type: String): Int {
-        return when {
-            type.contains("Missiles", ignoreCase = true) || type.contains("Rocket", ignoreCase = true) -> Color.RED
-            type.contains("Aircraft", ignoreCase = true) -> Color.parseColor("#FF9500")
-            type.contains("Event-Over", ignoreCase = true) || type.contains("Event", ignoreCase = true) -> Color.GREEN
-            type.contains("Earthquake", ignoreCase = true) -> Color.parseColor("#9C27B0")
-            type.contains("Tsunami", ignoreCase = true) -> Color.BLUE
-            else -> Color.parseColor("#FF9800")  // Orange default
+        return when (type.lowercase()) {
+            "missile" -> Color.RED
+            "aircraft" -> Color.parseColor("#FF9500")
+            "event" -> Color.GREEN
+            else -> Color.parseColor("#FF9800")
         }
     }
-
-    // Helper data classes for tuples
-    private data class Tuple4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
-    private data class Tuple6<A, B, C, D, E, F>(val a: A, val b: B, val c: C, val d: D, val e: E, val f: F)
 
     override fun onResume() {
         super.onResume()
         mapView.onResume()
+        loadAlerts()
     }
 
     override fun onPause() {

@@ -41,6 +41,7 @@ class SettingsFragment : Fragment() {
     private lateinit var spinnerTheme: Spinner
     private lateinit var tvSelectedRegions: TextView
     private lateinit var btnSelectRegions: Button
+    private lateinit var radioRegionDisplay: RadioGroup
 
     private lateinit var prefs: android.content.SharedPreferences
 
@@ -74,6 +75,7 @@ class SettingsFragment : Fragment() {
         spinnerTheme = view.findViewById(R.id.spinnerTheme)
         tvSelectedRegions = view.findViewById(R.id.tvSelectedRegions)
         btnSelectRegions = view.findViewById(R.id.btnSelectRegions)
+        radioRegionDisplay = view.findViewById(R.id.radioRegionDisplay)
 
         setupModeRadio()
         setupDelaySeekbar()
@@ -86,6 +88,7 @@ class SettingsFragment : Fragment() {
         setupLanguageSpinner()
         setupThemeSpinner()
         setupRegionPicker()
+        setupRegionDisplayMode()
 
         updateLocationText()
         updateRegionPickerLabel()
@@ -430,6 +433,17 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    private fun setupRegionDisplayMode() {
+        val mode = prefs.getString("region_display_mode", "all") ?: "all"
+        radioRegionDisplay.check(if (mode == "selected_only") R.id.radioRegionSelectedOnly else R.id.radioRegionAll)
+        radioRegionDisplay.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("region_display_mode", when (id) {
+                R.id.radioRegionSelectedOnly -> "selected_only"
+                else -> "all"
+            }).apply()
+        }
+    }
+
     private fun setupRegionPicker() {
         btnSelectRegions.setOnClickListener {
             showRegionPickerDialog()
@@ -613,6 +627,11 @@ class SettingsFragment : Fragment() {
             }
 
         dialog = builder.show()
+
+        // Request focus and show keyboard
+        searchEditText.requestFocus()
+        searchEditText.setSelection(searchEditText.text.length)
+        dialog?.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
 
         // Add search functionality
         searchEditText.addTextChangedListener(object : android.text.TextWatcher {

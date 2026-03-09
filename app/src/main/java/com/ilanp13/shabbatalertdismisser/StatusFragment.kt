@@ -1,5 +1,6 @@
 package com.ilanp13.shabbatalertdismisser
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
@@ -41,6 +43,13 @@ class StatusFragment : Fragment() {
     private lateinit var btnRefetch24h: Button
     private lateinit var btnPrevAlert: Button
     private lateinit var btnNextAlert: Button
+    private lateinit var shabbatBanner: LinearLayout
+    private lateinit var tvShabbatBanner: TextView
+    private lateinit var threatBanner: LinearLayout
+    private lateinit var tvThreatLevel: TextView
+    private lateinit var tvThreatRegions: TextView
+    private lateinit var tvThreatSince: TextView
+    private lateinit var btnDismissThreat: Button
 
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
@@ -48,7 +57,8 @@ class StatusFragment : Fragment() {
     private var timestampUpdateRunnable: Runnable? = null
     private var lastAlertUpdateMs = 0L
     private var cachedAlertsList = listOf<AlertCacheService.CachedAlert>()
-    private var currentCachedAlertIndex = 0
+    private var alertsByMinute = listOf<List<AlertCacheService.CachedAlert>>()  // Grouped by minute
+    private var currentMinuteGroupIndex = 0
     private var autoCycleRunnable: Runnable? = null
     private var autoCycleDurationMs = 5000L  // Default 5 seconds
 
@@ -79,6 +89,13 @@ class StatusFragment : Fragment() {
         miniMapView = view.findViewById(R.id.miniMapView)
         btnClearAlerts = view.findViewById(R.id.btnClearAlerts)
         btnRefetch24h = view.findViewById(R.id.btnRefetch24h)
+        shabbatBanner = view.findViewById(R.id.shabbatBanner)
+        tvShabbatBanner = view.findViewById(R.id.tvShabbatBanner)
+        threatBanner = view.findViewById(R.id.threatBanner)
+        tvThreatLevel = view.findViewById(R.id.tvThreatLevel)
+        tvThreatRegions = view.findViewById(R.id.tvThreatRegions)
+        tvThreatSince = view.findViewById(R.id.tvThreatSince)
+        btnDismissThreat = view.findViewById(R.id.btnDismissThreat)
 
         // Setup mini map
         setupMiniMap()
@@ -111,6 +128,19 @@ class StatusFragment : Fragment() {
         miniMapContainer.setOnClickListener {
             (activity as? MainActivity)?.navigateToTab(3)
         }
+
+        // Dismiss threat button with confirmation
+        btnDismissThreat.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle(R.string.threat_dismiss_title)
+                .setMessage(R.string.threat_dismiss_message)
+                .setPositiveButton(R.string.threat_dismiss_confirm) { _, _ ->
+                    AlertStateMachine.clearState(requireContext())
+                    updateThreatBanner()
+                }
+                .setNegativeButton(R.string.threat_dismiss_cancel, null)
+                .show()
+        }
     }
 
     private fun setupMiniMap() {
@@ -136,52 +166,20 @@ class StatusFragment : Fragment() {
         controller.setZoom(8.0)
         controller.setCenter(GeoPoint(31.5, 35.0))
 
-        // Add current location marker (blue dot)
-        addCurrentLocationMarker()
-
         // Start hidden
         miniMapContainer.visibility = View.GONE
     }
 
-    private fun addCurrentLocationMarker() {
-        try {
-            val lat = prefs.getFloat("latitude", 31.7683f).toDouble()
-            val lon = prefs.getFloat("longitude", 35.2137f).toDouble()
-
-            // Clear existing location markers
-            miniMapView.overlays.removeAll { it is org.osmdroid.views.overlay.Marker }
-
-            // Add blue dot for current location
-            val locationMarker = org.osmdroid.views.overlay.Marker(miniMapView)
-            locationMarker.position = GeoPoint(lat, lon)
-            locationMarker.title = "Current Location"
-            locationMarker.setAnchor(org.osmdroid.views.overlay.Marker.ANCHOR_CENTER, org.osmdroid.views.overlay.Marker.ANCHOR_CENTER)
-
-            // Create a blue circle drawable for current location
-            val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.BLUE
-                style = android.graphics.Paint.Style.FILL
-                isAntiAlias = true
-            }
-            val bitmap = android.graphics.Bitmap.createBitmap(20, 20, android.graphics.Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bitmap)
-            canvas.drawCircle(10f, 10f, 8f, paint)
-
-            locationMarker.icon = android.graphics.drawable.BitmapDrawable(resources, bitmap)
-            miniMapView.overlays.add(locationMarker)
-            miniMapView.invalidate()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     override fun onResume() {
         super.onResume()
         miniMapView.onResume()
         updateStatus()
+        updateShabbatBanner()
         updateShabbatTimes()
         updateSyncStatus()
         updateDismissalCount()
+        updateThreatBanner()
         loadCyclerSettings()
         startAlertPolling()
         if (cachedAlertsList.isNotEmpty() && shouldStartCycler()) {
@@ -213,6 +211,27 @@ class StatusFragment : Fragment() {
             else -> null
         }
         tvStatus.text = if (screenOnLine != null) "$base\n$screenOnLine" else base
+    }
+
+    private fun updateShabbatBanner() {
+        val mode = prefs.getString("mode", "shabbat_only")
+        val now = System.currentTimeMillis()
+        val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
+        val isShabbatNow = candleMs > 0 && havdalahMs > 0 && now in candleMs..havdalahMs
+        val isAlwaysMode = mode == "always"
+
+        if (isShabbatNow) {
+            shabbatBanner.visibility = View.VISIBLE
+            val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+            tvShabbatBanner.text = getString(R.string.shabbat_banner, fmt.format(Date(havdalahMs)))
+        } else if (isAlwaysMode) {
+            // Preview: show banner when in "always" mode so user can see how it looks
+            shabbatBanner.visibility = View.VISIBLE
+            tvShabbatBanner.text = getString(R.string.shabbat_banner_always)
+        } else {
+            shabbatBanner.visibility = View.GONE
+        }
     }
 
     private fun updateShabbatTimes() {
@@ -337,36 +356,39 @@ class StatusFragment : Fragment() {
             val result = RedAlertService.fetch()
             val selectedRegions = getSelectedRegions()
 
+            val regionMode = prefs.getString("region_display_mode", "all") ?: "all"
+
+            // Feed into state machine for selected regions
+            val ctx = requireContext()
+            if (result is RedAlertService.FetchResult.Success && result.alert != null) {
+                AlertStateMachine.processAlert(ctx, result.alert, selectedRegions.toSet())
+            }
+            // Always run tick to check timeouts
+            AlertStateMachine.processTick(ctx)
+
             val displayAlert = when (result) {
                 is RedAlertService.FetchResult.Success -> {
                     val alert = result.alert
                     if (alert != null) {
                         // Save to cache
-                        AlertCacheService.save(requireContext(), alert)
+                        AlertCacheService.save(ctx, alert)
 
                         // Filter by alert type
-                        if (!AlertTypeFilter.shouldShow(requireContext(), alert.type)) {
-                            null  // Alert type is filtered out
+                        if (!AlertTypeFilter.shouldShow(ctx, alert.type)) {
+                            null
+                        } else if (regionMode == "selected_only" && selectedRegions.isNotEmpty()) {
+                            // Filter to matching regions only
+                            val filtered = alert.regions.filter { it in selectedRegions }
+                            if (filtered.isNotEmpty()) alert.copy(regions = filtered) else null
                         } else {
-                            // Filter alert regions by selected regions
-                            if (selectedRegions.isEmpty()) {
-                                // All regions selected - show alert
-                                alert
-                            } else {
-                                // Filter to matching regions
-                                val filtered = alert.regions.filter { it in selectedRegions }
-                                if (filtered.isNotEmpty()) {
-                                    alert.copy(regions = filtered)
-                                } else {
-                                    null
-                                }
-                            }
+                            // Show all regions (selected ones get highlighted on map)
+                            alert
                         }
                     } else {
-                        null  // No active alerts from API
+                        null
                     }
                 }
-                is RedAlertService.FetchResult.Unavailable -> null  // API error
+                is RedAlertService.FetchResult.Unavailable -> null
             }
 
             val isUnavailable = (result is RedAlertService.FetchResult.Unavailable)
@@ -379,6 +401,7 @@ class StatusFragment : Fragment() {
                 // Update timestamp
                 lastAlertUpdateMs = System.currentTimeMillis()
                 updateAlertTimestamp()
+                updateThreatBanner()
 
                 when {
                     displayAlert != null -> {
@@ -450,20 +473,13 @@ class StatusFragment : Fragment() {
         btnRefetch24h.isEnabled = false
 
         Thread {
-            // Clear the cache completely
-            prefs.edit().putString("alert_cache", "[]").apply()
-
-            // Fetch historical alerts from the last 24 hours
-            android.util.Log.d("StatusFragment", "Refetch 24h: Fetching history alerts...")
+            android.util.Log.d("StatusFragment", "Refetch 24h: Fetching history...")
             val historyAlerts = RedAlertService.fetchHistory()
             android.util.Log.d("StatusFragment", "Refetch 24h: Got ${historyAlerts.size} history alerts")
 
-            var fetchedNewAlerts = false
-            for (alert in historyAlerts) {
-                android.util.Log.d("StatusFragment", "Refetch 24h: Saving alert: ${alert.title} with ${alert.regions.size} regions")
-                AlertCacheService.save(requireContext(), alert)
-                fetchedNewAlerts = true
-            }
+            // Batch save all at once (clears old cache and writes single time)
+            val ctx = requireContext()
+            AlertCacheService.saveBatch(ctx, historyAlerts)
 
             handler.post {
                 pbAlertsLoading.visibility = View.GONE
@@ -474,21 +490,17 @@ class StatusFragment : Fragment() {
                 lastAlertUpdateMs = System.currentTimeMillis()
                 updateAlertTimestamp()
 
-                // Reload and display cached alerts
                 loadCachedAlerts()
-                android.util.Log.d("StatusFragment", "Refetch 24h: Loaded ${cachedAlertsList.size} cached alerts")
 
-                // Show feedback to user
-                if (!fetchedNewAlerts) {
-                    android.widget.Toast.makeText(
-                        requireContext(),
-                        "History API not available (geo-restricted). Build history by polling.",
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                    tvActiveAlerts.text = "⚠️ History endpoint unavailable - cache cleared. Alerts will build up as they occur."
-                    activeAlertsScrollView.visibility = View.VISIBLE
-                } else if (cachedAlertsList.isNotEmpty()) {
-                    displayCachedAlert(0)
+                val count = historyAlerts.size
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    if (count > 0) "Fetched $count alerts" else "No alerts in last 24h",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+
+                if (alertsByMinute.isNotEmpty()) {
+                    displayCachedAlertsGroup(0)
                     miniMapContainer.visibility = View.VISIBLE
                     activeAlertsScrollView.visibility = View.VISIBLE
                     if (shouldStartCycler()) {
@@ -497,8 +509,6 @@ class StatusFragment : Fragment() {
                 } else {
                     tvActiveAlerts.text = getString(R.string.active_alerts_none)
                     activeAlertsScrollView.visibility = View.GONE
-                    miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
-                    miniMapView.invalidate()
                 }
             }
         }.start()
@@ -514,47 +524,51 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateMiniMap(alert: RedAlertService.ActiveAlert) {
-        // Clear existing overlays (except compass)
         miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
 
-        // Use custom overlay to draw colored markers based on alert type
+        val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
+        val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+
         val overlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
                 if (shadow || canvas == null || mapView == null) return
-
                 val pj = mapView.projection ?: return
                 val paint = android.graphics.Paint().apply { isAntiAlias = true }
 
-                // Get color based on alert type
+                // Draw user location (blue dot)
+                val userScreen = pj.toPixels(GeoPoint(userLat, userLon), null)
+                paint.color = android.graphics.Color.BLUE
+                paint.style = android.graphics.Paint.Style.FILL
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
+                paint.color = android.graphics.Color.WHITE
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 2f
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
+
+                // Draw alert markers
                 val color = getAlertTypeColor(alert.type)
-
-                // Draw markers for each region
                 for (region in alert.regions) {
-                    val coords = OrefRegionCoords.coords[region]
-                    if (coords != null) {
-                        val point = GeoPoint(coords.first, coords.second)
-                        val screenPos = pj.toPixels(point, null)
-
-                        // Draw colored circle (larger for active alerts)
-                        paint.color = color
-                        paint.style = android.graphics.Paint.Style.FILL
-                        paint.alpha = 255
-                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
-
-                        // White border
-                        paint.color = android.graphics.Color.WHITE
-                        paint.style = android.graphics.Paint.Style.STROKE
-                        paint.strokeWidth = 2f
-                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
-                    }
+                    val coords = OrefRegionCoords.coords[region] ?: continue
+                    val screenPos = pj.toPixels(GeoPoint(coords.first, coords.second), null)
+                    paint.color = color
+                    paint.style = android.graphics.Paint.Style.FILL
+                    paint.alpha = 255
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
+                    paint.color = android.graphics.Color.WHITE
+                    paint.style = android.graphics.Paint.Style.STROKE
+                    paint.strokeWidth = 2f
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
                 }
 
-                // Draw title at top
-                paint.color = android.graphics.Color.BLACK
-                paint.textSize = 14f
+                // Header: "NOW" in red + title
+                paint.color = android.graphics.Color.parseColor("#CC000000")
                 paint.style = android.graphics.Paint.Style.FILL
-                paint.alpha = 255
-                canvas.drawText(alert.title, 20f, 35f, paint)
+                canvas.drawRect(0f, 0f, canvas.width.toFloat(), 44f, paint)
+                paint.color = android.graphics.Color.RED
+                paint.textSize = 24f
+                paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
+                canvas.drawText("NOW  ${alert.title}", 8f, 32f, paint)
+                paint.typeface = android.graphics.Typeface.DEFAULT
             }
         }
 
@@ -563,47 +577,51 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateMiniMapFromCached(alert: AlertCacheService.CachedAlert) {
-        // Clear existing overlays (except compass)
         miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
 
-        // Use custom overlay to draw colored markers based on alert type
+        val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
+        val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+
         val overlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
                 if (shadow || canvas == null || mapView == null) return
-
                 val pj = mapView.projection ?: return
                 val paint = android.graphics.Paint().apply { isAntiAlias = true }
 
-                // Get color based on alert type
+                // Draw user location
+                val userScreen = pj.toPixels(GeoPoint(userLat, userLon), null)
+                paint.color = android.graphics.Color.BLUE
+                paint.style = android.graphics.Paint.Style.FILL
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
+                paint.color = android.graphics.Color.WHITE
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 2f
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
+
                 val color = getAlertTypeColor(alert.type)
-
-                // Draw markers for each region
                 for (region in alert.regions) {
-                    val coords = OrefRegionCoords.coords[region]
-                    if (coords != null) {
-                        val point = GeoPoint(coords.first, coords.second)
-                        val screenPos = pj.toPixels(point, null)
-
-                        // Draw colored circle
-                        paint.color = color
-                        paint.style = android.graphics.Paint.Style.FILL
-                        paint.alpha = 200
-                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
-
-                        // White border
-                        paint.color = android.graphics.Color.WHITE
-                        paint.style = android.graphics.Paint.Style.STROKE
-                        paint.strokeWidth = 2f
-                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
-                    }
+                    val coords = OrefRegionCoords.coords[region] ?: continue
+                    val screenPos = pj.toPixels(GeoPoint(coords.first, coords.second), null)
+                    paint.color = color
+                    paint.style = android.graphics.Paint.Style.FILL
+                    paint.alpha = 200
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
+                    paint.color = android.graphics.Color.WHITE
+                    paint.style = android.graphics.Paint.Style.STROKE
+                    paint.strokeWidth = 2f
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
                 }
 
-                // Draw title at top
-                paint.color = android.graphics.Color.BLACK
-                paint.textSize = 14f
+                // Header
+                val dateFmt = SimpleDateFormat("dd.MM", Locale.getDefault())
+                val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+                val headerText = "History ${dateFmt.format(Date(alert.timestampMs))} ${timeFmt.format(Date(alert.timestampMs))} ${alert.title}"
+                paint.color = android.graphics.Color.parseColor("#CC333333")
                 paint.style = android.graphics.Paint.Style.FILL
-                paint.alpha = 255
-                canvas.drawText(alert.title, 20f, 35f, paint)
+                canvas.drawRect(0f, 0f, canvas.width.toFloat(), 40f, paint)
+                paint.color = android.graphics.Color.WHITE
+                paint.textSize = 22f
+                canvas.drawText(headerText, 8f, 30f, paint)
             }
         }
 
@@ -611,13 +629,44 @@ class StatusFragment : Fragment() {
         miniMapView.invalidate()
     }
 
+    private fun updateThreatBanner() {
+        val state = AlertStateMachine.getState(requireContext())
+        when (state.level) {
+            AlertStateMachine.ThreatLevel.CLEAR -> {
+                threatBanner.visibility = View.GONE
+            }
+            AlertStateMachine.ThreatLevel.WARNING -> {
+                threatBanner.visibility = View.VISIBLE
+                threatBanner.setBackgroundColor(android.graphics.Color.parseColor("#FFC107")) // Amber
+                tvThreatLevel.text = getString(R.string.threat_warning)
+                tvThreatLevel.setTextColor(android.graphics.Color.BLACK)
+                tvThreatRegions.text = getString(R.string.threat_regions, state.regions.joinToString(", "))
+                tvThreatRegions.setTextColor(android.graphics.Color.BLACK)
+                tvThreatSince.setTextColor(android.graphics.Color.BLACK)
+                val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+                tvThreatSince.text = getString(R.string.threat_since, fmt.format(Date(state.since)))
+            }
+            AlertStateMachine.ThreatLevel.ALARM -> {
+                threatBanner.visibility = View.VISIBLE
+                threatBanner.setBackgroundColor(android.graphics.Color.parseColor("#D32F2F")) // Red
+                tvThreatLevel.text = getString(R.string.threat_alarm)
+                tvThreatLevel.setTextColor(android.graphics.Color.WHITE)
+                tvThreatRegions.text = getString(R.string.threat_regions, state.regions.joinToString(", "))
+                tvThreatRegions.setTextColor(android.graphics.Color.WHITE)
+                tvThreatSince.setTextColor(android.graphics.Color.parseColor("#FFCDD2"))
+                val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+                tvThreatSince.text = getString(R.string.threat_since, fmt.format(Date(state.since)))
+            }
+        }
+    }
+
     private fun getAlertTypeColor(type: String): Int {
-        return when {
-            type.contains("Missiles", ignoreCase = true) || type.contains("Rocket", ignoreCase = true) -> android.graphics.Color.RED
-            type.contains("Aircraft", ignoreCase = true) -> android.graphics.Color.parseColor("#FF9500") // Orange
-            type.contains("Event-Over", ignoreCase = true) -> android.graphics.Color.GREEN
-            type.contains("Earthquake", ignoreCase = true) -> android.graphics.Color.parseColor("#9C27B0") // Purple
-            type.contains("Tsunami", ignoreCase = true) -> android.graphics.Color.BLUE
+        return when (type.lowercase()) {
+            "missile" -> android.graphics.Color.RED
+            "aircraft" -> android.graphics.Color.parseColor("#FF9500") // Orange
+            "event" -> android.graphics.Color.GREEN
+            "earthquake" -> android.graphics.Color.parseColor("#9C27B0") // Purple
+            "tsunami" -> android.graphics.Color.BLUE
             else -> android.graphics.Color.parseColor("#FF9800") // Default orange
         }
     }
@@ -637,31 +686,120 @@ class StatusFragment : Fragment() {
     }
 
     private fun cyclePreviousAlert() {
-        if (cachedAlertsList.isEmpty()) return
-        currentCachedAlertIndex = if (currentCachedAlertIndex > 0) {
-            currentCachedAlertIndex - 1
+        if (alertsByMinute.isEmpty()) return
+        currentMinuteGroupIndex = if (currentMinuteGroupIndex > 0) {
+            currentMinuteGroupIndex - 1
         } else {
-            cachedAlertsList.size - 1
+            alertsByMinute.size - 1
         }
-        displayCachedAlert(currentCachedAlertIndex)
+        displayCachedAlertsGroup(currentMinuteGroupIndex)
     }
 
     private fun cycleNextAlert() {
-        if (cachedAlertsList.isEmpty()) return
-        currentCachedAlertIndex = (currentCachedAlertIndex + 1) % cachedAlertsList.size
-        displayCachedAlert(currentCachedAlertIndex)
+        if (alertsByMinute.isEmpty()) return
+        currentMinuteGroupIndex = (currentMinuteGroupIndex + 1) % alertsByMinute.size
+        displayCachedAlertsGroup(currentMinuteGroupIndex)
     }
 
     private fun displayCachedAlert(index: Int) {
-        if (index < 0 || index >= cachedAlertsList.size) return
-        val alert = cachedAlertsList[index]
-        val fmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-        val timeStr = fmt.format(Date(alert.timestampMs))
-        val indexStr = if (cachedAlertsList.size > 1) " (${index + 1}/${cachedAlertsList.size})" else ""
-        tvActiveAlerts.text = "[$timeStr] ${alert.title}$indexStr"
-        tvActiveAlertsRegions.text = alert.regions.joinToString(", ")
+        // Legacy method - show first group
+        if (alertsByMinute.isEmpty()) return
+        currentMinuteGroupIndex = 0
+        displayCachedAlertsGroup(0)
+    }
+
+    private fun displayCachedAlertsGroup(groupIndex: Int) {
+        if (groupIndex < 0 || groupIndex >= alertsByMinute.size) return
+        val group = alertsByMinute[groupIndex]
+        if (group.isEmpty()) return
+
+        val header = AlertCacheService.formatGroupHeader(group)
+        val posStr = "${groupIndex + 1}/${alertsByMinute.size}"
+        val countStr = if (group.size > 1) " [${group.size} alerts]" else ""
+        tvActiveAlerts.text = "$header$countStr ($posStr)${if (group.size == 1) " ${group[0].title}" else ""}"
+
+        // Show all regions from all alerts in this group
+        val allRegions = group.flatMap { it.regions }.distinct()
+        tvActiveAlertsRegions.text = allRegions.joinToString(", ")
         activeAlertsScrollView.visibility = View.VISIBLE
-        updateMiniMapFromCached(alert)
+
+        // Update mini map with all alerts from this minute
+        updateMiniMapFromCachedGroup(group)
+    }
+
+    private fun updateMiniMapFromCachedGroup(alerts: List<AlertCacheService.CachedAlert>) {
+        miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
+
+        val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
+        val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+
+        val overlay = object : org.osmdroid.views.overlay.Overlay() {
+            override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
+                if (shadow || canvas == null || mapView == null) return
+                val pj = mapView.projection ?: return
+                val paint = android.graphics.Paint().apply { isAntiAlias = true }
+
+                // Draw user location
+                val userScreen = pj.toPixels(GeoPoint(userLat, userLon), null)
+                paint.color = android.graphics.Color.BLUE
+                paint.style = android.graphics.Paint.Style.FILL
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
+                paint.color = android.graphics.Color.WHITE
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 2f
+                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
+
+                // Group alerts by region for stacking
+                val alertsByRegion = alerts.flatMap { alert ->
+                    alert.regions.map { region -> region to alert }
+                }.groupBy { it.first }
+
+                for ((region, regionAlerts) in alertsByRegion) {
+                    val coords = OrefRegionCoords.coords[region] ?: continue
+                    val screenPos = pj.toPixels(GeoPoint(coords.first, coords.second), null)
+                    val bx = screenPos.x.toFloat()
+                    val by = screenPos.y.toFloat()
+
+                    for ((index, pair) in regionAlerts.withIndex()) {
+                        val alert = pair.second
+                        val ox = (index % 3) * 6f - 6f
+                        val oy = (index / 3) * 6f
+                        val color = getAlertTypeColor(alert.type)
+
+                        paint.color = color
+                        paint.style = android.graphics.Paint.Style.FILL
+                        paint.alpha = 200
+                        canvas.drawCircle(bx + ox, by + oy, 10f, paint)
+                        paint.color = android.graphics.Color.WHITE
+                        paint.style = android.graphics.Paint.Style.STROKE
+                        paint.strokeWidth = 2f
+                        canvas.drawCircle(bx + ox, by + oy, 10f, paint)
+                    }
+
+                    if (regionAlerts.size > 1) {
+                        paint.color = android.graphics.Color.BLACK
+                        paint.textSize = 12f
+                        paint.style = android.graphics.Paint.Style.FILL
+                        canvas.drawText(regionAlerts.size.toString(), bx + 8f, by - 8f, paint)
+                    }
+                }
+
+                // Header
+                if (alerts.isNotEmpty()) {
+                    val header = AlertCacheService.formatGroupHeader(alerts)
+                    val countStr = if (alerts.size > 1) " (${alerts.size} alerts)" else ""
+                    paint.color = android.graphics.Color.parseColor("#CC333333")
+                    paint.style = android.graphics.Paint.Style.FILL
+                    canvas.drawRect(0f, 0f, canvas.width.toFloat(), 40f, paint)
+                    paint.color = android.graphics.Color.WHITE
+                    paint.textSize = 22f
+                    canvas.drawText("$header$countStr", 8f, 30f, paint)
+                }
+            }
+        }
+
+        miniMapView.overlays.add(overlay)
+        miniMapView.invalidate()
     }
 
     private fun loadCyclerSettings() {
@@ -671,8 +809,8 @@ class StatusFragment : Fragment() {
     }
 
     private fun shouldStartCycler(): Boolean {
-        // Only cycle if there's more than 1 alert
-        if (cachedAlertsList.size <= 1) return false
+        // Only cycle if there's more than 1 minute-group
+        if (alertsByMinute.size <= 1) return false
 
         val cyclerMode = prefs.getString("cycler_mode", "off") ?: "off"
         if (cyclerMode == "off") return false
@@ -689,7 +827,7 @@ class StatusFragment : Fragment() {
 
     private fun startAutoCycle() {
         stopAutoCycle()
-        if (cachedAlertsList.size <= 1) return  // No point cycling with 0-1 alerts
+        if (alertsByMinute.size <= 1) return  // No point cycling with 0-1 minute groups
 
         autoCycleRunnable = object : Runnable {
             override fun run() {
@@ -706,16 +844,21 @@ class StatusFragment : Fragment() {
     }
 
     private fun loadCachedAlerts() {
+        // Load and filter alerts
         cachedAlertsList = AlertCacheService.getLast24Hours(requireContext())
             .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
             .sortedByDescending { it.timestampMs }
-        currentCachedAlertIndex = 0
+
+        // Tiered grouping: 1min (recent) → 10min → 30min (old)
+        alertsByMinute = AlertCacheService.groupByTimeBucket(cachedAlertsList)
+
+        currentMinuteGroupIndex = 0
         updateCycleButtonStates()
     }
 
     private fun updateCycleButtonStates() {
-        val hasAlerts = cachedAlertsList.size > 1
-        btnPrevAlert.isEnabled = hasAlerts
-        btnNextAlert.isEnabled = hasAlerts
+        val hasMultipleGroups = alertsByMinute.size > 1
+        btnPrevAlert.isEnabled = hasMultipleGroups
+        btnNextAlert.isEnabled = hasMultipleGroups
     }
 }

@@ -5,6 +5,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 object RedAlertService {
 
@@ -14,7 +17,9 @@ object RedAlertService {
         val title: String,
         val regions: List<String>,
         val description: String,
-        val type: String = ""  // e.g., "missiles", "event", etc.
+        val type: String = "",  // e.g., "missile", "event", etc.
+        val category: Int = 0,  // raw category: 1=missile, 2=aircraft, 12=warning, 13=event_ended
+        val timestampMs: Long = 0L  // 0 = use current time when saving to cache
     )
 
     sealed class FetchResult {
@@ -67,125 +72,159 @@ object RedAlertService {
     fun fetchHistory(): List<ActiveAlert> {
         Log.d(TAG, "====== FETCHHISTORY START ======")
 
-        // Correct endpoint with hours=24 parameter to get full 24-hour history
-        val endpoints = listOf(
-            // Primary endpoint with hours parameter
-            "https://www.oref.org.il/warningMessages/alert/History/AlertsHistory.json?hours=24",
-            // Fallback variations
-            "https://www.oref.org.il/WarningMessages/Alert/History/AlertsHistory.json?hours=24",
-            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json?hours=24"
-        )
+        // Fetch in day-sized chunks to work around API's 3000-entry limit
+        val dateFmt = SimpleDateFormat("dd.MM.yyyy", Locale.US)
+        val allAlerts = mutableListOf<ActiveAlert>()
 
-        for ((index, endpoint) in endpoints.withIndex()) {
-            Log.d(TAG, "[$index/${endpoints.size}] Attempting: $endpoint")
+        // Fetch today and yesterday separately for better coverage
+        val cal = Calendar.getInstance()
+        val today = dateFmt.format(cal.time)
+        cal.add(Calendar.DAY_OF_YEAR, -1)
+        val yesterday = dateFmt.format(cal.time)
 
-            try {
-                val url = URL(endpoint)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 15_000
-                conn.readTimeout = 15_000
-                conn.setRequestProperty("Referer", "https://www.oref.org.il/")
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)")
-                conn.setRequestProperty("Accept", "application/json")
-                conn.setRequestProperty("X-Requested-With", "XMLHttpRequest")
+        // Chunk 1: yesterday only
+        allAlerts.addAll(fetchHistoryChunk(yesterday, yesterday))
+        // Chunk 2: today only
+        allAlerts.addAll(fetchHistoryChunk(today, today))
 
-                val responseCode = conn.responseCode
-                Log.d(TAG, "Response code: $responseCode")
+        Log.d(TAG, "✓ Total: ${allAlerts.size} alerts from 2 chunks")
+        Log.d(TAG, "====== FETCHHISTORY END ======")
+        return allAlerts
+    }
 
-                if (responseCode !in 200..299) {
-                    Log.w(TAG, "Bad status $responseCode, skipping")
-                    conn.disconnect()
-                    continue
-                }
+    private fun fetchHistoryChunk(fromDate: String, toDate: String): List<ActiveAlert> {
+        val endpoint = "https://alerts-history.oref.org.il/Shared/Ajax/GetAlarmsHistory.aspx?lang=he&fromDate=$fromDate&toDate=$toDate&mode=0"
+        Log.d(TAG, "Fetching chunk: $fromDate → $toDate")
 
-                val body = conn.inputStream.bufferedReader().readText()
+        try {
+            val url = URL(endpoint)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 30_000
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)")
+
+            val responseCode = conn.responseCode
+            Log.d(TAG, "Response code: $responseCode")
+
+            if (responseCode !in 200..299) {
+                Log.w(TAG, "Bad status $responseCode")
                 conn.disconnect()
-
-                Log.d(TAG, "Response length: ${body.length} bytes")
-                Log.d(TAG, "Full response: $body")  // Log everything to debug
-
-                if (body.isEmpty() || body.trim() == "{}" || body.trim() == "[]") {
-                    Log.d(TAG, "Empty/blank response")
-                    continue
-                }
-
-                // Try parsing as array first
-                val result = try {
-                    Log.d(TAG, "Trying to parse as JSON array...")
-                    parseHistoryArray(body)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Array parse failed: ${e.message}")
-                    try {
-                        // If it's a single object, wrap it in array
-                        Log.d(TAG, "Trying to wrap as array...")
-                        val wrapped = "[$body]"
-                        parseHistoryArray(wrapped)
-                    } catch (e2: Exception) {
-                        Log.w(TAG, "Wrapped parse also failed: ${e2.message}")
-                        // Try parsing as object with "data" field
-                        try {
-                            Log.d(TAG, "Trying to parse as object with data field...")
-                            val obj = JSONObject(body)
-                            val dataArray = obj.optJSONArray("data")
-                            if (dataArray != null) {
-                                parseHistoryArray(dataArray.toString())
-                            } else {
-                                Log.w(TAG, "No data field found")
-                                emptyList()
-                            }
-                        } catch (e3: Exception) {
-                            Log.w(TAG, "Data field parse failed: ${e3.message}")
-                            emptyList()
-                        }
-                    }
-                }
-
-                if (result.isNotEmpty()) {
-                    Log.d(TAG, "✓ SUCCESS: Got ${result.size} alerts from this endpoint")
-                    Log.d(TAG, "====== FETCHHISTORY END (SUCCESS) ======")
-                    return result
-                } else {
-                    Log.d(TAG, "No results from this endpoint")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Exception: ${e.javaClass.simpleName}: ${e.message}")
-                e.printStackTrace()
+                return emptyList()
             }
-        }
 
-        Log.w(TAG, "✗ All endpoints exhausted, returning empty")
-        Log.d(TAG, "====== FETCHHISTORY END (FAILED) ======")
+            val body = conn.inputStream.bufferedReader().readText()
+            conn.disconnect()
+
+            Log.d(TAG, "Response length: ${body.length} bytes")
+
+            val trimmed = body.trim().replace("\uFEFF", "")
+            if (trimmed.length < 5) {
+                Log.d(TAG, "Empty response for $fromDate")
+                return emptyList()
+            }
+
+            val result = parseHistoryArray(trimmed)
+            Log.d(TAG, "Got ${result.size} alerts for $fromDate → $toDate")
+            return result
+        } catch (e: Exception) {
+            Log.w(TAG, "Exception for $fromDate: ${e.javaClass.simpleName}: ${e.message}")
+            e.printStackTrace()
+        }
         return emptyList()
     }
 
     private fun parseHistoryArray(json: String): List<ActiveAlert> {
         return try {
-            val alerts = mutableListOf<ActiveAlert>()
             val array = JSONArray(json)
+            Log.d(TAG, "Parsing ${array.length()} raw entries, grouping by timestamp+category...")
+
+            // Date formats to try for alertDate parsing
+            val dateFormats = listOf(
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US),
+                SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.US),
+                SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+            )
+
+            // First pass: group raw JSON objects by alertDate + category
+            data class RawEntry(val title: String, val type: String, val region: String, val desc: String, val alertDate: String, val category: Int)
+            val groups = mutableMapOf<String, MutableList<RawEntry>>()
 
             for (i in 0 until array.length()) {
                 val obj = array.getJSONObject(i)
-                val alert = parseAlertObject(obj)
-                if (alert != null) {
-                    alerts.add(alert)
+                val alertDate = obj.optString("alertDate", "")
+                val categoryStr = obj.optString("category", "")
+                val categoryInt = categoryStr.toIntOrNull() ?: obj.optInt("category", 0)
+                val key = "$alertDate|$categoryStr"
+
+                var title = obj.optString("title", "")
+                if (title.isEmpty()) title = obj.optString("category_desc", "")
+
+                var type = obj.optString("type", "")
+                if (type.isEmpty()) {
+                    type = mapCategoryToType(categoryInt)
+                }
+                if (type.isEmpty()) type = "missile"
+
+                val region = obj.optString("data", "").trim()
+                if (title.isNotEmpty() && region.isNotEmpty()) {
+                    groups.getOrPut(key) { mutableListOf() }
+                        .add(RawEntry(title, type, region, obj.optString("desc", ""), alertDate, categoryInt))
                 }
             }
-            Log.d(TAG, "Parsed ${alerts.size} historical alerts")
-            alerts
+
+            // Second pass: merge each group into a single ActiveAlert with original timestamp
+            val merged = groups.map { (_, entries) ->
+                val first = entries[0]
+                val allRegions = entries.map { it.region }.distinct()
+                val timestampMs = parseAlertDate(first.alertDate, dateFormats)
+
+                ActiveAlert(first.title, allRegions, first.desc, first.type, first.category, timestampMs)
+            }
+
+            Log.d(TAG, "Merged into ${merged.size} grouped alerts")
+            merged
         } catch (e: Exception) {
             Log.w(TAG, "Parse history array failed: ${e.message}")
             emptyList()
         }
     }
 
+    private fun parseAlertDate(alertDate: String, formats: List<SimpleDateFormat>): Long {
+        if (alertDate.isEmpty()) return 0L
+        for (fmt in formats) {
+            try {
+                val date = fmt.parse(alertDate)
+                if (date != null) return date.time
+            } catch (_: Exception) { }
+        }
+        Log.w(TAG, "Could not parse alertDate: $alertDate")
+        return 0L
+    }
+
     private fun parseAlertObject(obj: JSONObject): ActiveAlert? {
         return try {
-            val title = obj.optString("title", "")
+            // Title: try "title", then "category_desc" (from history endpoint)
+            var title = obj.optString("title", "")
+            if (title.isEmpty()) {
+                title = obj.optString("category_desc", "")
+            }
             val description = obj.optString("desc", "")
             val alertDate = obj.optString("alertDate", "")
 
-            // Type can come from "type" field or "category" field
-            val type = obj.optString("type", obj.optString("category", ""))
+            // Type can come from "type" field or "category" field (numeric or string)
+            var type = obj.optString("type", "")
+            if (type.isEmpty()) {
+                val categoryValue = obj.opt("category")
+                type = when (categoryValue) {
+                    is Int -> mapCategoryToType(categoryValue)
+                    is String -> mapCategoryToType(categoryValue.toIntOrNull() ?: -1)
+                    else -> ""
+                }
+                if (type.isEmpty()) {
+                    type = obj.optString("category", "")
+                }
+            }
 
             // Regions can come from "cities" array or "data" field
             val citiesArray = obj.optJSONArray("cities")
@@ -207,23 +246,17 @@ object RedAlertService {
                     regions.add(dataArray.getString(i))
                 }
             }
-            // If data is a string (could be comma-separated, space-separated, or single region)
+            // If data is a string — treat as single region or comma-separated list
             else {
                 val dataStr = obj.optString("data", "")
                 Log.d(TAG, "RAW data string: '$dataStr'")
                 if (dataStr.isNotEmpty()) {
-                    // Try comma separation first
+                    // Only split by comma (region names can contain spaces!)
                     if (dataStr.contains(",")) {
                         Log.d(TAG, "Splitting by comma")
                         regions.addAll(dataStr.split(",").map { it.trim() }.filter { it.isNotEmpty() })
-                    }
-                    // Try space separation
-                    else if (dataStr.contains(" ")) {
-                        Log.d(TAG, "Splitting by space")
-                        regions.addAll(dataStr.split(" ").map { it.trim() }.filter { it.isNotEmpty() })
-                    }
-                    // Single region
-                    else {
+                    } else {
+                        // Single region name (may contain spaces)
                         Log.d(TAG, "Single region: $dataStr")
                         regions.add(dataStr.trim())
                     }
@@ -233,16 +266,16 @@ object RedAlertService {
             Log.d(TAG, "Alert: title=$title, date=$alertDate, type=$type, regions=$regions")
 
             if (title.isNotEmpty() && regions.isNotEmpty()) {
-                // Check if regions exist in coordinates
+                // Log which regions have coordinates vs not
                 val validRegions = regions.filter { OrefRegionCoords.coords.containsKey(it) }
-                Log.d(TAG, "Valid regions with coordinates: $validRegions out of $regions")
-
-                if (validRegions.isNotEmpty()) {
-                    ActiveAlert(title, validRegions, description, type)
-                } else {
-                    Log.w(TAG, "No regions found in OrefRegionCoords: $regions")
-                    null
+                val unknownRegions = regions.filter { !OrefRegionCoords.coords.containsKey(it) }
+                if (unknownRegions.isNotEmpty()) {
+                    Log.w(TAG, "Regions missing from OrefRegionCoords: $unknownRegions")
                 }
+                Log.d(TAG, "Valid regions: $validRegions out of $regions")
+
+                // Keep ALL regions (even without coordinates) so alerts show in list
+                ActiveAlert(title, regions, description, type)
             } else {
                 Log.d(TAG, "Alert missing title or regions: title=$title, regions=$regions")
                 null
@@ -250,6 +283,29 @@ object RedAlertService {
         } catch (e: Exception) {
             Log.w(TAG, "Parse alert object failed: ${e.message}", e)
             null
+        }
+    }
+
+    private fun inferCategoryFromTitle(title: String): Int {
+        val t = title.lowercase()
+        return when {
+            t.contains("רקטות") || t.contains("טילים") -> 1  // missiles
+            t.contains("כלי טיס") || t.contains("חדירת") -> 2  // aircraft
+            t.contains("הסתיים") || t.contains("all clear") -> 13  // event ended
+            t.contains("אירוע") -> 12  // general event/warning
+            else -> 0
+        }
+    }
+
+    private fun mapCategoryToType(category: Int): String {
+        return when (category) {
+            1 -> "missile"
+            2 -> "aircraft"
+            3 -> "earthquake"
+            4 -> "tsunami"
+            12 -> "event"
+            13 -> "event"  // Event ended / all clear
+            else -> ""
         }
     }
 
@@ -261,10 +317,10 @@ object RedAlertService {
 
         return try {
             val obj = JSONObject(json)
-            // For active alerts, regions come in "data" field instead of "cities"
             val title = obj.optString("title", "")
             val description = obj.optString("desc", "")
             val type = obj.optString("type", "")
+            val cat = obj.optInt("cat", 0)
             val dataArray = obj.optJSONArray("data")
 
             val regions = mutableListOf<String>()
@@ -274,8 +330,11 @@ object RedAlertService {
                 }
             }
 
+            // Infer category from title if cat field is missing
+            val category = if (cat > 0) cat else inferCategoryFromTitle(title)
+
             if (title.isNotEmpty() && regions.isNotEmpty()) {
-                ActiveAlert(title, regions, description, type)
+                ActiveAlert(title, regions, description, type, category)
             } else {
                 null
             }

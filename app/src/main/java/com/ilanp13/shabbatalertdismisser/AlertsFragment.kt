@@ -134,17 +134,12 @@ class AlertsFragment : Fragment() {
         btnRefetch24h.isEnabled = false
 
         Thread {
-            // Clear the cache
-            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
-            prefs.edit().putString("alert_cache", "[]").apply()
-
             // Fetch historical alerts from the last 24 hours
             val historyAlerts = RedAlertService.fetchHistory()
-            var fetchedNewAlerts = false
-            for (alert in historyAlerts) {
-                AlertCacheService.save(requireContext(), alert)
-                fetchedNewAlerts = true
-            }
+
+            // Batch save all at once (replaces cache with single write)
+            val ctx = requireContext()
+            AlertCacheService.saveBatch(ctx, historyAlerts)
 
             handler.post {
                 pbAlertsLoading.visibility = View.GONE
@@ -155,13 +150,12 @@ class AlertsFragment : Fragment() {
                 updateLastRefreshedTime()
 
                 // Show feedback to user
-                if (!fetchedNewAlerts) {
-                    android.widget.Toast.makeText(
-                        requireContext(),
-                        "History API not available (geo-restricted). Alerts will build up from polling.",
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                }
+                val count = historyAlerts.size
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    if (count > 0) "Fetched $count alerts" else "No alerts in last 24h",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
 
                 loadAlerts()
             }

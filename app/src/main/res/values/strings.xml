@@ -105,4 +105,18 @@
     <string name="cycler_duration_format">Duration: %d seconds</string>
     <string name="filter_note_all_tabs">💡 Type filters (from Map tab) apply to all alerts shown here</string>
     <string name="alert_refetch_info">💡 Refetch clears cache. History builds from live polling. Use Refresh for current alerts.</string>
+    <string name="region_display_mode_label">Show alerts from</string>
+    <string name="region_display_all">All regions (selected highlighted)</string>
+    <string name="region_display_selected_only">Selected regions only</string>
+    <string name="shabbat_banner">🕯️ Shabbat Shalom 🕯️\nAuto-dismissing alerts · Ends %s</string>
+    <string name="shabbat_banner_always">🕯️ Shabbat Mode Active 🕯️\nAuto-dismissing alerts</string>
+    <string name="threat_warning">⚠️ WARNING — Potential threat</string>
+    <string name="threat_alarm">🚨 ALARM — Take shelter now!</string>
+    <string name="threat_regions">Regions: %s</string>
+    <string name="threat_since">Since %s</string>
+    <string name="threat_dismiss">Dismiss</string>
+    <string name="threat_dismiss_title">Dismiss Threat?</string>
+    <string name="threat_dismiss_message">Are you sure? Only dismiss if the event has ended.</string>
+    <string name="threat_dismiss_confirm">Dismiss</string>
+    <string name="threat_dismiss_cancel">Cancel</string>
 </resources>

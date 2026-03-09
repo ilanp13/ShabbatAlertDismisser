@@ -250,7 +250,37 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/alert_regions_select_btn"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="8dp" />
+
+        <!-- Region display mode -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/region_display_mode_label"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radioRegionDisplay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/radioRegionAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/region_display_all"
+                android:minHeight="48dp" />
+
+            <RadioButton
+                android:id="@+id/radioRegionSelectedOnly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/region_display_selected_only"
+                android:minHeight="48dp" />
+
+        </RadioGroup>
 
         <!-- Alert Cycler -->
         <TextView

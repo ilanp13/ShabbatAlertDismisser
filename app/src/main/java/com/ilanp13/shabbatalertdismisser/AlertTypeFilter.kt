@@ -13,7 +13,7 @@ object AlertTypeFilter {
     fun getSelectedTypes(context: Context): Set<String> {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getStringSet(PREF_KEY, null)
-            ?: setOf("missiles", "aircraft", "event", "earthquake", "tsunami")  // Default: show all
+            ?: setOf("missile", "aircraft", "event")  // Default: show all
     }
 
     fun setSelectedTypes(context: Context, types: Set<String>) {
@@ -23,19 +23,20 @@ object AlertTypeFilter {
 
     fun shouldShow(context: Context, alertType: String): Boolean {
         val selected = getSelectedTypes(context)
-        val normalized = alertType.lowercase()
+        val normalized = alertType.lowercase().trim()
 
         return when {
-            normalized.contains("missile") || normalized.contains("rocket") -> selected.contains("missiles")
-            normalized.contains("aircraft") -> selected.contains("aircraft")
-            normalized.contains("event") -> selected.contains("event")
-            normalized.contains("earthquake") -> selected.contains("earthquake")
-            normalized.contains("tsunami") -> selected.contains("tsunami")
+            normalized.isEmpty() -> true  // Show alerts with no type (don't hide them)
+            normalized == "missile" || normalized == "missiles" || normalized.contains("rocket") -> selected.contains("missile")
+            normalized == "aircraft" -> selected.contains("aircraft")
+            normalized == "event" -> selected.contains("event")
+            normalized == "earthquake" -> selected.contains("earthquake")
+            normalized == "tsunami" -> selected.contains("tsunami")
             else -> true  // Show unknown types by default
         }
     }
 
     fun isAllFiltered(context: Context): Boolean {
-        return getSelectedTypes(context).size == 5  // All 5 types selected
+        return getSelectedTypes(context).size == 3  // All 3 types selected
     }
 }
