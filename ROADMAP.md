@@ -4,148 +4,112 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 
 ---
 
-## 🎯 Planned Features
+## Completed Features
 
-### 1. Alert History & Summary (During Shabbat)
+### Phase 1 (v1.2.5)
 
-**Goal:** Show users which areas were affected by emergency alerts during Shabbat in a non-intrusive way.
+- [x] **Improved Shabbat Status Screen layout** — No-scroll, compact 2-column layout for top section
+- [x] **Red-Alert API integration** — Fetch alert history from pikud-haoref.com
+
+### Phase 2 (Current)
+
+- [x] **Map view with osmdroid** — Interactive map with pins for active and historical alerts, mini-map on Status tab
+- [x] **User-customizable region filters** — Region selector in Settings, "show alerts from selected/all" display mode
+- [x] **Alert caching service** — 24-hour alert history cached locally
+- [x] **Alerts tab** — Dedicated tab for browsing alert history with refresh/clear/refetch buttons
+- [x] **Alert type filters** — Missile, aircraft, event filters configurable on the Map tab
+- [x] **Alert state machine** — WARNING/ALARM/CLEAR states based on alert categories
+- [x] **Threat banner** — Amber WARNING and red ALARM banners on the Status screen
+- [x] **Shabbat mode banner** — Visual indicator during Shabbat or "always" mode
+- [x] **Tiered alert grouping** — 1-minute recent, 10-minute, 30-minute buckets for older alerts
+- [x] **Compact status layout** — 2-column layout for the top section of the Status screen
+- [x] **5-tab interface** — Status, Settings, History, Map, Alerts
+
+---
+
+## Planned Features
+
+### Phase 3 (Long-term)
+
+#### 1. Advanced Analytics
+
+**Goal:** Provide trend data and insights from alert history.
 
 **Features:**
-- Integrate with **Red-Alert API** (pikud-haoref.com) to fetch historical alert data
-- Display **summary of alerts** that occurred during current/recent Shabbat periods
-- Show **location-based filtering** — allow user to mark interesting regions/cities they care about
-- Alert summary includes:
-  - Number of alerts per region
-  - Most affected areas
-  - Time of first/last alert
-  - Duration of alert period
+- Most common alert times (by hour/day)
+- Trends over time for selected regions
+- Summary statistics (alerts per day, most affected areas)
 
-**User Experience:**
-- Small, scrollable list in a collapsible section (not required on main screen)
-- Quick glance at "what happened in my region"
-- Optional: clickable regions to see details
+#### 2. Alert Notifications (Optional)
 
-**Technical Notes:**
-- Requires new network call to Red-Alert API
-- Cache results locally (updates every few hours)
-- Respect API rate limits
-- Handle network failures gracefully (offline fallback)
-
----
-
-### 2. Map View of Alerts During Shabbat
-
-**Goal:** Visual representation of all alerts that occurred during Shabbat on an interactive map.
+**Goal:** Notify users about incoming alerts while respecting Shabbat mode.
 
 **Features:**
-- **Map integration** (Google Maps or Open Street Map)
-- Show **all alert locations** as pins/circles on the map
-- **Density visualization** — heat map or clustering of repeated alerts in same area
-- Clickable pins showing:
-  - Region/city name
-  - Time of alert
-  - Number of times alert was sounded
+- Push-style notifications for alerts in selected regions
+- Respect Shabbat mode — suppress or defer notifications during Shabbat
+- Configurable notification preferences (sound, vibration, silent)
 
-**User Experience:**
-- Access from a "Map" tab or button on main screen during/after Shabbat
-- Can zoom/pan to see affected areas
-- Shows alerts from "Shabbat start" to "current time" or "Shabbat end"
-- Timeline slider to filter alerts by time of day
+#### 3. Export Alert History
 
-**Technical Notes:**
-- Consider privacy implications of showing specific locations
-- Cache map data
-- Lightweight rendering (cluster nearby alerts)
-- Only fetch/show if Shabbat is active or recently ended
+**Goal:** Allow users to export cached alert data for external use.
+
+**Features:**
+- Export to CSV or JSON
+- Date range selection
+- Filter by region or alert type before export
 
 ---
 
-### 3. Improved Shabbat Status Screen (No Scrolling Required)
+## Implementation Priority
 
-**Goal:** Consolidate all essential Shabbat information on one screen without requiring vertical scrolling.
+**Phase 1 (Short-term) — Done:**
+1. [x] Improve Shabbat Status Screen layout (no scrolling)
+2. [x] Add Red-Alert API integration for alert history
 
-**Current Issues:**
-- Main screen requires scrolling on smaller devices
-- Important information (Shabbat times, status, modes) requires scroll navigation
-- Settings (delay, notification toggle) are below the fold
+**Phase 2 (Medium-term) — Done:**
+1. [x] Map view of alerts (interactive osmdroid map + mini-map on Status screen)
+2. [x] User-customizable region filters
+3. [x] Alert caching service (24h local cache)
+4. [x] Alerts tab with refresh/clear/refetch
+5. [x] Alert type filters (missile, aircraft, event)
+6. [x] Alert state machine (WARNING/ALARM/CLEAR)
+7. [x] Threat banner and Shabbat mode banner
+8. [x] Tiered alert grouping
+9. [x] Compact status layout and 5-tab interface
 
-**Proposed Improvements:**
-- **Vertical layout optimization:**
-  - Move less critical info to separate tabs or collapsible sections
-  - Keep essential info (status, times, modes) above fold
-  - Group related settings more efficiently
-
-- **Tab-based navigation:**
-  - Tab 1: "Status" — Current state, Shabbat times, mode selection
-  - Tab 2: "Settings" — Delay, notification, screen-on options
-  - Tab 3: "Alerts" — History & map (when available)
-  - Tab 4: "About" — Info, Privacy Policy, Terms
-
-- **Or: Bottom Navigation:**
-  - Similar structure with bottom navigation tabs
-  - Modern Material Design approach
-
-- **Conditional hiding:**
-  - Hide sections not relevant to current time (e.g., mode options disabled when accessibility off)
-  - Collapse/expand advanced settings
-
-**Technical Notes:**
-- Requires layout restructuring (fragment-based or ViewPager/ViewPager2)
-- Material Design tab layout or bottom navigation
-- Preserve all current functionality
-- Test on small devices (4-5 inches)
-
----
-
-## 📋 Implementation Priority
-
-**Phase 1 (Short-term):**
-1. Improve Shabbat Status Screen layout (no scrolling)
-2. Add Red-Alert API integration for alert history
-
-**Phase 2 (Medium-term):**
-1. Map view of alerts
-2. User-customizable region filters
-
-**Phase 3 (Long-term):**
+**Phase 3 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)
 2. Notifications about incoming alerts (optional, respects Shabbat)
 3. Export alert history
 
 ---
 
-## 🔧 Technical Considerations
+## Technical Considerations
 
-### Red-Alert API Integration
-- **Endpoint:** pikud-haoref.com API (or similar public API)
-- **Rate limiting:** Check documentation
-- **Data format:** JSON, likely includes timestamp, region, alert type
-- **Caching:** Store locally, update every 1-2 hours
-- **Privacy:** Never send user location to Red-Alert API; only fetch summary data
+### Red-Alert API Integration (Implemented)
+- **Endpoint:** pikud-haoref.com API with `hours=24` parameter for full history
+- **Data format:** JSON with timestamp, region, alert type
+- **Caching:** Stored locally via AlertCacheService, updated periodically
+- **Privacy:** Never sends user location to the API; only fetches summary data
 
-### Map Integration
-- **Library options:**
-  - Google Maps SDK (requires API key, Play Services)
-  - Open Street Map + Leaflet.js (open source, no key needed)
-  - Mapbox (freemium)
-- **Lightweight approach:** Consider static map image instead of interactive map for faster loading
+### Map Integration (Implemented)
+- **Library:** osmdroid (open source, no API key needed)
+- **Features:** Interactive pan/zoom, alert pins with color coding, mini-map on Status tab
+- **Filtering:** By alert type (missile, aircraft, event) and by region
 
-### Screen Layout
-- **Current:** Single scrollable activity
-- **Proposed:** Fragment-based with tabs/bottom nav
-- **Considerations:**
-  - Maintain state across tabs
-  - Handle accessibility service status changes across tabs
-  - Keep loading times fast
+### Screen Layout (Implemented)
+- **Structure:** Fragment-based with 5 bottom navigation tabs (Status, Settings, History, Map, Alerts)
+- **State management:** Maintained across tab switches
+- **Accessibility:** Service status changes handled across all tabs
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-To contribute to these features:
+To contribute to Phase 3 features:
 
-1. **Alert History:** Start by exploring Red-Alert API documentation
-2. **Map View:** Choose a map library and create a prototype screen
-3. **Layout:** Create a new layout with tab navigation and test on various screen sizes
+1. **Advanced Analytics:** Design summary views and chart components for trend visualization
+2. **Notifications:** Investigate FCM or local notification scheduling that respects Shabbat windows
+3. **Export:** Add file-writing logic with format selection (CSV/JSON)
 
 All contributions welcome! Open an issue to discuss implementation approaches.

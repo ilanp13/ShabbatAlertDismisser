@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:id="@+id/pbMapLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true" />
+
+    <!-- Top-left: Filter panel -->
+    <LinearLayout
+        android:id="@+id/filterPanel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:background="?android:attr/colorBackground"
+        android:alpha="0.95">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Filter by Type:"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <CheckBox
+            android:id="@+id/cbMissiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔴 Missiles"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp"
+            android:checked="true" />
+
+        <CheckBox
+            android:id="@+id/cbAircraft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🟠 Aircraft"
+            android:textSize="11sp"
+            android:checked="true" />
+
+        <CheckBox
+            android:id="@+id/cbEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🟢 Events"
+            android:textSize="11sp"
+            android:checked="true" />
+
+    </LinearLayout>
+
+    <!-- Bottom: Navigation bar for cycling alerts -->
+    <LinearLayout
+        android:id="@+id/navBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:background="?android:attr/colorBackground"
+        android:alpha="0.95">
+
+        <Button
+            android:id="@+id/btnMapPrev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="←"
+            android:textSize="14sp"
+            style="?attr/materialButtonOutlinedStyle"
+            android:minWidth="48dp"
+            android:minHeight="36dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <TextView
+            android:id="@+id/tvMapCounter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:text="No alerts" />
+
+        <Button
+            android:id="@+id/btnMapNext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="→"
+            android:textSize="14sp"
+            style="?attr/materialButtonOutlinedStyle"
+            android:minWidth="48dp"
+            android:minHeight="36dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+    </LinearLayout>
+
+</FrameLayout>

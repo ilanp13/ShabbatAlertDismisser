@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated:** March 4, 2026
+**Last Updated:** March 9, 2026
 
 ## Overview
 
@@ -20,6 +20,13 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 - **Request data:** Your location coordinates and selected minhag preference are sent to Hebcal.
 - **No PII:** No personally identifiable information, device identifiers, or device IDs are sent.
 
+### Red Alert API (Pikud HaOref)
+- **Active alerts:** The app fetches currently active emergency alerts from `www.oref.org.il/WarningMessages/alert/alerts.json`.
+- **Alert history:** The app fetches the 24-hour alert history from `alerts-history.oref.org.il/Shared/Ajax/GetAlarmsHistory.aspx`.
+- **Data sent:** No personal data and no location data are sent — only standard HTTP headers.
+- **Data received:** Alert titles, affected region names, alert types, and timestamps.
+- **Polling:** The app polls every 30 seconds while the Status tab is active. Polling does not occur in the background.
+
 ### App Settings
 - **Stored locally:** Your app preferences (minhag selection, alert dismissal delay, notification settings, etc.) are stored locally on your device only.
 - **Not transmitted:** Settings are never sent to external servers.
@@ -30,6 +37,27 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 - **Data logging:** The app does not log or transmit the content of alerts or any alert metadata to external services.
 - **Persistent storage:** No alert data is recorded or stored.
 
+### Alert Cache
+- **What:** The app caches alert data locally for up to 48 hours to display recent alerts on the map and alerts list.
+- **Data stored:** Alert timestamp, title, type, category, and affected region names.
+- **Storage:** Stored locally in SharedPreferences as JSON.
+- **No transmission:** Cached alert data is never sent to any server or external service.
+- **Cleared on uninstall:** All cached data is deleted when you uninstall the app or clear app data.
+
+### Alert Dismissal History
+- **What is stored:** A local log of dismissed alerts is kept on your device only.
+- **Data captured:** Each entry includes:
+  - Timestamp of dismissal (milliseconds since epoch)
+  - Package name of the alert source (e.g., "com.android.cellbroadcastreceiver")
+  - Button text that was tapped (e.g., "OK", "אישור")
+  - Visible text content from the alert window
+- **Note:** Alert content (region names, alert type) is also stored separately in the alert cache described above.
+- **Storage:** Stored locally in SharedPreferences as a JSON array
+- **Retention:** The app keeps a maximum of 200 recent records; older entries are automatically deleted
+- **No transmission:** This history is never transmitted to any server or external service
+- **Privacy:** You have full visibility and control — you can view the entire history within the app
+- **Clear on uninstall:** All history is deleted when you uninstall the app or clear app data
+
 ## Data Not Collected
 
 - **No analytics:** The app does not use analytics libraries or track app usage.
@@ -37,6 +65,7 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 - **No device identifiers:** No Android ID, AAID, IMEI, or device-specific identifiers are collected or transmitted.
 - **No crash reporting:** The app does not automatically report crashes to external services.
 - **No personal information:** The app does not request or store your name, phone number, email, or other personal identifiers.
+- **No alert data transmitted:** Alert content received from the Red Alert API is cached locally and never transmitted to any external service.
 
 ## Third-Party Services
 
@@ -46,9 +75,18 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 - **Their privacy policy:** https://www.hebcal.com/privacy
 - **Note:** Hebcal is a public service. Review their privacy policy to understand how they handle location data.
 
+### Map Tiles (OpenStreetMap)
+- **Library:** The app uses the osmdroid library to display maps showing alert locations.
+- **Map tiles:** Map tile images are downloaded from OpenStreetMap tile servers as you browse the map.
+- **Data sent:** Standard HTTP requests for map tile images — no personal data is included.
+- **Their privacy policy:** https://wiki.osmfoundation.org/wiki/Privacy_Policy
+- **Local caching:** Map tiles are cached locally on your device to reduce network usage.
+
 ## Data Retention
 
 - **Local storage:** App settings and cached Hebcal data are stored on your device indefinitely until you uninstall the app or manually clear data.
+- **Alert cache:** Cached alert data is automatically expired after 48 hours.
+- **Map tile cache:** Downloaded map tiles are cached locally and managed by the osmdroid library.
 - **Server retention:** Hebcal may retain logs of API requests (including IP addresses and request timestamps) according to their privacy policy.
 - **No long-term storage:** The app does not maintain a persistent database or cloud storage of user data.
 
@@ -56,7 +94,7 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 
 | Permission | Purpose |
 |---|---|
-| `INTERNET` | Fetch Shabbat times from Hebcal API |
+| `INTERNET` | Fetch Shabbat times from Hebcal API, Red Alert data from Pikud HaOref, and map tiles from OpenStreetMap |
 | `ACCESS_FINE_LOCATION` | Calculate local Shabbat times based on your location |
 | `ACCESS_COARSE_LOCATION` | Fallback for location (if fine location is unavailable) |
 | `POST_NOTIFICATIONS` | Display persistent status notification (Android 13+) |
@@ -75,7 +113,7 @@ Shabbat Alert Dismisser ("the App") is designed with privacy as a core principle
 - **Local-first:** Data is stored locally on your device by default.
 - **No account creation:** The app does not require creating an account.
 - **No password storage:** No credentials or sensitive data are stored in the app.
-- **HTTPS:** All network requests to external services (Hebcal) use HTTPS encryption.
+- **HTTPS:** All network requests to external services (Hebcal, Pikud HaOref, OpenStreetMap) use HTTPS encryption.
 
 ## Changes to This Policy
 
@@ -89,4 +127,4 @@ If you have questions or concerns about this privacy policy, you can:
 
 ## Summary
 
-**Shabbat Alert Dismisser respects your privacy.** We don't track you, don't sell data, and only access the minimum information needed to calculate Shabbat times for your location. Your data stays on your device.
+**Shabbat Alert Dismisser respects your privacy.** We don't track you, don't sell data, and only access the minimum information needed to calculate Shabbat times and display emergency alerts for your location. Your data stays on your device.

@@ -1,270 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
     android:background="?android:colorBackground">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="start">
+        android:fitsSystemWindows="true">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Mode Selection -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/mode_label"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <RadioGroup
-            android:id="@+id/radioMode"
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp">
+            app:tabMode="fixed" />
 
-            <RadioButton
-                android:id="@+id/radioShabbatOnly"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_shabbat_only"
-                android:minHeight="48dp" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <RadioButton
-                android:id="@+id/radioShabbatAndHolidays"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_shabbat_holidays"
-                android:minHeight="48dp" />
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-            <RadioButton
-                android:id="@+id/radioAlways"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_always"
-                android:minHeight="48dp" />
-
-            <RadioButton
-                android:id="@+id/radioDisabled"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_disabled"
-                android:minHeight="48dp" />
-
-        </RadioGroup>
-
-        <!-- Accessibility -->
-        <Button
-            android:id="@+id/btnAccessibility"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/open_accessibility"
-            android:layout_marginBottom="4dp" />
-
-        <Button
-            android:id="@+id/btnBatteryOpt"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/battery_opt_hint"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Location -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/location_title"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/tvLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnUpdateLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/update_location"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Minhag -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/minhag_label"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <Spinner
-            android:id="@+id/spinnerMinhag"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
-
-        <!-- End of Shabbat -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/end_shabbat_label"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
-
-        <RadioGroup
-            android:id="@+id/radioEndShabbat"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="4dp">
-
-            <RadioButton
-                android:id="@+id/radioGra"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/end_shabbat_gra"
-                android:minHeight="48dp"
-                android:layout_marginEnd="16dp" />
-
-            <RadioButton
-                android:id="@+id/radioRabenTam"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/end_shabbat_rt"
-                android:minHeight="48dp" />
-
-        </RadioGroup>
-
-        <!-- Sync status -->
-        <TextView
-            android:id="@+id/tvSyncStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Shabbat Times -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/shabbat_times_title"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/tvShabbatTimes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Delay -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/delay_label"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
-
-        <SeekBar
-            android:id="@+id/seekDelay"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="55"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/tvDelay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp" />
-
-        <!-- Battery info -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/battery_info"
-            android:textSize="12sp"
-            android:alpha="0.6"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- Persistent notification toggle -->
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/switchNotification"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/notif_switch_label" />
-
-        <!-- Keep screen on -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/screen_on_label"
-            android:textSize="14sp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp" />
-
-        <RadioGroup
-            android:id="@+id/radioScreenOn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp">
-
-            <RadioButton
-                android:id="@+id/radioScreenOnOff"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/screen_on_off"
-                android:minHeight="48dp" />
-
-            <RadioButton
-                android:id="@+id/radioScreenOnShabbat"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/screen_on_shabbat"
-                android:minHeight="48dp" />
-
-            <RadioButton
-                android:id="@+id/radioScreenOnAlways"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/screen_on_always"
-                android:minHeight="48dp" />
-
-        </RadioGroup>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/screen_on_warning"
-            android:textSize="12sp"
-            android:alpha="0.6"
-            android:layout_marginBottom="8dp" />
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

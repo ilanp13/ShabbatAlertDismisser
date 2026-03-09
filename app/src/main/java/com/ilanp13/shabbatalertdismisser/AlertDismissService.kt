@@ -16,6 +16,8 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -175,12 +177,36 @@ class AlertDismissService : AccessibilityService() {
         }
 
         val mode      = prefs.getString("mode", "shabbat_only")
-        val candleMs  = prefs.getLong("hebcal_candle_ms",   0)
-        val havMs     = prefs.getLong("hebcal_havdalah_ms", 0)
+        var candleMs  = prefs.getLong("hebcal_candle_ms",   0)
+        var havMs     = prefs.getLong("hebcal_havdalah_ms", 0)
         val now       = System.currentTimeMillis()
         val fmt       = SimpleDateFormat("EEE HH:mm", Locale.getDefault())
 
         fun fmtHav(ms: Long) = fmt.format(Date((ms + 30_000L) / 60_000L * 60_000L))
+
+        // Detect stale cache: if now > havMs (past Shabbat) or cache is older than 7 days
+        val cacheTimestampMs = prefs.getLong("hebcal_cache_timestamp_ms", 0)
+        val isCacheStale = havMs > 0 && now > havMs ||
+                          (cacheTimestampMs > 0 && now - cacheTimestampMs > 7 * 86_400_000L)
+
+        if (isCacheStale) {
+            // Refetch from Hebcal to get next Shabbat's times
+            val lat = prefs.getFloat("latitude", 31.7683f).toDouble()
+            val lon = prefs.getFloat("longitude", 35.2137f).toDouble()
+            val candleMins = prefs.getInt("candle_lighting_minutes", 18)
+            val havdalahMins = prefs.getInt("havdalah_minutes", 40)
+
+            val window = HebcalService.fetch(lat, lon, candleMins, havdalahMins)
+            if (window != null) {
+                candleMs = window.candleMs
+                havMs = window.havdalahMs
+                prefs.edit()
+                    .putLong("hebcal_candle_ms", candleMs)
+                    .putLong("hebcal_havdalah_ms", havMs)
+                    .putLong("hebcal_cache_timestamp_ms", now)
+                    .apply()
+            }
+        }
 
         val body = when (mode) {
             "disabled" -> getString(R.string.notif_body_disabled)
@@ -285,12 +311,16 @@ class AlertDismissService : AccessibilityService() {
             return
         }
 
+        val packageName = rootNode.packageName?.toString() ?: "unknown"
+        val windowText = captureWindowText(rootNode)
+
         try {
             for (buttonText in DISMISS_BUTTON_TEXTS) {
                 val nodes = rootNode.findAccessibilityNodeInfosByText(buttonText)
                 for (node in nodes) {
                     if (tryClick(node)) {
                         Log.d(TAG, "Dismissed via button: $buttonText")
+                        saveHistoryRecord(packageName, buttonText, windowText)
                         return
                     }
                 }
@@ -298,14 +328,56 @@ class AlertDismissService : AccessibilityService() {
 
             if (findAndClickButton(rootNode)) {
                 Log.d(TAG, "Dismissed via fallback button search")
+                saveHistoryRecord(packageName, "fallback", windowText)
                 return
             }
 
             Log.d(TAG, "No button found, trying BACK action")
             performGlobalAction(GLOBAL_ACTION_BACK)
+            saveHistoryRecord(packageName, "back", windowText)
 
         } finally {
             rootNode.recycle()
+        }
+    }
+
+    private fun captureWindowText(node: AccessibilityNodeInfo): String {
+        val texts = mutableListOf<String>()
+        collectText(node, texts)
+        return texts.joinToString(" ").trim()
+    }
+
+    private fun collectText(node: AccessibilityNodeInfo, texts: MutableList<String>) {
+        node.text?.let { if (it.isNotBlank()) texts.add(it.toString()) }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectText(child, texts)
+        }
+    }
+
+    private fun saveHistoryRecord(packageName: String, buttonText: String, windowText: String) {
+        try {
+            val historyJson = prefs.getString("dismiss_history", "[]") ?: "[]"
+            val array = JSONArray(historyJson)
+
+            val record = JSONObject().apply {
+                put("timestampMs", System.currentTimeMillis())
+                put("packageName", packageName)
+                put("buttonText", buttonText)
+                put("windowText", windowText)
+            }
+
+            array.put(record)
+
+            // Keep only last 200 records
+            while (array.length() > 200) {
+                array.remove(0)
+            }
+
+            prefs.edit().putString("dismiss_history", array.toString()).apply()
+            Log.d(TAG, "History record saved, total: ${array.length()}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to save history record: ${e.message}")
         }
     }
 
