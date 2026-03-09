@@ -292,7 +292,7 @@ object RedAlertService {
             t.contains("רקטות") || t.contains("טילים") -> 1  // missiles
             t.contains("כלי טיס") || t.contains("חדירת") -> 2  // aircraft
             t.contains("הסתיים") || t.contains("all clear") -> 13  // event ended
-            t.contains("אירוע") -> 12  // general event/warning
+            t.contains("אירוע") || t.contains("בדקות הקרובות") || t.contains("התרעות") -> 12  // general event/warning
             else -> 0
         }
     }

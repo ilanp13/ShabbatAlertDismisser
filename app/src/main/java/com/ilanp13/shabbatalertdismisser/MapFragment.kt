@@ -206,7 +206,7 @@ class MapFragment : Fragment() {
         } else if (historyIndex in alertsByMinute.indices) {
             val group = alertsByMinute[historyIndex]
             val header = AlertCacheService.formatGroupHeader(group)
-            val countStr = if (group.size > 1) " [${group.size}]" else ""
+            val countStr = AlertCacheService.formatGroupCount(group)
             tvMapCounter.text = "$header$countStr (${displayIndex + 1}/$totalGroups)"
 
             val selectedRegions = getSelectedRegions(prefs)
@@ -265,8 +265,11 @@ class MapFragment : Fragment() {
                 paint.strokeWidth = 3f
                 canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 8f, paint)
 
-                // Draw alert markers
-                for ((_, locationMarkers) in byLocation) {
+                // Draw alert markers — non-selected first, selected on top
+                val sortedLocations = byLocation.entries.sortedBy { entry ->
+                    entry.value.any { it.isSelectedRegion }
+                }
+                for ((_, locationMarkers) in sortedLocations) {
                     if (locationMarkers.isEmpty()) continue
                     val screenPos = pj.toPixels(locationMarkers[0].point, null)
                     val bx = screenPos.x.toFloat()

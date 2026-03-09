@@ -171,6 +171,17 @@ object AlertCacheService {
     }
 
     /**
+     * Format a count string that includes distinct alert titles.
+     * e.g. "[2 alerts: ירי רקטות וטילים, חדירת כלי טיס]"
+     * Returns empty string for single-alert groups.
+     */
+    fun formatGroupCount(alerts: List<CachedAlert>): String {
+        if (alerts.size <= 1) return ""
+        val titles = alerts.map { it.title }.distinct()
+        return " [${alerts.size} alerts: ${titles.joinToString(", ")}]"
+    }
+
+    /**
      * Get all cached alerts (up to 48h to cover history refetches).
      */
     fun getLast24Hours(context: Context): List<CachedAlert> {

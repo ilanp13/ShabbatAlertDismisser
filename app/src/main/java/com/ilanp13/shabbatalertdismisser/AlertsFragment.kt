@@ -200,6 +200,36 @@ class AlertsFragment : Fragment() {
         }
     }
 
+    private fun getSelectedRegions(): Set<String> {
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val json = prefs.getString("alert_regions_selected", "[]") ?: "[]"
+        return try {
+            val array = org.json.JSONArray(json)
+            val set = mutableSetOf<String>()
+            for (i in 0 until array.length()) set.add(array.getString(i))
+            set
+        } catch (_: Exception) { emptySet() }
+    }
+
+    private fun formatRegionsHighlighted(regions: List<String>): CharSequence {
+        val selectedRegions = getSelectedRegions()
+        val sorted = regions.sortedByDescending { it in selectedRegions }
+        val builder = android.text.SpannableStringBuilder()
+        for ((i, region) in sorted.withIndex()) {
+            if (i > 0) builder.append(", ")
+            val start = builder.length
+            builder.append(region)
+            if (region in selectedRegions) {
+                builder.setSpan(
+                    android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                    start, builder.length,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+        return builder
+    }
+
     // Adapter for displaying alerts
     inner class AlertsAdapter : androidx.recyclerview.widget.ListAdapter<AlertCacheService.CachedAlert, AlertsAdapter.ViewHolder>(
         object : androidx.recyclerview.widget.DiffUtil.ItemCallback<AlertCacheService.CachedAlert>() {
@@ -220,7 +250,7 @@ class AlertsFragment : Fragment() {
                 val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 tvTime.text = fmt.format(Date(alert.timestampMs))
                 tvTitle.text = alert.title
-                tvRegions.text = alert.regions.joinToString(", ")
+                tvRegions.text = formatRegionsHighlighted(alert.regions)
                 tvDescription.text = alert.description
             }
         }

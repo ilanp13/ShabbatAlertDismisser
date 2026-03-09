@@ -408,7 +408,7 @@ class StatusFragment : Fragment() {
                         // Active alerts found - stop cycling and show them
                         stopAutoCycle()
                         tvActiveAlerts.text = displayAlert.title
-                        tvActiveAlertsRegions.text = displayAlert.regions.joinToString(", ")
+                        tvActiveAlertsRegions.text = formatRegionsHighlighted(displayAlert.regions)
                         activeAlertsScrollView.visibility = View.VISIBLE
                         updateMiniMap(displayAlert)
                         miniMapContainer.visibility = View.VISIBLE
@@ -429,6 +429,8 @@ class StatusFragment : Fragment() {
                         // No active alerts (API working, but no current alerts)
                         stopAutoCycle()
                         loadCachedAlerts()
+                        feedRecentCachedAlertsToStateMachine()
+                        updateThreatBanner()
                         miniMapContainer.visibility = View.VISIBLE  // Always show map
 
                         if (cachedAlertsList.isNotEmpty()) {
@@ -491,6 +493,8 @@ class StatusFragment : Fragment() {
                 updateAlertTimestamp()
 
                 loadCachedAlerts()
+                feedRecentCachedAlertsToStateMachine()
+                updateThreatBanner()
 
                 val count = historyAlerts.size
                 android.widget.Toast.makeText(
@@ -528,6 +532,7 @@ class StatusFragment : Fragment() {
 
         val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
         val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+        val selectedRegions = getSelectedRegions().toSet()
 
         val overlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
@@ -545,19 +550,33 @@ class StatusFragment : Fragment() {
                 paint.strokeWidth = 2f
                 canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
 
-                // Draw alert markers
+                // Draw alert markers — non-selected first, selected on top
                 val color = getAlertTypeColor(alert.type)
-                for (region in alert.regions) {
+                val sortedRegions = alert.regions.sortedBy { it in selectedRegions }
+                for (region in sortedRegions) {
                     val coords = OrefRegionCoords.coords[region] ?: continue
                     val screenPos = pj.toPixels(GeoPoint(coords.first, coords.second), null)
+                    val isSelected = region in selectedRegions
+                    val radius = if (isSelected) 14f else 12f
+
                     paint.color = color
                     paint.style = android.graphics.Paint.Style.FILL
                     paint.alpha = 255
-                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), radius, paint)
+
+                    if (isSelected) {
+                        // Yellow highlight border for selected regions
+                        paint.color = android.graphics.Color.YELLOW
+                        paint.style = android.graphics.Paint.Style.STROKE
+                        paint.strokeWidth = 3f
+                        paint.alpha = 255
+                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), radius + 2f, paint)
+                    }
+
                     paint.color = android.graphics.Color.WHITE
                     paint.style = android.graphics.Paint.Style.STROKE
                     paint.strokeWidth = 2f
-                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 12f, paint)
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), radius, paint)
                 }
 
                 // Header: "NOW" in red + title
@@ -581,6 +600,7 @@ class StatusFragment : Fragment() {
 
         val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
         val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+        val selectedRegions = getSelectedRegions().toSet()
 
         val overlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
@@ -599,17 +619,30 @@ class StatusFragment : Fragment() {
                 canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
 
                 val color = getAlertTypeColor(alert.type)
-                for (region in alert.regions) {
+                val sortedRegions = alert.regions.sortedBy { it in selectedRegions }
+                for (region in sortedRegions) {
                     val coords = OrefRegionCoords.coords[region] ?: continue
                     val screenPos = pj.toPixels(GeoPoint(coords.first, coords.second), null)
+                    val isSelected = region in selectedRegions
+                    val radius = if (isSelected) 12f else 10f
+
                     paint.color = color
                     paint.style = android.graphics.Paint.Style.FILL
-                    paint.alpha = 200
-                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
+                    paint.alpha = if (isSelected) 255 else 200
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), radius, paint)
+
+                    if (isSelected) {
+                        paint.color = android.graphics.Color.YELLOW
+                        paint.style = android.graphics.Paint.Style.STROKE
+                        paint.strokeWidth = 3f
+                        paint.alpha = 255
+                        canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), radius + 2f, paint)
+                    }
+
                     paint.color = android.graphics.Color.WHITE
                     paint.style = android.graphics.Paint.Style.STROKE
                     paint.strokeWidth = 2f
-                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), 10f, paint)
+                    canvas.drawCircle(screenPos.x.toFloat(), screenPos.y.toFloat(), radius, paint)
                 }
 
                 // Header
@@ -715,12 +748,12 @@ class StatusFragment : Fragment() {
 
         val header = AlertCacheService.formatGroupHeader(group)
         val posStr = "${groupIndex + 1}/${alertsByMinute.size}"
-        val countStr = if (group.size > 1) " [${group.size} alerts]" else ""
+        val countStr = AlertCacheService.formatGroupCount(group)
         tvActiveAlerts.text = "$header$countStr ($posStr)${if (group.size == 1) " ${group[0].title}" else ""}"
 
-        // Show all regions from all alerts in this group
+        // Show all regions from all alerts in this group (selected regions bold + first)
         val allRegions = group.flatMap { it.regions }.distinct()
-        tvActiveAlertsRegions.text = allRegions.joinToString(", ")
+        tvActiveAlertsRegions.text = formatRegionsHighlighted(allRegions)
         activeAlertsScrollView.visibility = View.VISIBLE
 
         // Update mini map with all alerts from this minute
@@ -732,6 +765,7 @@ class StatusFragment : Fragment() {
 
         val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
         val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+        val selectedRegions = getSelectedRegions().toSet()
 
         val overlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun draw(canvas: android.graphics.Canvas?, mapView: MapView?, shadow: Boolean) {
@@ -749,31 +783,45 @@ class StatusFragment : Fragment() {
                 paint.strokeWidth = 2f
                 canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 6f, paint)
 
-                // Group alerts by region for stacking
+                // Group alerts by region for stacking — draw selected regions last (on top)
                 val alertsByRegion = alerts.flatMap { alert ->
                     alert.regions.map { region -> region to alert }
                 }.groupBy { it.first }
 
-                for ((region, regionAlerts) in alertsByRegion) {
+                val sortedRegionKeys = alertsByRegion.keys.sortedBy { it in selectedRegions }
+
+                for (region in sortedRegionKeys) {
+                    val regionAlerts = alertsByRegion[region] ?: continue
                     val coords = OrefRegionCoords.coords[region] ?: continue
                     val screenPos = pj.toPixels(GeoPoint(coords.first, coords.second), null)
                     val bx = screenPos.x.toFloat()
                     val by = screenPos.y.toFloat()
+                    val isSelected = region in selectedRegions
 
                     for ((index, pair) in regionAlerts.withIndex()) {
                         val alert = pair.second
                         val ox = (index % 3) * 6f - 6f
                         val oy = (index / 3) * 6f
                         val color = getAlertTypeColor(alert.type)
+                        val radius = if (isSelected) 12f else 10f
 
                         paint.color = color
                         paint.style = android.graphics.Paint.Style.FILL
-                        paint.alpha = 200
-                        canvas.drawCircle(bx + ox, by + oy, 10f, paint)
+                        paint.alpha = if (isSelected) 255 else 200
+                        canvas.drawCircle(bx + ox, by + oy, radius, paint)
+
+                        if (isSelected) {
+                            paint.color = android.graphics.Color.YELLOW
+                            paint.style = android.graphics.Paint.Style.STROKE
+                            paint.strokeWidth = 3f
+                            paint.alpha = 255
+                            canvas.drawCircle(bx + ox, by + oy, radius + 2f, paint)
+                        }
+
                         paint.color = android.graphics.Color.WHITE
                         paint.style = android.graphics.Paint.Style.STROKE
                         paint.strokeWidth = 2f
-                        canvas.drawCircle(bx + ox, by + oy, 10f, paint)
+                        canvas.drawCircle(bx + ox, by + oy, radius, paint)
                     }
 
                     if (regionAlerts.size > 1) {
@@ -787,7 +835,7 @@ class StatusFragment : Fragment() {
                 // Header
                 if (alerts.isNotEmpty()) {
                     val header = AlertCacheService.formatGroupHeader(alerts)
-                    val countStr = if (alerts.size > 1) " (${alerts.size} alerts)" else ""
+                    val countStr = AlertCacheService.formatGroupCount(alerts)
                     paint.color = android.graphics.Color.parseColor("#CC333333")
                     paint.style = android.graphics.Paint.Style.FILL
                     canvas.drawRect(0f, 0f, canvas.width.toFloat(), 40f, paint)
@@ -841,6 +889,68 @@ class StatusFragment : Fragment() {
     private fun stopAutoCycle() {
         autoCycleRunnable?.let { handler.removeCallbacks(it) }
         autoCycleRunnable = null
+    }
+
+    /**
+     * Check recent cached alerts for matches with selected regions and feed them
+     * to the state machine. This ensures the threat banner shows even if the
+     * 30-second polling missed the brief live alert window.
+     * Uses UNFILTERED cache so category 13 (event ended) isn't excluded by type filter.
+     */
+    private fun feedRecentCachedAlertsToStateMachine() {
+        val ctx = context ?: return
+        val selectedRegions = getSelectedRegions().toSet()
+        if (selectedRegions.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val recentThresholdMs = 60 * 60 * 1000L // 1 hour
+
+        // Use unfiltered cache so cat 13 "event over" still triggers CLEAR
+        val allCached = AlertCacheService.getLast24Hours(ctx)
+
+        // Feed ALL recent matching alerts in chronological order so the full
+        // sequence (warning → alarm → event_over) replays correctly and a
+        // category 13 "event over" properly clears the state.
+        val recentMatching = allCached
+            .filter { alert ->
+                (now - alert.timestampMs) < recentThresholdMs &&
+                    alert.regions.any { it in selectedRegions }
+            }
+            .sortedBy { it.timestampMs }
+
+        if (recentMatching.isEmpty()) return
+
+        for (cached in recentMatching) {
+            val activeAlert = RedAlertService.ActiveAlert(
+                title = cached.title,
+                regions = cached.regions,
+                description = cached.description,
+                type = cached.type,
+                category = cached.category,
+                timestampMs = cached.timestampMs
+            )
+            AlertStateMachine.processAlert(ctx, activeAlert, selectedRegions)
+        }
+    }
+
+    /** Format regions with selected ones bold and listed first */
+    private fun formatRegionsHighlighted(regions: List<String>): CharSequence {
+        val selectedRegions = getSelectedRegions().toSet()
+        val sorted = regions.sortedByDescending { it in selectedRegions }
+        val builder = android.text.SpannableStringBuilder()
+        for ((i, region) in sorted.withIndex()) {
+            if (i > 0) builder.append(", ")
+            val start = builder.length
+            builder.append(region)
+            if (region in selectedRegions) {
+                builder.setSpan(
+                    android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                    start, builder.length,
+                    android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+        return builder
     }
 
     private fun loadCachedAlerts() {

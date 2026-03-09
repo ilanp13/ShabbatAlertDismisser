@@ -37,16 +37,26 @@ object AlertStateMachine {
         alert: RedAlertService.ActiveAlert,
         selectedRegions: Set<String>
     ): ThreatState {
-        // Only process alerts that affect selected regions
-        val matchingRegions = alert.regions.filter { it in selectedRegions }
-        if (matchingRegions.isEmpty()) return getState(context)
-
         val now = System.currentTimeMillis()
         val current = getState(context)
         val category = alert.category
 
+        // Event ended (cat 13): clear if we're in an elevated state, regardless
+        // of region matching. The "event over" broadcast may cover different
+        // regions than the original missiles/aircraft alerts.
+        if (category == 13 && current.level != ThreatLevel.CLEAR) {
+            Log.d(TAG, "Event ended (cat 13) while in ${current.level} -> CLEAR")
+            val cleared = ThreatState(ThreatLevel.CLEAR, "", emptyList(), now, now)
+            saveState(context, cleared)
+            return cleared
+        }
+
+        // For all other categories, only process alerts that affect selected regions
+        val matchingRegions = alert.regions.filter { it in selectedRegions }
+        if (matchingRegions.isEmpty()) return current
+
         val newState = when {
-            // Event ended -> CLEAR
+            // Event ended -> CLEAR (also handles cat 13 with matching regions when already CLEAR)
             category == 13 -> {
                 Log.d(TAG, "Event ended (cat 13) -> CLEAR")
                 ThreatState(ThreatLevel.CLEAR, "", emptyList(), now, now)
