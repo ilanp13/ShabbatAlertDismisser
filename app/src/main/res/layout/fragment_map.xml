@@ -20,7 +20,7 @@
         android:id="@+id/filterPanel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
+        android:layout_gravity="top|left"
         android:orientation="vertical"
         android:padding="8dp"
         android:background="?android:attr/colorBackground"
@@ -29,7 +29,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Filter by Type:"
+            android:text="@string/filter_by_type_label"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -37,7 +37,7 @@
             android:id="@+id/cbMissiles"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔴 Missiles"
+            android:text="@string/filter_missiles"
             android:textSize="11sp"
             android:layout_marginTop="4dp"
             android:checked="true" />
@@ -46,7 +46,7 @@
             android:id="@+id/cbAircraft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🟠 Aircraft"
+            android:text="@string/filter_aircraft"
             android:textSize="11sp"
             android:checked="true" />
 
@@ -54,7 +54,22 @@
             android:id="@+id/cbEvent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🟢 Events"
+            android:text="@string/filter_events"
+            android:textSize="11sp"
+            android:checked="true" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#40808080"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp" />
+
+        <CheckBox
+            android:id="@+id/cbShowOtherRegions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/show_other_regions"
             android:textSize="11sp"
             android:checked="true" />
 
@@ -92,7 +107,7 @@
             android:gravity="center"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:text="No alerts" />
+            android:text="@string/map_no_alerts" />
 
         <Button
             android:id="@+id/btnMapNext"

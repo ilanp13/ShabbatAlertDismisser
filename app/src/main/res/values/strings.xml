@@ -108,6 +108,8 @@
     <string name="region_display_mode_label">Show alerts from</string>
     <string name="region_display_all">All regions (selected highlighted)</string>
     <string name="region_display_selected_only">Selected regions only</string>
+    <string name="show_other_regions">Show non-selected regions</string>
+    <string name="filter_note_all_tabs_regions">💡 Filters (from Map tab) apply to all alerts shown here</string>
     <string name="shabbat_banner">🕯️ Shabbat Shalom 🕯️\nAuto-dismissing alerts · Ends %s</string>
     <string name="shabbat_banner_always">🕯️ Shabbat Mode Active 🕯️\nAuto-dismissing alerts</string>
     <string name="threat_warning">⚠️ WARNING — Potential threat</string>
@@ -119,4 +121,18 @@
     <string name="threat_dismiss_message">Are you sure? Only dismiss if the event has ended.</string>
     <string name="threat_dismiss_confirm">Dismiss</string>
     <string name="threat_dismiss_cancel">Cancel</string>
+    <string name="filter_by_type_label">Filter by Type:</string>
+    <string name="filter_missiles">🔴 Missiles</string>
+    <string name="filter_aircraft">🟠 Aircraft</string>
+    <string name="filter_events">🟢 Events</string>
+    <string name="map_no_alerts">No alerts</string>
+    <string name="map_now_counter">NOW - %1$s (%2$d/%3$d)</string>
+    <string name="map_now_header">NOW  %s</string>
+    <string name="history_prefix">History</string>
+    <string name="alerts_count_format"> [%1$d alerts: %2$s]</string>
+    <string name="fetched_alerts_format">Fetched %d alerts</string>
+    <string name="no_alerts_last_24h">No alerts in last 24h</string>
+    <string name="time_ago_just_now">just now</string>
+    <string name="time_ago_minutes">%d min ago</string>
+    <string name="time_ago_hours">%d hr ago</string>
 </resources>

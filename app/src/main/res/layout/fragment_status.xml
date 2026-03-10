@@ -250,6 +250,20 @@
                     android:layout_marginEnd="8dp" />
 
                 <Button
+                    android:id="@+id/btnPausePlay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⏸"
+                    android:textSize="12sp"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:minWidth="0dp"
+                    android:minHeight="32dp"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone" />
+
+                <Button
                     android:id="@+id/btnNextAlert"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -285,7 +299,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/filter_note_all_tabs"
+                        android:text="@string/filter_note_all_tabs_regions"
                         android:textSize="9sp"
                         android:alpha="0.6"
                         android:layout_marginBottom="8dp" />

@@ -150,10 +150,10 @@ object AlertCacheService {
     }
 
     /**
-     * Build a display string for a group of alerts showing date + time range.
-     * Examples: "09.03 12:30", "09.03 12:30-12:47", "History 08.03 14:00-14:30"
+     * Build a display string for a group of alerts showing date + time range + time ago.
+     * Examples: "היסטוריה 09.03 12:30 (35 דק׳ לפני)", "09.03 12:30-12:47 (2 שע׳ לפני)"
      */
-    fun formatGroupHeader(alerts: List<CachedAlert>, includeHistoryLabel: Boolean = true): String {
+    fun formatGroupHeader(context: Context, alerts: List<CachedAlert>): String {
         if (alerts.isEmpty()) return ""
         val dateFmt = SimpleDateFormat("dd.MM", Locale.getDefault())
         val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -166,19 +166,32 @@ object AlertCacheService {
         val toTime = timeFmt.format(Date(latest))
 
         val timeStr = if (fromTime == toTime) fromTime else "$fromTime-$toTime"
-        val prefix = if (includeHistoryLabel) "History " else ""
-        return "$prefix$dateStr $timeStr"
+        val prefix = context.getString(R.string.history_prefix)
+        val ago = formatTimeAgo(context, earliest)
+        return "$prefix $dateStr $timeStr ($ago)"
     }
 
     /**
      * Format a count string that includes distinct alert titles.
-     * e.g. "[2 alerts: ירי רקטות וטילים, חדירת כלי טיס]"
      * Returns empty string for single-alert groups.
      */
-    fun formatGroupCount(alerts: List<CachedAlert>): String {
+    fun formatGroupCount(context: Context, alerts: List<CachedAlert>): String {
         if (alerts.size <= 1) return ""
         val titles = alerts.map { it.title }.distinct()
-        return " [${alerts.size} alerts: ${titles.joinToString(", ")}]"
+        return context.getString(R.string.alerts_count_format, alerts.size, titles.joinToString(", "))
+    }
+
+    /**
+     * Format a relative time string like "5 min ago" or "2 hr ago".
+     */
+    fun formatTimeAgo(context: Context, timestampMs: Long): String {
+        val diffMs = System.currentTimeMillis() - timestampMs
+        val diffMin = (diffMs / 60_000).toInt()
+        return when {
+            diffMin < 1 -> context.getString(R.string.time_ago_just_now)
+            diffMin < 60 -> context.getString(R.string.time_ago_minutes, diffMin)
+            else -> context.getString(R.string.time_ago_hours, diffMin / 60)
+        }
     }
 
     /**

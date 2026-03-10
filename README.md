@@ -27,12 +27,15 @@ Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates 
 - **5-tab interface** — Status, Settings, History, Map, and Alerts
 - **Live alert feed** from the Pikud HaOref (Home Front Command) API, polling every 30 seconds when the Status tab is active
 - **Interactive map view** using osmdroid — shows active and historical alert locations as markers on an OpenStreetMap base layer
-- **24-hour alert history cache** with tiered time grouping (last 5 min, 15 min, 30 min, 1 hr, 6 hr, 24 hr)
-- **Region filtering** — select specific regions to monitor; markers for selected regions are highlighted on the map
-- **Alert type filters** — filter by alert category (missiles, hostile aircraft intrusion, non-conventional events)
-- **Alert state machine** — persistent WARNING / ALARM / CLEAR threat banners for your selected regions, displayed on the Status tab
+- **24-hour alert history cache** with tiered time grouping (1 min recent, 10 min, 30 min buckets for older alerts)
+- **Region filtering** — select specific regions to monitor; markers for selected regions are highlighted with bold text and yellow borders on the map
+- **Within-alert region filtering** — when "show non-selected regions" is off, only your selected regions are shown even within multi-region alerts
+- **Alert type filters** — filter by alert category (missiles, hostile aircraft intrusion, events) via checkboxes on the Map tab
+- **Alert state machine** — persistent WARNING / ALARM / CLEAR threat banners for your selected regions, with reliable clearing after event_over alerts
 - **Shabbat mode banner** — visual indicator on the Status tab when Shabbat auto-dismiss is active
-- **Alert history browser** — cycle through tiered history groups with prev/next navigation in the Alerts tab
+- **Alert history browser** — cycle through tiered history groups with prev/next navigation and pause/play control
+- **Relative time display** — alert history headers show "X min ago" / "X hr ago" alongside timestamps
+- **Full localization** — complete Hebrew and English UI with no English leakage in Hebrew mode
 
 ## Screenshots
 

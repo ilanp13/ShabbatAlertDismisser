@@ -30,6 +30,7 @@ class MapFragment : Fragment() {
     private lateinit var cbMissiles: CheckBox
     private lateinit var cbAircraft: CheckBox
     private lateinit var cbEvent: CheckBox
+    private lateinit var cbShowOtherRegions: CheckBox
     private lateinit var btnMapPrev: Button
     private lateinit var btnMapNext: Button
     private lateinit var tvMapCounter: TextView
@@ -54,6 +55,7 @@ class MapFragment : Fragment() {
         cbMissiles = view.findViewById(R.id.cbMissiles)
         cbAircraft = view.findViewById(R.id.cbAircraft)
         cbEvent = view.findViewById(R.id.cbEvent)
+        cbShowOtherRegions = view.findViewById(R.id.cbShowOtherRegions)
         btnMapPrev = view.findViewById(R.id.btnMapPrev)
         btnMapNext = view.findViewById(R.id.btnMapNext)
         tvMapCounter = view.findViewById(R.id.tvMapCounter)
@@ -79,14 +81,20 @@ class MapFragment : Fragment() {
     }
 
     private fun setupFilterListeners() {
-        val listener = View.OnClickListener {
+        val typeListener = View.OnClickListener {
             updateSelectedTypes()
             saveFilterPreferences()
             loadAlerts()
         }
-        cbMissiles.setOnClickListener(listener)
-        cbAircraft.setOnClickListener(listener)
-        cbEvent.setOnClickListener(listener)
+        cbMissiles.setOnClickListener(typeListener)
+        cbAircraft.setOnClickListener(typeListener)
+        cbEvent.setOnClickListener(typeListener)
+
+        cbShowOtherRegions.setOnClickListener {
+            val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            prefs.edit().putBoolean("show_other_regions", cbShowOtherRegions.isChecked).apply()
+            loadAlerts()
+        }
     }
 
     private fun updateSelectedTypes() {
@@ -102,6 +110,17 @@ class MapFragment : Fragment() {
         cbMissiles.isChecked = selectedTypes.contains("missile")
         cbAircraft.isChecked = selectedTypes.contains("aircraft")
         cbEvent.isChecked = selectedTypes.contains("event")
+
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        // Migrate old setting
+        if (prefs.contains("region_display_mode")) {
+            val oldMode = prefs.getString("region_display_mode", "all")
+            prefs.edit()
+                .putBoolean("show_other_regions", oldMode == "all")
+                .remove("region_display_mode")
+                .apply()
+        }
+        cbShowOtherRegions.isChecked = prefs.getBoolean("show_other_regions", true)
     }
 
     private fun saveFilterPreferences() {
@@ -144,8 +163,16 @@ class MapFragment : Fragment() {
                     is RedAlertService.FetchResult.Unavailable -> null
                 }
 
-                val historyAlerts = AlertCacheService.getLast24Hours(requireContext())
-                    .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
+                val ctx = requireContext()
+                val mapPrefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+                val showOther = mapPrefs.getBoolean("show_other_regions", true)
+                val selRegions = getSelectedRegions(mapPrefs)
+
+                val historyAlerts = AlertCacheService.getLast24Hours(ctx)
+                    .filter { AlertTypeFilter.shouldShow(ctx, it.type) }
+                    .filter { alert ->
+                        showOther || selRegions.isEmpty() || alert.regions.any { it in selRegions }
+                    }
                     .sortedByDescending { it.timestampMs }
 
                 // Tiered grouping: 1min (recent) → 10min → 30min (old)
@@ -181,10 +208,14 @@ class MapFragment : Fragment() {
         val totalGroups = alertsByMinute.size + (if (hasActive) 1 else 0)
 
         if (totalGroups == 0) {
-            tvMapCounter.text = "No alerts"
+            tvMapCounter.text = getString(R.string.map_no_alerts)
             drawMarkersOnMap(emptyList(), false, null)
             return
         }
+
+        val ctx = requireContext()
+        val selectedRegions = getSelectedRegions(prefs)
+        val showOther = prefs.getBoolean("show_other_regions", true)
 
         // Index 0 = active alert (if exists), then history groups
         val displayIndex = currentGroupIndex % totalGroups
@@ -193,26 +224,27 @@ class MapFragment : Fragment() {
 
         if (isShowingActive) {
             val alert = activeAlert!!
-            tvMapCounter.text = "NOW - ${alert.title} (1/$totalGroups)"
+            tvMapCounter.text = getString(R.string.map_now_counter, alert.title, 1, totalGroups)
 
-            // Convert active alert regions to display data
             val color = getAlertTypeColor(alert.type)
-            val selectedRegions = getSelectedRegions(prefs)
-            val markers = alert.regions.mapNotNull { region ->
+            val regions = if (!showOther && selectedRegions.isNotEmpty())
+                alert.regions.filter { it in selectedRegions } else alert.regions
+            val markers = regions.mapNotNull { region ->
                 val coords = OrefRegionCoords.coords[region] ?: return@mapNotNull null
                 MarkerData(GeoPoint(coords.first, coords.second), region, color, 1.0f, selectedRegions.contains(region))
             }
-            drawMarkersOnMap(markers, true, "NOW  ${alert.title}")
+            drawMarkersOnMap(markers, true, getString(R.string.map_now_header, alert.title))
         } else if (historyIndex in alertsByMinute.indices) {
             val group = alertsByMinute[historyIndex]
-            val header = AlertCacheService.formatGroupHeader(group)
-            val countStr = AlertCacheService.formatGroupCount(group)
+            val header = AlertCacheService.formatGroupHeader(ctx, group)
+            val countStr = AlertCacheService.formatGroupCount(ctx, group)
             tvMapCounter.text = "$header$countStr (${displayIndex + 1}/$totalGroups)"
 
-            val selectedRegions = getSelectedRegions(prefs)
             val markers = group.flatMap { alert ->
                 val color = getAlertTypeColor(alert.type)
-                alert.regions.mapNotNull { region ->
+                val regions = if (!showOther && selectedRegions.isNotEmpty())
+                    alert.regions.filter { it in selectedRegions } else alert.regions
+                regions.mapNotNull { region ->
                     val coords = OrefRegionCoords.coords[region] ?: return@mapNotNull null
                     MarkerData(GeoPoint(coords.first, coords.second), region, color, 0.85f, selectedRegions.contains(region))
                 }

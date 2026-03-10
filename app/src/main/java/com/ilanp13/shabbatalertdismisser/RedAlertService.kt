@@ -154,11 +154,14 @@ object RedAlertService {
                 val obj = array.getJSONObject(i)
                 val alertDate = obj.optString("alertDate", "")
                 val categoryStr = obj.optString("category", "")
-                val categoryInt = categoryStr.toIntOrNull() ?: obj.optInt("category", 0)
+                val rawCategory = categoryStr.toIntOrNull() ?: obj.optInt("category", 0)
                 val key = "$alertDate|$categoryStr"
 
                 var title = obj.optString("title", "")
                 if (title.isEmpty()) title = obj.optString("category_desc", "")
+
+                // Infer category from title if API didn't provide one
+                val categoryInt = if (rawCategory > 0) rawCategory else inferCategoryFromTitle(title)
 
                 var type = obj.optString("type", "")
                 if (type.isEmpty()) {
@@ -286,7 +289,7 @@ object RedAlertService {
         }
     }
 
-    private fun inferCategoryFromTitle(title: String): Int {
+    internal fun inferCategoryFromTitle(title: String): Int {
         val t = title.lowercase()
         return when {
             t.contains("רקטות") || t.contains("טילים") -> 1  // missiles

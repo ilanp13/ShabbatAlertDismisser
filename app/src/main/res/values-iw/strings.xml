@@ -108,6 +108,8 @@
     <string name="region_display_mode_label">הצג התראות מ-</string>
     <string name="region_display_all">כל האזורים (נבחרים מודגשים)</string>
     <string name="region_display_selected_only">אזורים נבחרים בלבד</string>
+    <string name="show_other_regions">הצג אזורים שלא נבחרו</string>
+    <string name="filter_note_all_tabs_regions">💡 הסינונים (מלשונית המפה) חלים על כל ההתראות המוצגות כאן</string>
     <string name="shabbat_banner">🕯️ שבת שלום 🕯️\nסוגר התראות אוטומטית · יציאה %s</string>
     <string name="shabbat_banner_always">🕯️ מצב שבת פעיל 🕯️\nסוגר התראות אוטומטית</string>
     <string name="threat_warning">⚠️ אזהרה — איום אפשרי</string>
@@ -119,4 +121,18 @@
     <string name="threat_dismiss_message">בטוח? סגור רק אם האירוע הסתיים.</string>
     <string name="threat_dismiss_confirm">סגור</string>
     <string name="threat_dismiss_cancel">ביטול</string>
+    <string name="filter_by_type_label">סינון לפי סוג:</string>
+    <string name="filter_missiles">🔴 טילים</string>
+    <string name="filter_aircraft">🟠 כלי טיס</string>
+    <string name="filter_events">🟢 אירועים</string>
+    <string name="map_no_alerts">אין התראות</string>
+    <string name="map_now_counter">עכשיו - %1$s (%2$d/%3$d)</string>
+    <string name="map_now_header">עכשיו  %s</string>
+    <string name="history_prefix">היסטוריה</string>
+    <string name="alerts_count_format"> [%1$d התראות: %2$s]</string>
+    <string name="fetched_alerts_format">נטענו %d התראות</string>
+    <string name="no_alerts_last_24h">אין התראות ב-24 השעות האחרונות</string>
+    <string name="time_ago_just_now">עכשיו</string>
+    <string name="time_ago_minutes">לפני %d דק׳</string>
+    <string name="time_ago_hours">לפני %d שע׳</string>
 </resources>

@@ -11,7 +11,7 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Improved Shabbat Status Screen layout** — No-scroll, compact 2-column layout for top section
 - [x] **Red-Alert API integration** — Fetch alert history from pikud-haoref.com
 
-### Phase 2 (Current)
+### Phase 2 (Complete)
 
 - [x] **Map view with osmdroid** — Interactive map with pins for active and historical alerts, mini-map on Status tab
 - [x] **User-customizable region filters** — Region selector in Settings, "show alerts from selected/all" display mode
@@ -24,6 +24,18 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Tiered alert grouping** — 1-minute recent, 10-minute, 30-minute buckets for older alerts
 - [x] **Compact status layout** — 2-column layout for the top section of the Status screen
 - [x] **5-tab interface** — Status, Settings, History, Map, Alerts
+
+### Phase 2.1 (Complete)
+
+- [x] **Within-alert region filtering** — Filter non-selected regions from within multi-region alerts (not just hide entire alerts)
+- [x] **Full Hebrew localization** — All filter labels, map headers, toast messages, and overlay text properly translated
+- [x] **Relative time display** — "X min ago" / "X hr ago" shown alongside timestamps in alert history
+- [x] **Pause/play cycler button** — Toggle auto-cycling on the Status tab
+- [x] **Region filter UX** — Moved from Settings radio to Map tab checkbox for quick access
+- [x] **RTL layout fix** — Filter panel anchored to left side regardless of language direction
+- [x] **Threat banner reliability** — Clears correctly after event_over (cat 13), replays cached alerts chronologically
+- [x] **Alert type labels in groups** — Shows distinct alert titles in grouped/stacked alerts
+- [x] **Selected region highlighting** — Bold text + yellow map marker borders for selected regions
 
 ---
 
@@ -76,6 +88,17 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 7. [x] Threat banner and Shabbat mode banner
 8. [x] Tiered alert grouping
 9. [x] Compact status layout and 5-tab interface
+
+**Phase 2.1 (Polish) — Done:**
+1. [x] Within-alert region filtering
+2. [x] Full Hebrew localization (no English leakage)
+3. [x] Relative time display in alert history
+4. [x] Pause/play cycler button
+5. [x] Region filter moved to Map tab
+6. [x] RTL layout fix for filter panel
+7. [x] Threat banner reliability (event_over handling)
+8. [x] Alert type labels in grouped alerts
+9. [x] Selected region highlighting (bold + yellow border)
 
 **Phase 3 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)

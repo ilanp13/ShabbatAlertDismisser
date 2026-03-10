@@ -80,9 +80,15 @@ class AlertsFragment : Fragment() {
     }
 
     private fun loadAlerts() {
-        // Show full 24h cache history, filtered by selected alert types
+        // Show full 24h cache history, filtered by type and region
+        val alertPrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val showOtherRegions = alertPrefs.getBoolean("show_other_regions", true)
+        val selectedRegions = getSelectedRegions()
         val cachedAlerts = AlertCacheService.getLast24Hours(requireContext())
             .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
+            .filter { alert ->
+                showOtherRegions || selectedRegions.isEmpty() || alert.regions.any { it in selectedRegions }
+            }
         val sortedAlerts = cachedAlerts.sortedByDescending { it.timestampMs }
         adapter.submitList(sortedAlerts)
         updateEmptyState(sortedAlerts.isEmpty())
@@ -153,7 +159,7 @@ class AlertsFragment : Fragment() {
                 val count = historyAlerts.size
                 android.widget.Toast.makeText(
                     requireContext(),
-                    if (count > 0) "Fetched $count alerts" else "No alerts in last 24h",
+                    if (count > 0) getString(R.string.fetched_alerts_format, count) else getString(R.string.no_alerts_last_24h),
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
 
@@ -250,7 +256,12 @@ class AlertsFragment : Fragment() {
                 val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 tvTime.text = fmt.format(Date(alert.timestampMs))
                 tvTitle.text = alert.title
-                tvRegions.text = formatRegionsHighlighted(alert.regions)
+                val alertPrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(itemView.context)
+                val showOther = alertPrefs.getBoolean("show_other_regions", true)
+                val selectedRegions = getSelectedRegions()
+                val displayRegions = if (!showOther && selectedRegions.isNotEmpty())
+                    alert.regions.filter { it in selectedRegions } else alert.regions
+                tvRegions.text = formatRegionsHighlighted(displayRegions)
                 tvDescription.text = alert.description
             }
         }
