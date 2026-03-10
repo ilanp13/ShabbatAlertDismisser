@@ -37,6 +37,12 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Alert type labels in groups** — Shows distinct alert titles in grouped/stacked alerts
 - [x] **Selected region highlighting** — Bold text + yellow map marker borders for selected regions
 
+### Phase 2.2 (Complete)
+
+- [x] **Category 14 WARNING fix** — Handle Pikud HaOref API category 14 ("alerts expected soon") as WARNING in the state machine
+- [x] **History grouping mode** — Settings option to choose tiered time buckets or single "all alerts" view; Shabbat-aware filtering shows only alerts since candle lighting
+- [x] **Fragment crash fix** — Guard `requireContext()` in background thread callbacks to prevent crashes when switching tabs
+
 ---
 
 ## Planned Features
@@ -99,6 +105,11 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 7. [x] Threat banner reliability (event_over handling)
 8. [x] Alert type labels in grouped alerts
 9. [x] Selected region highlighting (bold + yellow border)
+
+**Phase 2.2 (Bug Fixes & History) — Done:**
+1. [x] Category 14 WARNING fix (alerts expected soon)
+2. [x] History grouping mode (tiered vs all 24h / since Shabbat)
+3. [x] Fragment crash fix (background thread safety)
 
 **Phase 3 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)

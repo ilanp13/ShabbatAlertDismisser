@@ -34,6 +34,7 @@ Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates 
 - **Alert state machine** — persistent WARNING / ALARM / CLEAR threat banners for your selected regions, with reliable clearing after event_over alerts
 - **Shabbat mode banner** — visual indicator on the Status tab when Shabbat auto-dismiss is active
 - **Alert history browser** — cycle through tiered history groups with prev/next navigation and pause/play control
+- **History grouping modes** — choose between tiered time buckets (1min/10min/30min) or a single "all alerts" view; during Shabbat, "all" mode shows only alerts since candle lighting
 - **Relative time display** — alert history headers show "X min ago" / "X hr ago" alongside timestamps
 - **Full localization** — complete Hebrew and English UI with no English leakage in Hebrew mode
 

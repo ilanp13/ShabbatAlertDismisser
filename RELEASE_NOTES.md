@@ -1,21 +1,21 @@
 # Release Notes
 
-## Version 2.1.0 - Current Release
+## Version 2.2.0 - Current Release
 
 ### English (en-US)
 
-**Version 2.1.0 — Improved Filtering, Localization & UX**
+**Version 2.2.0 — Warning Banner Fix, History Grouping & Stability**
 
 ✨ **New:**
-  • Within-alert region filtering — when "show non-selected regions" is off, only your selected regions are shown even within multi-region alerts
-  • Relative time display — alert history shows "X min ago" / "X hr ago" alongside timestamps
-  • Full Hebrew localization — all filter labels, map headers, and UI text properly translated (no more English leaking in Hebrew mode)
-  • Pause/play button for the alert cycler on the Status tab
-  • Region filter moved from Settings to Map tab as a checkbox for quick access
-  • RTL layout fix — filter panel stays on the left side (over the sea) regardless of language direction
-  • Threat banner improvements — clears correctly after event_over alerts, even with different regions
-  • Alert type labels shown in grouped/stacked alerts (e.g. "3 alerts: missiles, aircraft")
-  • Selected regions highlighted with bold text and yellow map marker borders
+  • History grouping mode — choose between tiered time buckets (1min/10min/30min) or a single "all alerts" view; in Shabbat, "all" mode shows only alerts since candle lighting
+  • Fixed WARNING banner for "alerts expected soon" messages — the app now correctly handles Pikud HaOref API category 14 alerts that were previously ignored
+  • Category 14 ("בדקות הקרובות") now properly mapped as event/warning type
+  • Fixed crashes when switching tabs during background network operations
+
+🔧 **Bug Fixes:**
+  • AlertStateMachine now handles category 14 as WARNING (was falling through as "unknown category")
+  • Fragment-not-attached crash fixed — background thread callbacks now guard against detached fragments
+  • RedAlertService maps category 14 to "event" type for proper filtering
 
 **Features:**
   • 4 dismiss modes + minhag profiles
@@ -29,18 +29,18 @@ Requires accessibility permission.
 
 ### Hebrew (iw-IL)
 
-**גרסה 2.1.0 — סינון משופר, תרגום מלא ושיפורי חוויה**
+**גרסה 2.2.0 — תיקון באנר אזהרה, קיבוץ היסטוריה ויציבות**
 
 ✨ **חדש:**
-  • סינון אזורים בתוך התראות — כשההצגה מוגבלת לאזורים נבחרים, רק הם מוצגים גם בהתראות מרובות אזורים
-  • תצוגת זמן יחסי — היסטוריית התראות מציגה "לפני X דק׳" / "לפני X שע׳" ליד חותמת הזמן
-  • תרגום עברית מלא — כל תוויות הסינון, כותרות המפה וטקסט הממשק מתורגמים כראוי
-  • כפתור השהייה/המשך למחזור ההתראות בלשונית הסטטוס
-  • סינון אזורים הועבר מהגדרות ללשונית המפה כתיבת סימון לגישה מהירה
-  • תיקון RTL — פאנל הסינון נשאר בצד שמאל (מעל הים) ללא קשר לכיוון השפה
-  • שיפורי באנר איום — מתנקה נכון לאחר התראת סיום אירוע, גם עם אזורים שונים
-  • סוגי התראות מוצגים בהתראות מקובצות (למשל "3 התראות: טילים, כלי טיס")
-  • אזורים נבחרים מודגשים בטקסט מודגש ומסגרת צהובה על סמני המפה
+  • מצב קיבוץ היסטוריה — בחר בין קיבוץ לפי זמנים (1 דק'/10 דק'/30 דק') או תצוגת "כל ההתראות" יחד; בשבת, מצב "כל" מציג רק התראות מתחילת השבת
+  • תיקון באנר אזהרה עבור הודעות "בדקות הקרובות" — האפליקציה מטפלת כעת נכון בקטגוריה 14 מ-API של פיקוד העורף
+  • קטגוריה 14 ("בדקות הקרובות") ממופה כעת נכון כסוג אירוע/אזהרה
+  • תיקון קריסות בעת מעבר בין לשוניות במהלך פעולות רשת ברקע
+
+🔧 **תיקוני באגים:**
+  • מכונת מצב האיום מטפלת כעת בקטגוריה 14 כאזהרה (לפני כן הייתה מתעלמת)
+  • תיקון קריסת "Fragment not attached" — קריאות חוזרות מרקע מגינות כעת מפני פרגמנטים מנותקים
+  • RedAlertService ממפה קטגוריה 14 לסוג "אירוע" לסינון תקין
 
 **מאפיינים:**
   • 4 מצבי סגירה + פרופילי מנהגים
@@ -53,6 +53,21 @@ Requires accessibility permission.
 ---
 
 ## Previous Versions
+
+### Version 2.1.0
+
+**Version 2.1.0 — Improved Filtering, Localization & UX**
+
+✨ **New:**
+  • Within-alert region filtering — when "show non-selected regions" is off, only your selected regions are shown even within multi-region alerts
+  • Relative time display — alert history shows "X min ago" / "X hr ago" alongside timestamps
+  • Full Hebrew localization — all filter labels, map headers, and UI text properly translated (no more English leaking in Hebrew mode)
+  • Pause/play button for the alert cycler on the Status tab
+  • Region filter moved from Settings to Map tab as a checkbox for quick access
+  • RTL layout fix — filter panel stays on the left side (over the sea) regardless of language direction
+  • Threat banner improvements — clears correctly after event_over alerts, even with different regions
+  • Alert type labels shown in grouped/stacked alerts (e.g. "3 alerts: missiles, aircraft")
+  • Selected regions highlighted with bold text and yellow map marker borders
 
 ### Version 2.0.0
 
