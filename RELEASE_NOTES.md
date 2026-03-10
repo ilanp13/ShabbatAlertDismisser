@@ -1,8 +1,32 @@
 # Release Notes
 
-## Version 2.0.0 - Current Release
+## Version 2.0.1 - Current Release
 
 ### English (en-US)
+
+**Version 2.0.1 — Background Alert Detection, Filter Sync & RTL Fixes**
+
+🔧 **Fixes:**
+  • Background history refresh — every ~2.5 minutes the app fetches recent alert history, so short-lived warnings (e.g. "alerts expected soon") are detected even if missed by the 30-second live poll
+  • Filter changes now apply immediately — switching back to the Status tab after changing filters on the Map tab refreshes the display without needing a manual refetch
+  • RTL arrow fix — prev/next navigation arrows now point in the correct direction in Hebrew
+
+---
+
+### Hebrew (iw-IL)
+
+**גרסה 2.0.1 — זיהוי התראות ברקע, סנכרון מסננים ותיקוני RTL**
+
+🔧 **תיקונים:**
+  • רענון היסטוריה ברקע — כל ~2.5 דקות האפליקציה מושכת היסטוריית התראות אחרונה, כך שאזהרות קצרות (כמו "בדקות הקרובות") מזוהות גם אם הסקר החי פספס אותן
+  • שינויי מסננים חלים מיד — מעבר חזרה ללשונית הסטטוס אחרי שינוי מסננים במפה מרענן את התצוגה ללא צורך בטעינה ידנית
+  • תיקון חצים RTL — חצי ניווט קודם/הבא מצביעים כעת בכיוון הנכון בעברית
+
+---
+
+## Previous Versions
+
+### Version 2.0.0
 
 **Version 2.0.0 — Live Alerts, Map View, Threat Monitoring & Full Localization**
 

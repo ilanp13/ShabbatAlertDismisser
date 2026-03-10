@@ -42,6 +42,9 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Category 14 WARNING fix** — Handle Pikud HaOref API category 14 ("alerts expected soon") as WARNING in the state machine
 - [x] **History grouping mode** — Settings option to choose tiered time buckets or single "all alerts" view; Shabbat-aware filtering shows only alerts since candle lighting
 - [x] **Fragment crash fix** — Guard `requireContext()` in background thread callbacks to prevent crashes when switching tabs
+- [x] **Background history refresh** — Periodic history fetch (~2.5 min) catches short-lived alerts missed by live polling
+- [x] **Filter sync on tab switch** — Changing filters on Map tab applies immediately when returning to Status tab
+- [x] **RTL arrow fix** — Prev/next navigation arrows point correctly in Hebrew
 
 ---
 
@@ -110,6 +113,9 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 1. [x] Category 14 WARNING fix (alerts expected soon)
 2. [x] History grouping mode (tiered vs all 24h / since Shabbat)
 3. [x] Fragment crash fix (background thread safety)
+4. [x] Background history refresh (catches missed alerts)
+5. [x] Filter sync on tab switch
+6. [x] RTL arrow fix for Hebrew
 
 **Phase 3 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)

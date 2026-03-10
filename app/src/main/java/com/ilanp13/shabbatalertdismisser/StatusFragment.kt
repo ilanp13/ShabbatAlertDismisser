@@ -55,6 +55,7 @@ class StatusFragment : Fragment() {
     private val handler = Handler(Looper.getMainLooper())
     private var alertsPollRunnable: Runnable? = null
     private var timestampUpdateRunnable: Runnable? = null
+    private var pollCycleCount = 0
     private var lastAlertUpdateMs = 0L
     private var cachedAlertsList = listOf<AlertCacheService.CachedAlert>()
     private var alertsByMinute = listOf<List<AlertCacheService.CachedAlert>>()  // Grouped by minute
@@ -186,6 +187,9 @@ class StatusFragment : Fragment() {
         updateShabbatTimes()
         updateSyncStatus()
         updateDismissalCount()
+        // Reload cached alerts to pick up filter changes from Map tab
+        loadCachedAlerts()
+        feedRecentCachedAlertsToStateMachine()
         updateThreatBanner()
         loadCyclerSettings()
         startAlertPolling()
@@ -324,9 +328,17 @@ class StatusFragment : Fragment() {
 
     private fun startAlertPolling() {
         stopAlertPolling()
+        pollCycleCount = 0
         alertsPollRunnable = object : Runnable {
             override fun run() {
                 updateActiveAlerts()
+                // Every 5th poll (~2.5 min), also fetch recent history to catch
+                // short-lived alerts (e.g. category 14 warnings) that the live
+                // endpoint may have already rotated out.
+                pollCycleCount++
+                if (pollCycleCount % 5 == 0) {
+                    backgroundHistoryRefresh()
+                }
                 handler.postDelayed(this, 30_000) // Poll every 30 seconds
             }
         }
@@ -452,6 +464,31 @@ class StatusFragment : Fragment() {
                             miniMapView.overlays.clear()
                             miniMapView.invalidate()
                         }
+                    }
+                }
+            }
+        }.start()
+    }
+
+    /**
+     * Lightweight background history fetch — merges new alerts into cache
+     * and re-feeds the state machine so the threat banner updates without
+     * the user having to press "Refetch".
+     */
+    private fun backgroundHistoryRefresh() {
+        Thread {
+            val ctx = context ?: return@Thread
+            val historyAlerts = RedAlertService.fetchHistory()
+            if (historyAlerts.isNotEmpty()) {
+                AlertCacheService.saveBatch(ctx, historyAlerts)
+                handler.post {
+                    if (!isAdded) return@post
+                    loadCachedAlerts()
+                    feedRecentCachedAlertsToStateMachine()
+                    updateThreatBanner()
+                    // Refresh display if showing cached alerts
+                    if (cachedAlertsList.isNotEmpty() && alertsByMinute.isNotEmpty()) {
+                        displayCachedAlertsGroup(currentMinuteGroupIndex.coerceAtMost(alertsByMinute.size - 1))
                     }
                 }
             }

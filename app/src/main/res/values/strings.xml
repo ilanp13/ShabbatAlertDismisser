@@ -140,4 +140,8 @@
     <string name="history_grouping_all">All alerts together</string>
     <string name="history_all_24h">All alerts (24h)</string>
     <string name="history_since_shabbat">Since Shabbat start</string>
+    <string name="btn_prev">← Previous</string>
+    <string name="btn_next">Next →</string>
+    <string name="btn_prev_arrow">←</string>
+    <string name="btn_next_arrow">→</string>
 </resources>
