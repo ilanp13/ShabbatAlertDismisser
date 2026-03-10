@@ -135,4 +135,9 @@
     <string name="time_ago_just_now">עכשיו</string>
     <string name="time_ago_minutes">לפני %d דק׳</string>
     <string name="time_ago_hours">לפני %d שע׳</string>
+    <string name="history_grouping_label">תצוגת היסטוריה</string>
+    <string name="history_grouping_tiered">לפי קבוצות זמן</string>
+    <string name="history_grouping_all">כל ההתראות ביחד</string>
+    <string name="history_all_24h">כל ההתראות (24 שע׳)</string>
+    <string name="history_since_shabbat">מתחילת השבת</string>
 </resources>

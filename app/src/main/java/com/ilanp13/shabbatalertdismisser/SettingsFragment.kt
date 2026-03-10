@@ -37,6 +37,7 @@ class SettingsFragment : Fragment() {
     private lateinit var radioCyclerMode: RadioGroup
     private lateinit var seekCyclerDuration: SeekBar
     private lateinit var tvCyclerDuration: TextView
+    private lateinit var radioHistoryGrouping: RadioGroup
     private lateinit var spinnerLanguage: Spinner
     private lateinit var spinnerTheme: Spinner
     private lateinit var tvSelectedRegions: TextView
@@ -69,6 +70,7 @@ class SettingsFragment : Fragment() {
         radioCyclerMode = view.findViewById(R.id.radioCyclerMode)
         seekCyclerDuration = view.findViewById(R.id.seekCyclerDuration)
         tvCyclerDuration = view.findViewById(R.id.tvCyclerDuration)
+        radioHistoryGrouping = view.findViewById(R.id.radioHistoryGrouping)
         spinnerLanguage = view.findViewById(R.id.spinnerLanguage)
         spinnerTheme = view.findViewById(R.id.spinnerTheme)
         tvSelectedRegions = view.findViewById(R.id.tvSelectedRegions)
@@ -81,6 +83,7 @@ class SettingsFragment : Fragment() {
         setupNotificationSwitch()
         setupScreenOnRadio()
         setupCyclerSettings()
+        setupHistoryGrouping()
         setupLanguageSpinner()
         setupThemeSpinner()
         setupRegionPicker()
@@ -218,6 +221,19 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
+    }
+
+    private fun setupHistoryGrouping() {
+        radioHistoryGrouping.check(
+            if (prefs.getString("history_grouping", "tiered") == "all") R.id.radioGroupingAll
+            else R.id.radioGroupingTiered
+        )
+        radioHistoryGrouping.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("history_grouping", when (id) {
+                R.id.radioGroupingAll -> "all"
+                else -> "tiered"
+            }).apply()
+        }
     }
 
     private fun setupLanguageSpinner() {

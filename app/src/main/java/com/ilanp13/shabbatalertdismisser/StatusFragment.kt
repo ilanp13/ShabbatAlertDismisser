@@ -365,7 +365,7 @@ class StatusFragment : Fragment() {
             val showOtherRegions = prefs.getBoolean("show_other_regions", true)
 
             // Feed into state machine for selected regions
-            val ctx = requireContext()
+            val ctx = context ?: return@Thread
             if (result is RedAlertService.FetchResult.Success && result.alert != null) {
                 AlertStateMachine.processAlert(ctx, result.alert, selectedRegions.toSet())
             }
@@ -399,6 +399,7 @@ class StatusFragment : Fragment() {
             val isUnavailable = (result is RedAlertService.FetchResult.Unavailable)
 
             handler.post {
+                if (!isAdded) return@post
                 // Hide loading indicator and re-enable button
                 pbAlertsLoading.visibility = View.GONE
                 btnRefreshAlerts.isEnabled = true
@@ -485,10 +486,11 @@ class StatusFragment : Fragment() {
             android.util.Log.d("StatusFragment", "Refetch 24h: Got ${historyAlerts.size} history alerts")
 
             // Batch save all at once (clears old cache and writes single time)
-            val ctx = requireContext()
+            val ctx = context ?: return@Thread
             AlertCacheService.saveBatch(ctx, historyAlerts)
 
             handler.post {
+                if (!isAdded) return@post
                 pbAlertsLoading.visibility = View.GONE
                 btnRefreshAlerts.isEnabled = true
                 btnClearAlerts.isEnabled = true
@@ -760,10 +762,22 @@ class StatusFragment : Fragment() {
         if (group.isEmpty()) return
 
         val ctx = requireContext()
-        val header = AlertCacheService.formatGroupHeader(ctx, group)
-        val posStr = "${groupIndex + 1}/${alertsByMinute.size}"
-        val countStr = AlertCacheService.formatGroupCount(ctx, group)
-        tvActiveAlerts.text = "$header$countStr ($posStr)${if (group.size == 1) " ${group[0].title}" else ""}"
+        val groupingMode = prefs.getString("history_grouping", "tiered") ?: "tiered"
+        val headerText = if (groupingMode == "all") {
+            // "All" mode: show "All alerts (24h)" or "Since Shabbat start"
+            val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+            val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
+            val now = System.currentTimeMillis()
+            val isInShabbat = candleMs > 0 && havdalahMs > 0 && now in candleMs..havdalahMs
+            val label = if (isInShabbat) getString(R.string.history_since_shabbat) else getString(R.string.history_all_24h)
+            "$label (${group.size})"
+        } else {
+            val header = AlertCacheService.formatGroupHeader(ctx, group)
+            val posStr = "${groupIndex + 1}/${alertsByMinute.size}"
+            val countStr = AlertCacheService.formatGroupCount(ctx, group)
+            "$header$countStr ($posStr)${if (group.size == 1) " ${group[0].title}" else ""}"
+        }
+        tvActiveAlerts.text = headerText
 
         // Show regions (filter to selected only when "show other regions" is off)
         val showOther = prefs.getBoolean("show_other_regions", true)
@@ -856,14 +870,25 @@ class StatusFragment : Fragment() {
 
                 // Header
                 if (alerts.isNotEmpty()) {
-                    val header = AlertCacheService.formatGroupHeader(requireContext(), alerts)
-                    val countStr = AlertCacheService.formatGroupCount(requireContext(), alerts)
+                    val groupingMode = prefs.getString("history_grouping", "tiered") ?: "tiered"
+                    val headerStr = if (groupingMode == "all") {
+                        val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+                        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
+                        val now = System.currentTimeMillis()
+                        val isInShabbat = candleMs > 0 && havdalahMs > 0 && now in candleMs..havdalahMs
+                        val label = if (isInShabbat) getString(R.string.history_since_shabbat) else getString(R.string.history_all_24h)
+                        "$label (${alerts.size})"
+                    } else {
+                        val header = AlertCacheService.formatGroupHeader(requireContext(), alerts)
+                        val countStr = AlertCacheService.formatGroupCount(requireContext(), alerts)
+                        "$header$countStr"
+                    }
                     paint.color = android.graphics.Color.parseColor("#CC333333")
                     paint.style = android.graphics.Paint.Style.FILL
                     canvas.drawRect(0f, 0f, canvas.width.toFloat(), 40f, paint)
                     paint.color = android.graphics.Color.WHITE
                     paint.textSize = 22f
-                    canvas.drawText("$header$countStr", 8f, 30f, paint)
+                    canvas.drawText(headerStr, 8f, 30f, paint)
                 }
             }
         }
@@ -956,11 +981,16 @@ class StatusFragment : Fragment() {
             }
             .sortedBy { it.timestampMs }
 
-        if (recentMatching.isEmpty()) return
+        if (recentMatching.isEmpty()) {
+            android.util.Log.d("StatusFragment", "feedStateMachine: no recent matching alerts")
+            return
+        }
 
+        android.util.Log.d("StatusFragment", "feedStateMachine: processing ${recentMatching.size} alerts")
         for (cached in recentMatching) {
             val category = if (cached.category > 0) cached.category
                 else RedAlertService.inferCategoryFromTitle(cached.title)
+            android.util.Log.d("StatusFragment", "feedStateMachine: cat=$category title='${cached.title}' regions=${cached.regions}")
             val activeAlert = RedAlertService.ActiveAlert(
                 title = cached.title,
                 regions = cached.regions,
@@ -969,7 +999,8 @@ class StatusFragment : Fragment() {
                 category = category,
                 timestampMs = cached.timestampMs
             )
-            AlertStateMachine.processAlert(ctx, activeAlert, selectedRegions)
+            val result = AlertStateMachine.processAlert(ctx, activeAlert, selectedRegions)
+            android.util.Log.d("StatusFragment", "feedStateMachine: -> ${result.level}")
         }
     }
 
@@ -997,15 +1028,33 @@ class StatusFragment : Fragment() {
         // Load and filter alerts by type and region
         val showOtherRegions = prefs.getBoolean("show_other_regions", true)
         val selectedRegions = getSelectedRegions().toSet()
-        cachedAlertsList = AlertCacheService.getLast24Hours(requireContext())
+        var allFiltered = AlertCacheService.getLast24Hours(requireContext())
             .filter { AlertTypeFilter.shouldShow(requireContext(), it.type) }
             .filter { alert ->
                 showOtherRegions || selectedRegions.isEmpty() || alert.regions.any { it in selectedRegions }
             }
             .sortedByDescending { it.timestampMs }
 
-        // Tiered grouping: 1min (recent) → 10min → 30min (old)
-        alertsByMinute = AlertCacheService.groupByTimeBucket(cachedAlertsList)
+        // If "all" grouping mode and in Shabbat/holiday, filter to since candle lighting
+        val groupingMode = prefs.getString("history_grouping", "tiered") ?: "tiered"
+        if (groupingMode == "all") {
+            val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+            val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
+            val now = System.currentTimeMillis()
+            val isInShabbat = candleMs > 0 && havdalahMs > 0 && now in candleMs..havdalahMs
+            if (isInShabbat) {
+                allFiltered = allFiltered.filter { it.timestampMs >= candleMs }
+            }
+        }
+
+        cachedAlertsList = allFiltered
+
+        // Group based on setting
+        alertsByMinute = if (groupingMode == "all" && cachedAlertsList.isNotEmpty()) {
+            listOf(cachedAlertsList)  // Single group with all alerts
+        } else {
+            AlertCacheService.groupByTimeBucket(cachedAlertsList)
+        }
 
         currentMinuteGroupIndex = 0
         updateCycleButtonStates()

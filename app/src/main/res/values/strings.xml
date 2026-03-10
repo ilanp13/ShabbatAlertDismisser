@@ -135,4 +135,9 @@
     <string name="time_ago_just_now">just now</string>
     <string name="time_ago_minutes">%d min ago</string>
     <string name="time_ago_hours">%d hr ago</string>
+    <string name="history_grouping_label">History display</string>
+    <string name="history_grouping_tiered">Tiered (by time buckets)</string>
+    <string name="history_grouping_all">All alerts together</string>
+    <string name="history_all_24h">All alerts (24h)</string>
+    <string name="history_since_shabbat">Since Shabbat start</string>
 </resources>

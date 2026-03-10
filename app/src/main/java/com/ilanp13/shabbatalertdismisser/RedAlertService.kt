@@ -308,6 +308,7 @@ object RedAlertService {
             4 -> "tsunami"
             12 -> "event"
             13 -> "event"  // Event ended / all clear
+            14 -> "event"  // Warning: alerts expected soon
             else -> ""
         }
     }

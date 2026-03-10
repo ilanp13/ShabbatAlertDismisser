@@ -28,7 +28,7 @@ object AlertStateMachine {
      * Returns the new threat state.
      *
      * Category mapping:
-     *   12 -> WARNING (potential threat incoming)
+     *   12, 14 -> WARNING (potential threat incoming)
      *   1, 2 -> ALARM (active missiles/aircraft)
      *   13 -> CLEAR (event ended)
      */
@@ -76,7 +76,7 @@ object AlertStateMachine {
             }
 
             // Warning -> WARNING (only if not already in ALARM)
-            category == 12 -> {
+            category == 12 || category == 14 -> {
                 if (current.level == ThreatLevel.ALARM) {
                     Log.d(TAG, "Warning received but already in ALARM, staying in ALARM")
                     current.copy(lastUpdate = now)
