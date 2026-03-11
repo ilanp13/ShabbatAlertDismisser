@@ -1,8 +1,40 @@
 # Release Notes
 
-## Version 2.0.1 - Current Release
+## Version 2.0.2 - Current Release
 
 ### English (en-US)
+
+**Version 2.0.2 — Stability, Region Picker & Smart Cycler**
+
+🔧 **Fixes & Improvements:**
+  • Green "Event Ended" banner — clear visual indicator when a threat has passed
+  • Configurable polling frequency (off / 5–60 seconds)
+  • Region picker rewrite — search with keyboard, selected regions shown first
+  • Smart alert cycler — stays on current group unless new alerts arrive
+  • Auto-dismissal safety — prevents accidental taps on wrong windows
+  • Full 24h history — works around API 3000-entry limit with per-category fetching
+  • Multiple crash and cache stability fixes
+
+---
+
+### Hebrew (iw-IL)
+
+**גרסה 2.0.2 — יציבות, בורר אזורים ומחזור חכם**
+
+🔧 **תיקונים ושיפורים:**
+  • באנר ירוק "האירוע הסתיים" — חיווי ויזואלי ברור כשהאיום חלף
+  • תדירות סקר מותאמת (כבוי / 5–60 שניות)
+  • בורר אזורים חדש — חיפוש עם מקלדת, אזורים נבחרים מוצגים ראשונים
+  • מחזור התראות חכם — נשאר על הקבוצה הנוכחית אלא אם הגיעו התראות חדשות
+  • בטיחות סגירה אוטומטית — מניעת לחיצה בטעות על חלון שגוי
+  • היסטוריה מלאה 24 שעות — עוקף מגבלת 3000 רשומות עם שליפה לפי קטגוריה
+  • מספר תיקוני קריסות ויציבות מטמון
+
+---
+
+## Previous Versions
+
+### Version 2.0.1
 
 **Version 2.0.1 — Background Alert Detection, Filter Sync & RTL Fixes**
 
@@ -12,19 +44,6 @@
   • RTL arrow fix — prev/next navigation arrows now point in the correct direction in Hebrew
 
 ---
-
-### Hebrew (iw-IL)
-
-**גרסה 2.0.1 — זיהוי התראות ברקע, סנכרון מסננים ותיקוני RTL**
-
-🔧 **תיקונים:**
-  • רענון היסטוריה ברקע — כל ~2.5 דקות האפליקציה מושכת היסטוריית התראות אחרונה, כך שאזהרות קצרות (כמו "בדקות הקרובות") מזוהות גם אם הסקר החי פספס אותן
-  • שינויי מסננים חלים מיד — מעבר חזרה ללשונית הסטטוס אחרי שינוי מסננים במפה מרענן את התצוגה ללא צורך בטעינה ידנית
-  • תיקון חצים RTL — חצי ניווט קודם/הבא מצביעים כעת בכיוון הנכון בעברית
-
----
-
-## Previous Versions
 
 ### Version 2.0.0
 

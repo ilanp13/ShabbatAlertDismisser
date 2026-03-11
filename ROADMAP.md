@@ -46,6 +46,18 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Filter sync on tab switch** — Changing filters on Map tab applies immediately when returning to Status tab
 - [x] **RTL arrow fix** — Prev/next navigation arrows point correctly in Hebrew
 
+### Phase 2.3 (Complete)
+
+- [x] **Green EVENT_ENDED banner** — Category 13 (event ended) now shows a green "Event ended — You can go out" banner with 10-minute auto-clear
+- [x] **Polling frequency setting** — Configurable alert polling interval (off / 5-60 seconds) in Settings
+- [x] **Auto-refetch on app open** — Single alert fetch when polling is disabled, triggered on resume
+- [x] **Auto-dismissal race condition fix** — Re-checks window package before clicking dismiss to prevent tapping wrong UI
+- [x] **Banner "since" time fix** — Threat banner shows actual alert timestamp instead of current time
+- [x] **Empty refetch cache fix** — Failed API fetches no longer wipe the local alert cache
+- [x] **Full 24h history fetch** — Per-category mode fetching when >3000 entries detected (works around API truncation limit)
+- [x] **Region picker rewrite** — In-place search filtering with keyboard support, selected regions sorted to top
+- [x] **Cycler vs polling fix** — Cycler preserves position when no new alerts; jumps to latest when new alerts arrive
+
 ---
 
 ## Planned Features
@@ -116,6 +128,17 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 4. [x] Background history refresh (catches missed alerts)
 5. [x] Filter sync on tab switch
 6. [x] RTL arrow fix for Hebrew
+
+**Phase 2.3 (Stability & UX) — Done:**
+1. [x] Green EVENT_ENDED banner (10-min auto-clear)
+2. [x] Polling frequency setting (off / 5-60s)
+3. [x] Auto-refetch on app open
+4. [x] Auto-dismissal race condition fix
+5. [x] Banner "since" time fix
+6. [x] Empty refetch cache protection
+7. [x] Full 24h history fetch (per-category mode)
+8. [x] Region picker rewrite (in-place search, keyboard, selected-first)
+9. [x] Cycler vs polling fix (smart index preservation)
 
 **Phase 3 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)

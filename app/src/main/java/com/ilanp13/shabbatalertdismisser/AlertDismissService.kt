@@ -312,6 +312,16 @@ class AlertDismissService : AccessibilityService() {
         }
 
         val packageName = rootNode.packageName?.toString() ?: "unknown"
+
+        // Re-check that the current window is still a cell broadcast alert.
+        // If the user already dismissed it manually, the window may have changed
+        // and we should not click on whatever is now on screen.
+        if (!isCellBroadcastPackage(packageName)) {
+            Log.d(TAG, "Window changed to $packageName (not cell broadcast), skipping dismiss")
+            rootNode.recycle()
+            return
+        }
+
         val windowText = captureWindowText(rootNode)
 
         try {

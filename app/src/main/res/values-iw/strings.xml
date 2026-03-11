@@ -114,6 +114,7 @@
     <string name="shabbat_banner_always">🕯️ מצב שבת פעיל 🕯️\nסוגר התראות אוטומטית</string>
     <string name="threat_warning">⚠️ אזהרה — איום אפשרי</string>
     <string name="threat_alarm">🚨 אזעקה — היכנסו למקלט!</string>
+    <string name="threat_event_ended">✅ האירוע הסתיים — ניתן לצאת</string>
     <string name="threat_regions">אזורים: %s</string>
     <string name="threat_since">מאז %s</string>
     <string name="threat_dismiss">סגור</string>
@@ -140,6 +141,10 @@
     <string name="history_grouping_all">כל ההתראות ביחד</string>
     <string name="history_all_24h">כל ההתראות (24 שע׳)</string>
     <string name="history_since_shabbat">מתחילת השבת</string>
+    <string name="search_regions_hint">חפש אזורים…</string>
+    <string name="poll_frequency_label">תדירות סקר התראות</string>
+    <string name="poll_frequency_format">כל %d שניות</string>
+    <string name="poll_frequency_off">כבוי</string>
     <string name="btn_prev">הקודם →</string>
     <string name="btn_next">← הבא</string>
     <string name="btn_prev_arrow">→</string>

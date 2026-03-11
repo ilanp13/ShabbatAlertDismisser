@@ -86,18 +86,20 @@ object AlertCacheService {
      * No time filtering - saves all provided alerts (filtering happens on read).
      */
     fun saveBatch(context: Context, alerts: List<RedAlertService.ActiveAlert>) {
+        if (alerts.isEmpty()) return  // Don't clear cache on empty fetch
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         try {
             val now = System.currentTimeMillis()
             val cacheArray = JSONArray()
 
-            // Deduplicate by title+type+sorted regions
+            // Deduplicate by title+type+sorted regions+timestamp (rounded to minute)
             val seen = mutableSetOf<String>()
             for (alert in alerts) {
-                val dedupeKey = "${alert.title}|${alert.type}|${alert.regions.sorted()}"
+                val timestamp = if (alert.timestampMs > 0) alert.timestampMs else now
+                val minuteKey = timestamp / 60_000
+                val dedupeKey = "${alert.title}|${alert.type}|${alert.regions.sorted()}|$minuteKey"
                 if (!seen.add(dedupeKey)) continue
 
-                val timestamp = if (alert.timestampMs > 0) alert.timestampMs else now
                 cacheArray.put(alertToJson(alert, timestamp))
             }
 

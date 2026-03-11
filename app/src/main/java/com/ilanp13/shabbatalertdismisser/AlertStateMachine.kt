@@ -10,7 +10,7 @@ object AlertStateMachine {
     private const val TAG = "AlertStateMachine"
     private const val PREF_KEY = "threat_state"
 
-    enum class ThreatLevel { CLEAR, WARNING, ALARM }
+    enum class ThreatLevel { CLEAR, WARNING, ALARM, EVENT_ENDED }
 
     data class ThreatState(
         val level: ThreatLevel,
@@ -20,8 +20,9 @@ object AlertStateMachine {
         val lastUpdate: Long   // timestamp of last alert that touched this state
     )
 
-    private const val ALARM_TIMEOUT_MS = 30 * 60 * 1000L   // 30 minutes
-    private const val WARNING_TIMEOUT_MS = 60 * 60 * 1000L  // 60 minutes
+    private const val ALARM_TIMEOUT_MS = 30 * 60 * 1000L        // 30 minutes
+    private const val WARNING_TIMEOUT_MS = 60 * 60 * 1000L     // 60 minutes
+    private const val EVENT_ENDED_TIMEOUT_MS = 10 * 60 * 1000L // 10 minutes
 
     /**
      * Process an incoming alert and update the threat state for selected regions.
@@ -38,17 +39,18 @@ object AlertStateMachine {
         selectedRegions: Set<String>
     ): ThreatState {
         val now = System.currentTimeMillis()
+        // Use the alert's own timestamp if available, otherwise fall back to now
+        val alertTime = if (alert.timestampMs > 0) alert.timestampMs else now
         val current = getState(context)
         val category = alert.category
 
-        // Event ended (cat 13): clear if we're in an elevated state, regardless
-        // of region matching. The "event over" broadcast may cover different
-        // regions than the original missiles/aircraft alerts.
-        if (category == 13 && current.level != ThreatLevel.CLEAR) {
-            Log.d(TAG, "Event ended (cat 13) while in ${current.level} -> CLEAR")
-            val cleared = ThreatState(ThreatLevel.CLEAR, "", emptyList(), now, now)
-            saveState(context, cleared)
-            return cleared
+        // Event ended (cat 13): if we're in WARNING/ALARM, transition to EVENT_ENDED
+        // (green banner for 10 min). If already CLEAR or EVENT_ENDED, stay as is.
+        if (category == 13 && (current.level == ThreatLevel.WARNING || current.level == ThreatLevel.ALARM)) {
+            Log.d(TAG, "Event ended (cat 13) while in ${current.level} -> EVENT_ENDED")
+            val ended = ThreatState(ThreatLevel.EVENT_ENDED, current.title, current.regions, alertTime, now)
+            saveState(context, ended)
+            return ended
         }
 
         // For all other categories, only process alerts that affect selected regions
@@ -56,10 +58,15 @@ object AlertStateMachine {
         if (matchingRegions.isEmpty()) return current
 
         val newState = when {
-            // Event ended -> CLEAR (also handles cat 13 with matching regions when already CLEAR)
+            // Event ended -> EVENT_ENDED (green banner) or CLEAR if already cleared
             category == 13 -> {
-                Log.d(TAG, "Event ended (cat 13) -> CLEAR")
-                ThreatState(ThreatLevel.CLEAR, "", emptyList(), now, now)
+                if (current.level == ThreatLevel.WARNING || current.level == ThreatLevel.ALARM) {
+                    Log.d(TAG, "Event ended (cat 13) -> EVENT_ENDED")
+                    ThreatState(ThreatLevel.EVENT_ENDED, current.title, matchingRegions, alertTime, now)
+                } else {
+                    Log.d(TAG, "Event ended (cat 13) while ${current.level} -> CLEAR")
+                    ThreatState(ThreatLevel.CLEAR, "", emptyList(), alertTime, now)
+                }
             }
 
             // Active alarm (missiles/aircraft) -> ALARM
@@ -70,7 +77,7 @@ object AlertStateMachine {
                     ThreatLevel.ALARM,
                     alert.title,
                     matchingRegions,
-                    if (current.level == ThreatLevel.ALARM) current.since else now,
+                    if (current.level == ThreatLevel.ALARM) current.since else alertTime,
                     now
                 )
             }
@@ -81,12 +88,12 @@ object AlertStateMachine {
                     Log.d(TAG, "Warning received but already in ALARM, staying in ALARM")
                     current.copy(lastUpdate = now)
                 } else {
-                    Log.d(TAG, "Warning (cat 12) -> WARNING")
+                    Log.d(TAG, "Warning (cat $category) -> WARNING")
                     ThreatState(
                         ThreatLevel.WARNING,
                         alert.title,
                         matchingRegions,
-                        if (current.level == ThreatLevel.WARNING) current.since else now,
+                        if (current.level == ThreatLevel.WARNING) current.since else alertTime,
                         now
                     )
                 }
@@ -116,6 +123,7 @@ object AlertStateMachine {
         val timeout = when (current.level) {
             ThreatLevel.ALARM -> ALARM_TIMEOUT_MS
             ThreatLevel.WARNING -> WARNING_TIMEOUT_MS
+            ThreatLevel.EVENT_ENDED -> EVENT_ENDED_TIMEOUT_MS
             ThreatLevel.CLEAR -> return current
         }
 

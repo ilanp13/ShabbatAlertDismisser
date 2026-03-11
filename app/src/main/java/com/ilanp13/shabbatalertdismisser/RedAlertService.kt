@@ -72,28 +72,44 @@ object RedAlertService {
     fun fetchHistory(): List<ActiveAlert> {
         Log.d(TAG, "====== FETCHHISTORY START ======")
 
-        // Fetch in day-sized chunks to work around API's 3000-entry limit
         val dateFmt = SimpleDateFormat("dd.MM.yyyy", Locale.US)
         val allAlerts = mutableListOf<ActiveAlert>()
 
-        // Fetch today and yesterday separately for better coverage
         val cal = Calendar.getInstance()
         val today = dateFmt.format(cal.time)
         cal.add(Calendar.DAY_OF_YEAR, -1)
         val yesterday = dateFmt.format(cal.time)
 
-        // Chunk 1: yesterday only
-        allAlerts.addAll(fetchHistoryChunk(yesterday, yesterday))
-        // Chunk 2: today only
-        allAlerts.addAll(fetchHistoryChunk(today, today))
+        // Fetch each day separately. If a day returns ~3000 entries (truncated),
+        // re-fetch with per-category mode filters to get full coverage.
+        for (date in listOf(yesterday, today)) {
+            val chunk = fetchHistoryChunk(date, date, mode = 0)
+            allAlerts.addAll(chunk)
 
-        Log.d(TAG, "✓ Total: ${allAlerts.size} alerts from 2 chunks")
+            if (chunk.size >= 2900) {
+                // Likely truncated — fetch per category to get more entries
+                Log.d(TAG, "Day $date returned ${chunk.size} entries (possibly truncated), fetching per-category")
+                for (mode in listOf(1, 2, 3, 4, 6, 7)) {
+                    val extra = fetchHistoryChunk(date, date, mode = mode)
+                    allAlerts.addAll(extra)
+                }
+            }
+        }
+
+        // Deduplicate merged results by alertDate+region
+        val seen = mutableSetOf<String>()
+        val deduped = allAlerts.filter { alert ->
+            val key = "${alert.timestampMs}|${alert.title}|${alert.regions.sorted()}"
+            seen.add(key)
+        }
+
+        Log.d(TAG, "✓ Total: ${deduped.size} alerts (before dedup: ${allAlerts.size})")
         Log.d(TAG, "====== FETCHHISTORY END ======")
-        return allAlerts
+        return deduped
     }
 
-    private fun fetchHistoryChunk(fromDate: String, toDate: String): List<ActiveAlert> {
-        val endpoint = "https://alerts-history.oref.org.il/Shared/Ajax/GetAlarmsHistory.aspx?lang=he&fromDate=$fromDate&toDate=$toDate&mode=0"
+    private fun fetchHistoryChunk(fromDate: String, toDate: String, mode: Int = 0): List<ActiveAlert> {
+        val endpoint = "https://alerts-history.oref.org.il/Shared/Ajax/GetAlarmsHistory.aspx?lang=he&fromDate=$fromDate&toDate=$toDate&mode=$mode"
         Log.d(TAG, "Fetching chunk: $fromDate → $toDate")
 
         try {

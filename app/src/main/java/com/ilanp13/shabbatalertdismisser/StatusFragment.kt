@@ -193,6 +193,11 @@ class StatusFragment : Fragment() {
         updateThreatBanner()
         loadCyclerSettings()
         startAlertPolling()
+        // If polling is off, still do a single fetch when entering the app
+        if (prefs.getInt("poll_frequency_seconds", 30) == 0) {
+            updateActiveAlerts()
+            backgroundHistoryRefresh()
+        }
         if (cachedAlertsList.isNotEmpty() && shouldStartCycler()) {
             startAutoCycle()
         }
@@ -329,17 +334,24 @@ class StatusFragment : Fragment() {
     private fun startAlertPolling() {
         stopAlertPolling()
         pollCycleCount = 0
+        val pollSeconds = prefs.getInt("poll_frequency_seconds", 30)
+        if (pollSeconds == 0) {
+            // Polling disabled — do a single fetch on resume only
+            startTimestampUpdate()
+            return
+        }
+        val pollMs = pollSeconds * 1000L
+        // Calculate how often to do background history refresh (~2.5 min)
+        val historyInterval = (150_000L / pollMs).toInt().coerceAtLeast(1)
         alertsPollRunnable = object : Runnable {
             override fun run() {
                 updateActiveAlerts()
-                // Every 5th poll (~2.5 min), also fetch recent history to catch
-                // short-lived alerts (e.g. category 14 warnings) that the live
-                // endpoint may have already rotated out.
+                // Periodically fetch history to catch short-lived alerts
                 pollCycleCount++
-                if (pollCycleCount % 5 == 0) {
+                if (pollCycleCount % historyInterval == 0) {
                     backgroundHistoryRefresh()
                 }
-                handler.postDelayed(this, 30_000) // Poll every 30 seconds
+                handler.postDelayed(this, pollMs)
             }
         }
         alertsPollRunnable?.let { handler.post(it) }
@@ -444,21 +456,32 @@ class StatusFragment : Fragment() {
                         }
                     }
                     else -> {
-                        // No active alerts (API working, but no current alerts)
-                        stopAutoCycle()
+                        // No active alerts — update data, jump to newest if new alerts arrived
+                        val prevCount = cachedAlertsList.size
+                        val prevLatest = cachedAlertsList.firstOrNull()?.timestampMs ?: 0L
                         loadCachedAlerts()
                         feedRecentCachedAlertsToStateMachine()
                         updateThreatBanner()
-                        miniMapContainer.visibility = View.VISIBLE  // Always show map
+                        miniMapContainer.visibility = View.VISIBLE
+
+                        val newCount = cachedAlertsList.size
+                        val newLatest = cachedAlertsList.firstOrNull()?.timestampMs ?: 0L
+                        val hasNewAlerts = newCount > prevCount || newLatest > prevLatest
 
                         if (cachedAlertsList.isNotEmpty()) {
-                            // Show most recent cached alert
-                            displayCachedAlert(0)
-                            if (shouldStartCycler()) {
-                                startAutoCycle()  // Start cycling through alerts if enabled
+                            if (hasNewAlerts) {
+                                // New alerts arrived — jump to latest group
+                                displayCachedAlertsGroup(0)
+                                if (shouldStartCycler()) startAutoCycle()
+                            } else if (autoCycleRunnable == null) {
+                                // No cycler, no new data — show latest and maybe start cycling
+                                displayCachedAlertsGroup(0)
+                                if (shouldStartCycler()) startAutoCycle()
                             }
+                            // Cycler running + no new alerts = keep current position (cycler advances on its own)
+                            activeAlertsScrollView.visibility = View.VISIBLE
                         } else {
-                            // No cached alerts at all
+                            stopAutoCycle()
                             tvActiveAlerts.text = getString(R.string.active_alerts_none)
                             activeAlertsScrollView.visibility = View.GONE
                             miniMapView.overlays.clear()
@@ -715,7 +738,8 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateThreatBanner() {
-        val state = AlertStateMachine.getState(requireContext())
+        val ctx = context ?: return
+        val state = AlertStateMachine.getState(ctx)
         when (state.level) {
             AlertStateMachine.ThreatLevel.CLEAR -> {
                 threatBanner.visibility = View.GONE
@@ -739,6 +763,17 @@ class StatusFragment : Fragment() {
                 tvThreatRegions.text = getString(R.string.threat_regions, state.regions.joinToString(", "))
                 tvThreatRegions.setTextColor(android.graphics.Color.WHITE)
                 tvThreatSince.setTextColor(android.graphics.Color.parseColor("#FFCDD2"))
+                val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+                tvThreatSince.text = getString(R.string.threat_since, fmt.format(Date(state.since)))
+            }
+            AlertStateMachine.ThreatLevel.EVENT_ENDED -> {
+                threatBanner.visibility = View.VISIBLE
+                threatBanner.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50")) // Green
+                tvThreatLevel.text = getString(R.string.threat_event_ended)
+                tvThreatLevel.setTextColor(android.graphics.Color.WHITE)
+                tvThreatRegions.text = getString(R.string.threat_regions, state.regions.joinToString(", "))
+                tvThreatRegions.setTextColor(android.graphics.Color.WHITE)
+                tvThreatSince.setTextColor(android.graphics.Color.parseColor("#C8E6C9"))
                 val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
                 tvThreatSince.text = getString(R.string.threat_since, fmt.format(Date(state.since)))
             }

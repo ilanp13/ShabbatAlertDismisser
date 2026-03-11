@@ -341,6 +341,28 @@
 
         </RadioGroup>
 
+        <!-- Poll Frequency -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/poll_frequency_label"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/seekPollFrequency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="12"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvPollFrequency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
         <!-- Language Selector -->
         <TextView
             android:layout_width="wrap_content"

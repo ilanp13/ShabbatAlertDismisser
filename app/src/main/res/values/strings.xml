@@ -114,6 +114,7 @@
     <string name="shabbat_banner_always">🕯️ Shabbat Mode Active 🕯️\nAuto-dismissing alerts</string>
     <string name="threat_warning">⚠️ WARNING — Potential threat</string>
     <string name="threat_alarm">🚨 ALARM — Take shelter now!</string>
+    <string name="threat_event_ended">✅ Event ended — You can go out</string>
     <string name="threat_regions">Regions: %s</string>
     <string name="threat_since">Since %s</string>
     <string name="threat_dismiss">Dismiss</string>
@@ -140,6 +141,10 @@
     <string name="history_grouping_all">All alerts together</string>
     <string name="history_all_24h">All alerts (24h)</string>
     <string name="history_since_shabbat">Since Shabbat start</string>
+    <string name="search_regions_hint">Search regions…</string>
+    <string name="poll_frequency_label">Alert polling frequency</string>
+    <string name="poll_frequency_format">Every %d seconds</string>
+    <string name="poll_frequency_off">Off</string>
     <string name="btn_prev">← Previous</string>
     <string name="btn_next">Next →</string>
     <string name="btn_prev_arrow">←</string>

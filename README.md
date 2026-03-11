@@ -25,13 +25,13 @@ Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates 
 
 ### Live alert monitoring
 - **5-tab interface** — Status, Settings, History, Map, and Alerts
-- **Live alert feed** from the Pikud HaOref (Home Front Command) API, polling every 30 seconds when the Status tab is active
+- **Live alert feed** from the Pikud HaOref (Home Front Command) API, with configurable polling frequency (off / 5-60 seconds)
 - **Interactive map view** using osmdroid — shows active and historical alert locations as markers on an OpenStreetMap base layer
 - **24-hour alert history cache** with tiered time grouping (1 min recent, 10 min, 30 min buckets for older alerts)
-- **Region filtering** — select specific regions to monitor; markers for selected regions are highlighted with bold text and yellow borders on the map
+- **Region filtering** — select specific regions to monitor with searchable region picker; markers for selected regions are highlighted with bold text and yellow borders on the map
 - **Within-alert region filtering** — when "show non-selected regions" is off, only your selected regions are shown even within multi-region alerts
 - **Alert type filters** — filter by alert category (missiles, hostile aircraft intrusion, events) via checkboxes on the Map tab
-- **Alert state machine** — persistent WARNING / ALARM / CLEAR threat banners for your selected regions, with reliable clearing after event_over alerts
+- **Alert state machine** — persistent WARNING / ALARM / EVENT_ENDED / CLEAR threat banners for your selected regions, with reliable clearing after event_over alerts
 - **Shabbat mode banner** — visual indicator on the Status tab when Shabbat auto-dismiss is active
 - **Alert history browser** — cycle through tiered history groups with prev/next navigation and pause/play control
 - **History grouping modes** — choose between tiered time buckets (1min/10min/30min) or a single "all alerts" view; during Shabbat, "all" mode shows only alerts since candle lighting
@@ -66,7 +66,7 @@ The app is designed to be lightweight:
 | What it does | Battery cost |
 |---|---|
 | Accessibility service (idle) | Near zero — event-driven, only wakes on cell broadcast windows |
-| Alert polling (Status tab active) | Every 30 seconds while the Status tab is visible; stopped when navigated away |
+| Alert polling (Status tab active) | Configurable interval (default 30 seconds) while the Status tab is visible; stopped when navigated away |
 | Notification refresh | Once per minute (negligible string update) |
 | Hebcal sync | Once per week, single HTTP call |
 | Location | On demand only (when you tap Update Location) |
@@ -154,7 +154,7 @@ app/src/main/
 The app makes network requests to the following external services:
 
 - **Hebcal API** (`hebcal.com`) — weekly sync for accurate Shabbat and holiday times
-- **Pikud HaOref API** (`oref.org.il`) — live alert data and 24-hour alert history, polled every 30 seconds while the Status tab is active
+- **Pikud HaOref API** (`oref.org.il`) — live alert data and 24-hour alert history, polled at a configurable interval while the Status tab is active
 
 ## Disclaimer
 
