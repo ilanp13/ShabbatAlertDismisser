@@ -1,8 +1,56 @@
 # Release Notes
 
-## Version 2.0.2 - Current Release
+## Version 2.1.0 - Current Release
 
 ### English (en-US)
+
+**Version 2.1.0 — Polygon Maps, Color-Coded Alerts & Dark Mode**
+
+✨ **New:**
+  • Polygon map regions — alert areas shown as filled polygons instead of dots
+  • Dark mode map — map tiles invert automatically in dark theme
+  • Color-coded alert types — red (alarm), yellow (warning), green (event ended)
+  • Multi-block alert display — all alert groups visible simultaneously with color coding
+  • Color legend on status screen
+  • Selected region borders (purple) and current location border (blue) on maps
+  • Map zoom setting — zoom to alert area on click or auto-focus
+  • Map swipe fix — panning no longer switches tabs
+
+🔧 **Fixes:**
+  • Alert type system — proper alarm/warning/event_ended classification
+  • Event ended detection — title-based inference catches all variants
+  • Threat banner auto-timeout — correctly clears after 10 minutes
+  • Smart cycler — no flicker, preserves position, live time updates
+  • Filter migration to new type system
+
+---
+
+### Hebrew (iw-IL)
+
+**גרסה 2.1.0 — מפות פוליגון, התראות צבעוניות ומצב כהה**
+
+✨ **חדש:**
+  • אזורי מפה כפוליגונים — שטחי התראה מוצגים כאזורים צבועים
+  • מפה כהה — מצב כהה אוטומטי לפי ערכת העיצוב
+  • התראות בקוד צבע — אדום (אזעקה), צהוב (אזהרה), ירוק (הסתיים)
+  • תצוגת בלוקים — כל קבוצות ההתראות נראות בו-זמנית עם צבע
+  • מקרא צבעים במסך הסטטוס
+  • גבולות אזורים נבחרים (סגול) ומיקום נוכחי (כחול) במפה
+  • הגדרת זום מפה — זום לאזור התראה בלחיצה או אוטומטית
+  • תיקון גלילת מפה — החלקה לא מעבירה לשוניות
+
+🔧 **תיקונים:**
+  • מערכת סוגי התראות — סיווג נכון של אזעקה/אזהרה/הסתיים
+  • זיהוי "האירוע הסתיים" — זיהוי לפי כותרת תופס את כל הגרסאות
+  • באנר איום נסגר אוטומטית — מתנקה נכון אחרי 10 דקות
+  • מחזור חכם — ללא הבהוב, שומר מיקום, זמנים מתעדכנים
+  • מיגרציית מסננים למערכת סוגים חדשה
+
+---
+
+## Previous Versions
+
+### Version 2.0.2
 
 **Version 2.0.2 — Stability, Region Picker & Smart Cycler**
 
@@ -16,23 +64,6 @@
   • Multiple crash and cache stability fixes
 
 ---
-
-### Hebrew (iw-IL)
-
-**גרסה 2.0.2 — יציבות, בורר אזורים ומחזור חכם**
-
-🔧 **תיקונים ושיפורים:**
-  • באנר ירוק "האירוע הסתיים" — חיווי ויזואלי ברור כשהאיום חלף
-  • תדירות סקר מותאמת (כבוי / 5–60 שניות)
-  • בורר אזורים חדש — חיפוש עם מקלדת, אזורים נבחרים מוצגים ראשונים
-  • מחזור התראות חכם — נשאר על הקבוצה הנוכחית אלא אם הגיעו התראות חדשות
-  • בטיחות סגירה אוטומטית — מניעת לחיצה בטעות על חלון שגוי
-  • היסטוריה מלאה 24 שעות — עוקף מגבלת 3000 רשומות עם שליפה לפי קטגוריה
-  • מספר תיקוני קריסות ויציבות מטמון
-
----
-
-## Previous Versions
 
 ### Version 2.0.1
 

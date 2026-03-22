@@ -58,11 +58,35 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Region picker rewrite** — In-place search filtering with keyboard support, selected regions sorted to top
 - [x] **Cycler vs polling fix** — Cycler preserves position when no new alerts; jumps to latest when new alerts arrive
 
+### Phase 3.0 (Complete)
+
+- [x] **Polygon map regions** — Alert areas rendered as filled polygons from Tzofar/RedAlert data (99.5% coverage) instead of dots
+- [x] **Dark mode maps** — Inverted tile colors on both mini-map and full map tab when dark theme is active
+- [x] **Color-coded alert types** — Red (alarm/missiles/aircraft), yellow (warning), green (event ended)
+- [x] **Multi-block alert display** — All alert groups shown simultaneously as color-coded blocks on Status tab
+- [x] **Color legend** — Compact legend row on Status tab
+- [x] **Selected region borders** — Purple polygon outline for selected regions on maps
+- [x] **Current location region** — Blue polygon outline for the region containing user's GPS position
+- [x] **Map zoom setting** — 3-mode setting: disabled, on click, or auto-focus with bounding box zoom
+- [x] **Map swipe fix** — ViewPager2 no longer steals horizontal swipes from map views
+- [x] **Alert type system rewrite** — alarm/warning/event_ended types with category-based classification
+- [x] **Event ended title inference** — "הסתיים" checked first in title to prevent misclassification
+- [x] **Threat banner auto-timeout** — EVENT_ENDED state correctly times out after 10 minutes
+- [x] **Smart block cycling** — No-flicker fast-path highlight updates, live header time refresh
+- [x] **Filter system migration** — Old missile/aircraft/event filters auto-migrate to alarm/warning/event_ended
+- [x] **Cache clear behavior** — Clear hides alerts without deleting cache; only refetch 24h brings them back
+
 ---
 
 ## Planned Features
 
-### Phase 3 (Long-term)
+### Phase 3.1 — Live Mode (Planned)
+
+- [ ] **Live mode** — Real-time per-region coloring on map based on current alert state
+- [ ] **Per-region state tracking** — Each region tracks its own warning/alarm/ended state with timeouts
+- [ ] **Live mode cycler option** — New cycler mode showing real-time status instead of history cycling
+
+### Phase 4 (Long-term)
 
 #### 1. Advanced Analytics
 
@@ -140,7 +164,25 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 8. [x] Region picker rewrite (in-place search, keyboard, selected-first)
 9. [x] Cycler vs polling fix (smart index preservation)
 
-**Phase 3 (Long-term) — Not started:**
+**Phase 3.0 (Polygon Maps & UX) — Done:**
+1. [x] Polygon map regions (Tzofar data, 99.5% coverage)
+2. [x] Dark mode maps (inverted tiles)
+3. [x] Color-coded alert types (alarm/warning/event_ended)
+4. [x] Multi-block alert display with legend
+5. [x] Selected region + current location polygon borders
+6. [x] Map zoom setting (off/click/auto)
+7. [x] Map swipe fix (ViewPager2)
+8. [x] Alert type system rewrite + filter migration
+9. [x] Event ended title inference fix
+10. [x] Threat banner auto-timeout fix
+11. [x] Smart no-flicker block cycling
+
+**Phase 3.1 (Live Mode) — Planned:**
+1. [ ] Real-time per-region map coloring
+2. [ ] Per-region state tracking with timeouts
+3. [ ] Live mode cycler option
+
+**Phase 4 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)
 2. Notifications about incoming alerts (optional, respects Shabbat)
 3. Export alert history

@@ -126,6 +126,9 @@
     <string name="filter_missiles">🔴 טילים</string>
     <string name="filter_aircraft">🟠 כלי טיס</string>
     <string name="filter_events">🟢 אירועים</string>
+    <string name="filter_alerts">🔴 התראות</string>
+    <string name="filter_warnings">🟡 אזהרות</string>
+    <string name="filter_ended">🟢 הסתיימו</string>
     <string name="map_no_alerts">אין התראות</string>
     <string name="map_now_counter">עכשיו - %1$s (%2$d/%3$d)</string>
     <string name="map_now_header">עכשיו  %s</string>
@@ -145,6 +148,14 @@
     <string name="poll_frequency_label">תדירות סקר התראות</string>
     <string name="poll_frequency_format">כל %d שניות</string>
     <string name="poll_frequency_off">כבוי</string>
+    <string name="legend_missile">התראה</string>
+    <string name="legend_aircraft">כלי טיס</string>
+    <string name="legend_warning">אזהרה</string>
+    <string name="legend_ended">הסתיים</string>
+    <string name="map_zoom_label">זום מפה בפוקוס התראה</string>
+    <string name="map_zoom_off">כבוי</string>
+    <string name="map_zoom_click">בלחיצה בלבד</string>
+    <string name="map_zoom_auto">בלחיצה ובפוקוס אוטומטי</string>
     <string name="btn_prev">הקודם →</string>
     <string name="btn_next">← הבא</string>
     <string name="btn_prev_arrow">→</string>

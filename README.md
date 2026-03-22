@@ -26,11 +26,12 @@ Shabbat times are fetched from the **Hebcal API** based on your GPS coordinates 
 ### Live alert monitoring
 - **5-tab interface** — Status, Settings, History, Map, and Alerts
 - **Live alert feed** from the Pikud HaOref (Home Front Command) API, with configurable polling frequency (off / 5-60 seconds)
-- **Interactive map view** using osmdroid — shows active and historical alert locations as markers on an OpenStreetMap base layer
+- **Interactive polygon map** using osmdroid — shows alert areas as colored polygon regions on dark-mode-aware OpenStreetMap tiles
 - **24-hour alert history cache** with tiered time grouping (1 min recent, 10 min, 30 min buckets for older alerts)
-- **Region filtering** — select specific regions to monitor with searchable region picker; markers for selected regions are highlighted with bold text and yellow borders on the map
+- **Region filtering** — select specific regions to monitor with searchable region picker; selected regions shown with purple polygon borders, current location with blue border
 - **Within-alert region filtering** — when "show non-selected regions" is off, only your selected regions are shown even within multi-region alerts
-- **Alert type filters** — filter by alert category (missiles, hostile aircraft intrusion, events) via checkboxes on the Map tab
+- **Color-coded alert types** — red (alarm/missiles/aircraft), yellow (warning), green (event ended) with color legend
+- **Alert type filters** — filter by category (alerts, warnings, ended) via checkboxes on the Map tab
 - **Alert state machine** — persistent WARNING / ALARM / EVENT_ENDED / CLEAR threat banners for your selected regions, with reliable clearing after event_over alerts
 - **Shabbat mode banner** — visual indicator on the Status tab when Shabbat auto-dismiss is active
 - **Alert history browser** — cycle through tiered history groups with prev/next navigation and pause/play control

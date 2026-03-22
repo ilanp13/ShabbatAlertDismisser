@@ -176,13 +176,13 @@ object RedAlertService {
                 var title = obj.optString("title", "")
                 if (title.isEmpty()) title = obj.optString("category_desc", "")
 
-                // Infer category from title if API didn't provide one
-                val categoryInt = if (rawCategory > 0) rawCategory else inferCategoryFromTitle(title)
+                // Title-based inference takes priority over unknown API categories
+                val inferredCat = inferCategoryFromTitle(title)
+                val categoryInt = if (inferredCat > 0) inferredCat else rawCategory
 
-                var type = obj.optString("type", "")
-                if (type.isEmpty()) {
-                    type = mapCategoryToType(categoryInt)
-                }
+                // Prefer category-based type over API's generic "event" type
+                var type = if (categoryInt > 0) mapCategoryToType(categoryInt) else obj.optString("type", "")
+                if (type.isEmpty()) type = obj.optString("type", "")
                 if (type.isEmpty()) type = "missile"
 
                 val region = obj.optString("data", "").trim()
@@ -231,19 +231,19 @@ object RedAlertService {
             val description = obj.optString("desc", "")
             val alertDate = obj.optString("alertDate", "")
 
-            // Type can come from "type" field or "category" field (numeric or string)
-            var type = obj.optString("type", "")
-            if (type.isEmpty()) {
-                val categoryValue = obj.opt("category")
-                type = when (categoryValue) {
-                    is Int -> mapCategoryToType(categoryValue)
-                    is String -> mapCategoryToType(categoryValue.toIntOrNull() ?: -1)
-                    else -> ""
-                }
-                if (type.isEmpty()) {
-                    type = obj.optString("category", "")
-                }
+            // Determine type: prefer category-based mapping over API's "type" field
+            // (API returns "event" for both warnings and event_ended — we need to distinguish)
+            val categoryValue = obj.opt("category")
+            val categoryInt = when (categoryValue) {
+                is Int -> categoryValue
+                is String -> categoryValue.toIntOrNull() ?: 0
+                else -> 0
             }
+            val inferredCat = inferCategoryFromTitle(title)
+            val resolvedCategory = if (inferredCat > 0) inferredCat else categoryInt
+            var type = if (resolvedCategory > 0) mapCategoryToType(resolvedCategory) else obj.optString("type", "")
+            if (type.isEmpty()) type = obj.optString("type", "")
+            if (type.isEmpty()) type = "missile"
 
             // Regions can come from "cities" array or "data" field
             val citiesArray = obj.optJSONArray("cities")
@@ -294,7 +294,7 @@ object RedAlertService {
                 Log.d(TAG, "Valid regions: $validRegions out of $regions")
 
                 // Keep ALL regions (even without coordinates) so alerts show in list
-                ActiveAlert(title, regions, description, type)
+                ActiveAlert(title, regions, description, type, resolvedCategory)
             } else {
                 Log.d(TAG, "Alert missing title or regions: title=$title, regions=$regions")
                 null
@@ -308,23 +308,25 @@ object RedAlertService {
     internal fun inferCategoryFromTitle(title: String): Int {
         val t = title.lowercase()
         return when {
+            // Check "event ended" FIRST — title may contain both "הסתיים" and "רקטות"
+            t.contains("הסתיים") || t.contains("all clear") -> 13  // event ended
+            t.contains("בדקות הקרובות") || t.contains("התרעות") -> 12  // warning ("in the next minutes")
             t.contains("רקטות") || t.contains("טילים") -> 1  // missiles
             t.contains("כלי טיס") || t.contains("חדירת") -> 2  // aircraft
-            t.contains("הסתיים") || t.contains("all clear") -> 13  // event ended
-            t.contains("אירוע") || t.contains("בדקות הקרובות") || t.contains("התרעות") -> 12  // general event/warning
+            t.contains("אירוע") -> 12  // general event/warning
             else -> 0
         }
     }
 
     private fun mapCategoryToType(category: Int): String {
         return when (category) {
-            1 -> "missile"
-            2 -> "aircraft"
-            3 -> "earthquake"
-            4 -> "tsunami"
-            12 -> "event"
-            13 -> "event"  // Event ended / all clear
-            14 -> "event"  // Warning: alerts expected soon
+            1 -> "alarm"        // Missiles
+            2 -> "alarm"        // Aircraft
+            3 -> "alarm"        // Earthquake
+            4 -> "alarm"        // Tsunami
+            12 -> "warning"     // "Alerts expected soon" / "In the next minutes"
+            13 -> "event_ended" // Event ended / all clear
+            14 -> "warning"     // Warning: alerts expected soon
             else -> ""
         }
     }

@@ -363,6 +363,42 @@
             android:textSize="14sp"
             android:layout_marginBottom="24dp" />
 
+        <!-- Map Zoom Setting -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/map_zoom_label"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radioMapZoom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/radioZoomOff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/map_zoom_off" />
+
+            <RadioButton
+                android:id="@+id/radioZoomClick"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/map_zoom_click" />
+
+            <RadioButton
+                android:id="@+id/radioZoomAuto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/map_zoom_auto" />
+
+        </RadioGroup>
+
         <!-- Language Selector -->
         <TextView
             android:layout_width="wrap_content"

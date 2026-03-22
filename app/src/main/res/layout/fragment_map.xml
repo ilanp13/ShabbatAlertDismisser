@@ -37,7 +37,7 @@
             android:id="@+id/cbMissiles"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/filter_missiles"
+            android:text="@string/filter_alerts"
             android:textSize="11sp"
             android:layout_marginTop="4dp"
             android:checked="true" />
@@ -46,7 +46,7 @@
             android:id="@+id/cbAircraft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/filter_aircraft"
+            android:text="@string/filter_warnings"
             android:textSize="11sp"
             android:checked="true" />
 
@@ -54,7 +54,7 @@
             android:id="@+id/cbEvent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/filter_events"
+            android:text="@string/filter_ended"
             android:textSize="11sp"
             android:checked="true" />
 

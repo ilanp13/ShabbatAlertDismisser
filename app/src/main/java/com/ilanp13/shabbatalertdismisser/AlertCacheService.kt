@@ -215,14 +215,28 @@ object AlertCacheService {
                 if (now - timestamp < maxAge) {
                     val title = obj.getString("title")
                     val description = obj.getString("description")
-                    val type = obj.optString("type", "")
+                    val rawType = obj.optString("type", "")
                     val category = obj.optInt("category", 0)
+                    // Normalize types: title-based inference overrides unknown categories
+                    val inferredCat = RedAlertService.inferCategoryFromTitle(title)
+                    val resolvedCat = if (inferredCat > 0) inferredCat else if (category > 0) category else 0
+                    val type = if (resolvedCat > 0) {
+                        when (resolvedCat) {
+                            1, 2, 3, 4 -> "alarm"
+                            12, 14 -> "warning"
+                            13 -> "event_ended"
+                            else -> rawType
+                        }
+                    } else rawType
+                    if (resolvedCat == 13 || title.contains("הסתיים")) {
+                        android.util.Log.d("AlertCache", "Event ended: rawType=$rawType cat=$category resolvedCat=$resolvedCat type=$type title=$title")
+                    }
                     val regionsArray = obj.getJSONArray("regions")
                     val regions = mutableListOf<String>()
                     for (j in 0 until regionsArray.length()) {
                         regions.add(regionsArray.getString(j))
                     }
-                    result.add(CachedAlert(timestamp, title, regions, description, type, category))
+                    result.add(CachedAlert(timestamp, title, regions, description, type, resolvedCat))
                 }
             }
             result

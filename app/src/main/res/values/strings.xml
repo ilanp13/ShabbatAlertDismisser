@@ -126,6 +126,9 @@
     <string name="filter_missiles">🔴 Missiles</string>
     <string name="filter_aircraft">🟠 Aircraft</string>
     <string name="filter_events">🟢 Events</string>
+    <string name="filter_alerts">🔴 Alerts</string>
+    <string name="filter_warnings">🟡 Warnings</string>
+    <string name="filter_ended">🟢 Ended</string>
     <string name="map_no_alerts">No alerts</string>
     <string name="map_now_counter">NOW - %1$s (%2$d/%3$d)</string>
     <string name="map_now_header">NOW  %s</string>
@@ -145,6 +148,14 @@
     <string name="poll_frequency_label">Alert polling frequency</string>
     <string name="poll_frequency_format">Every %d seconds</string>
     <string name="poll_frequency_off">Off</string>
+    <string name="legend_missile">Alert</string>
+    <string name="legend_aircraft">Aircraft</string>
+    <string name="legend_warning">Warning</string>
+    <string name="legend_ended">Ended</string>
+    <string name="map_zoom_label">Map zoom on alert focus</string>
+    <string name="map_zoom_off">Disabled</string>
+    <string name="map_zoom_click">On click only</string>
+    <string name="map_zoom_auto">On click and auto-focus</string>
     <string name="btn_prev">← Previous</string>
     <string name="btn_next">Next →</string>
     <string name="btn_prev_arrow">←</string>

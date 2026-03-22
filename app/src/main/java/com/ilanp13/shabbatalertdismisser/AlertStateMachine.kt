@@ -39,13 +39,21 @@ object AlertStateMachine {
         selectedRegions: Set<String>
     ): ThreatState {
         val now = System.currentTimeMillis()
-        // Use the alert's own timestamp if available, otherwise fall back to now
         val alertTime = if (alert.timestampMs > 0) alert.timestampMs else now
         val current = getState(context)
         val category = alert.category
 
+        // If state was manually dismissed (CLEAR with recent lastUpdate),
+        // ignore alerts older than the dismissal
+        if (current.level == ThreatLevel.CLEAR && current.lastUpdate > 0 && alertTime <= current.lastUpdate) {
+            return current
+        }
+
+        // Event ended (cat 13): if already EVENT_ENDED, don't reset the timeout
+        if (category == 13 && current.level == ThreatLevel.EVENT_ENDED) {
+            return current
+        }
         // Event ended (cat 13): if we're in WARNING/ALARM, transition to EVENT_ENDED
-        // (green banner for 10 min). If already CLEAR or EVENT_ENDED, stay as is.
         if (category == 13 && (current.level == ThreatLevel.WARNING || current.level == ThreatLevel.ALARM)) {
             Log.d(TAG, "Event ended (cat 13) while in ${current.level} -> EVENT_ENDED")
             val ended = ThreatState(ThreatLevel.EVENT_ENDED, current.title, current.regions, alertTime, now)
@@ -161,7 +169,10 @@ object AlertStateMachine {
     }
 
     fun clearState(context: Context) {
-        saveState(context, defaultState())
+        // Set lastUpdate to now so feedRecentCachedAlertsToStateMachine
+        // won't replay old alerts that are older than this dismissal
+        val now = System.currentTimeMillis()
+        saveState(context, ThreatState(ThreatLevel.CLEAR, "", emptyList(), now, now))
     }
 
     private fun defaultState(): ThreatState {

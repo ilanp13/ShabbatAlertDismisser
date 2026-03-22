@@ -40,6 +40,7 @@ class SettingsFragment : Fragment() {
     private lateinit var radioHistoryGrouping: RadioGroup
     private lateinit var seekPollFrequency: SeekBar
     private lateinit var tvPollFrequency: TextView
+    private lateinit var radioMapZoom: RadioGroup
     private lateinit var spinnerLanguage: Spinner
     private lateinit var spinnerTheme: Spinner
     private lateinit var tvSelectedRegions: TextView
@@ -75,6 +76,7 @@ class SettingsFragment : Fragment() {
         radioHistoryGrouping = view.findViewById(R.id.radioHistoryGrouping)
         seekPollFrequency = view.findViewById(R.id.seekPollFrequency)
         tvPollFrequency = view.findViewById(R.id.tvPollFrequency)
+        radioMapZoom = view.findViewById(R.id.radioMapZoom)
         spinnerLanguage = view.findViewById(R.id.spinnerLanguage)
         spinnerTheme = view.findViewById(R.id.spinnerTheme)
         tvSelectedRegions = view.findViewById(R.id.tvSelectedRegions)
@@ -89,6 +91,7 @@ class SettingsFragment : Fragment() {
         setupCyclerSettings()
         setupHistoryGrouping()
         setupPollFrequency()
+        setupMapZoom()
         setupLanguageSpinner()
         setupThemeSpinner()
         setupRegionPicker()
@@ -259,6 +262,21 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
+    }
+
+    private fun setupMapZoom() {
+        radioMapZoom.check(when (prefs.getString("map_zoom_mode", "off")) {
+            "click" -> R.id.radioZoomClick
+            "auto" -> R.id.radioZoomAuto
+            else -> R.id.radioZoomOff
+        })
+        radioMapZoom.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString("map_zoom_mode", when (id) {
+                R.id.radioZoomClick -> "click"
+                R.id.radioZoomAuto -> "auto"
+                else -> "off"
+            }).apply()
+        }
     }
 
     private fun setupLanguageSpinner() {

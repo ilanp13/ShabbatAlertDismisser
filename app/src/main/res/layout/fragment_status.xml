@@ -55,12 +55,12 @@
 
             <TextView
                 android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textSize="11sp"
-                android:layout_marginStart="8dp"
-                android:singleLine="true"
-                android:ellipsize="end" />
+                android:layout_weight="1"
+                android:textSize="9sp"
+                android:layout_marginStart="6dp"
+                android:maxLines="2" />
 
         </LinearLayout>
 
@@ -288,54 +288,54 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
+                        android:id="@+id/alertsHeaderSection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/active_alerts_title"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="4dp" />
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/filter_note_all_tabs_regions"
-                        android:textSize="9sp"
-                        android:alpha="0.6"
-                        android:layout_marginBottom="8dp" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/active_alerts_title"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="2dp" />
 
-                    <TextView
-                        android:id="@+id/tvAlertsUpdatedTime"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="9sp"
-                        android:alpha="0.6"
-                        android:layout_marginBottom="4dp"
-                        android:visibility="gone" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/filter_note_all_tabs_regions"
+                            android:textSize="9sp"
+                            android:alpha="0.6"
+                            android:layout_marginBottom="2dp" />
+
+                        <TextView
+                            android:id="@+id/tvAlertsUpdatedTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="9sp"
+                            android:alpha="0.6"
+                            android:layout_marginBottom="2dp"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvActiveAlerts"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="11sp"
-                        android:layout_marginBottom="4dp"
+                        android:layout_marginBottom="2dp"
                         android:text="@string/active_alerts_none" />
 
-                    <ScrollView
+                    <!-- Container for alert group blocks -->
+                    <LinearLayout
+                        android:id="@+id/alertBlocksContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:visibility="gone"
-                        android:id="@+id/activeAlertsScrollView"
-                        android:scrollbarStyle="insideInset">
-
-                        <TextView
-                            android:id="@+id/tvActiveAlertsRegions"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textSize="11sp"
-                            android:padding="4dp" />
-
-                    </ScrollView>
+                        android:orientation="vertical"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 

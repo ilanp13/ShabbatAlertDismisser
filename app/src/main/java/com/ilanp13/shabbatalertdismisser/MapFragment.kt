@@ -1,7 +1,10 @@
 package com.ilanp13.shabbatalertdismisser
 
+import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
@@ -13,10 +16,11 @@ import android.widget.CheckBox
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import org.osmdroid.config.Configuration
+import org.osmdroid.config.Configuration as OsmConfig
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import androidx.preference.PreferenceManager
 import java.text.SimpleDateFormat
@@ -99,20 +103,19 @@ class MapFragment : Fragment() {
 
     private fun updateSelectedTypes() {
         val types = mutableSetOf<String>()
-        if (cbMissiles.isChecked) types.add("missile")
-        if (cbAircraft.isChecked) types.add("aircraft")
-        if (cbEvent.isChecked) types.add("event")
+        if (cbMissiles.isChecked) types.add("alarm")
+        if (cbAircraft.isChecked) types.add("warning")
+        if (cbEvent.isChecked) types.add("event_ended")
         AlertTypeFilter.setSelectedTypes(requireContext(), types)
     }
 
     private fun loadFilterPreferences() {
         val selectedTypes = AlertTypeFilter.getSelectedTypes(requireContext())
-        cbMissiles.isChecked = selectedTypes.contains("missile")
-        cbAircraft.isChecked = selectedTypes.contains("aircraft")
-        cbEvent.isChecked = selectedTypes.contains("event")
+        cbMissiles.isChecked = selectedTypes.contains("alarm")
+        cbAircraft.isChecked = selectedTypes.contains("warning")
+        cbEvent.isChecked = selectedTypes.contains("event_ended")
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        // Migrate old setting
         if (prefs.contains("region_display_mode")) {
             val oldMode = prefs.getString("region_display_mode", "all")
             prefs.edit()
@@ -125,15 +128,15 @@ class MapFragment : Fragment() {
 
     private fun saveFilterPreferences() {
         val types = mutableSetOf<String>()
-        if (cbMissiles.isChecked) types.add("missile")
-        if (cbAircraft.isChecked) types.add("aircraft")
-        if (cbEvent.isChecked) types.add("event")
+        if (cbMissiles.isChecked) types.add("alarm")
+        if (cbAircraft.isChecked) types.add("warning")
+        if (cbEvent.isChecked) types.add("event_ended")
         AlertTypeFilter.setSelectedTypes(requireContext(), types)
     }
 
     private fun setupMap() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        Configuration.getInstance().apply {
+        OsmConfig.getInstance().apply {
             load(requireContext(), prefs)
             userAgentValue = requireContext().packageName
             osmdroidBasePath = requireContext().cacheDir
@@ -143,13 +146,39 @@ class MapFragment : Fragment() {
         mapView.setMultiTouchControls(true)
         mapView.setDestroyMode(false)
 
+        // Prevent ViewPager2 from intercepting horizontal swipes on the map
+        mapView.setOnTouchListener { v, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN,
+                android.view.MotionEvent.ACTION_MOVE -> v.parent?.requestDisallowInterceptTouchEvent(true)
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> v.parent?.requestDisallowInterceptTouchEvent(false)
+            }
+            false // Let map handle the event normally
+        }
+
         val controller = mapView.controller
         controller.setZoom(9.5)
         controller.setCenter(GeoPoint(31.5, 35.0))
 
+        applyDarkModeIfNeeded()
+
         val compass = CompassOverlay(requireContext(), mapView)
         compass.enableCompass()
         mapView.overlays.add(compass)
+    }
+
+    private fun applyDarkModeIfNeeded() {
+        val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        if (nightMode == Configuration.UI_MODE_NIGHT_YES) {
+            val invertMatrix = ColorMatrix(floatArrayOf(
+                -1f, 0f, 0f, 0f, 255f,
+                0f, -1f, 0f, 0f, 255f,
+                0f, 0f, -1f, 0f, 255f,
+                0f, 0f, 0f, 1f, 0f
+            ))
+            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(invertMatrix))
+        }
     }
 
     private fun loadAlerts() {
@@ -175,7 +204,6 @@ class MapFragment : Fragment() {
                     }
                     .sortedByDescending { it.timestampMs }
 
-                // Tiered grouping: 1min (recent) → 10min → 30min (old)
                 val minuteGroups = AlertCacheService.groupByTimeBucket(historyAlerts)
 
                 requireActivity().runOnUiThread {
@@ -209,15 +237,13 @@ class MapFragment : Fragment() {
 
         if (totalGroups == 0) {
             tvMapCounter.text = getString(R.string.map_no_alerts)
-            drawMarkersOnMap(emptyList(), false, null)
+            drawOnMap(emptyList(), false, null)
             return
         }
 
-        val ctx = requireContext()
         val selectedRegions = getSelectedRegions(prefs)
         val showOther = prefs.getBoolean("show_other_regions", true)
 
-        // Index 0 = active alert (if exists), then history groups
         val displayIndex = currentGroupIndex % totalGroups
         val isShowingActive = hasActive && displayIndex == 0
         val historyIndex = if (hasActive) displayIndex - 1 else displayIndex
@@ -229,28 +255,218 @@ class MapFragment : Fragment() {
             val color = getAlertTypeColor(alert.type)
             val regions = if (!showOther && selectedRegions.isNotEmpty())
                 alert.regions.filter { it in selectedRegions } else alert.regions
-            val markers = regions.mapNotNull { region ->
-                val coords = OrefRegionCoords.coords[region] ?: return@mapNotNull null
-                MarkerData(GeoPoint(coords.first, coords.second), region, color, 1.0f, selectedRegions.contains(region))
-            }
-            drawMarkersOnMap(markers, true, getString(R.string.map_now_header, alert.title))
+            val regionData = regions.map { RegionColorData(it, color, 0.35f, it in selectedRegions) }
+            drawOnMap(regionData, true, getString(R.string.map_now_header, alert.title))
+            zoomToFitRegions(regionData)
         } else if (historyIndex in alertsByMinute.indices) {
             val group = alertsByMinute[historyIndex]
+            val ctx = requireContext()
             val header = AlertCacheService.formatGroupHeader(ctx, group)
             val countStr = AlertCacheService.formatGroupCount(ctx, group)
             tvMapCounter.text = "$header$countStr (${displayIndex + 1}/$totalGroups)"
 
-            val markers = group.flatMap { alert ->
+            // Process oldest-first so latest alert color wins per region
+            val regionData = group.asReversed().flatMap { alert ->
                 val color = getAlertTypeColor(alert.type)
                 val regions = if (!showOther && selectedRegions.isNotEmpty())
                     alert.regions.filter { it in selectedRegions } else alert.regions
-                regions.mapNotNull { region ->
-                    val coords = OrefRegionCoords.coords[region] ?: return@mapNotNull null
-                    MarkerData(GeoPoint(coords.first, coords.second), region, color, 0.85f, selectedRegions.contains(region))
+                regions.map { RegionColorData(it, color, 0.25f, it in selectedRegions) }
+            }
+            drawOnMap(regionData, false, "$header$countStr")
+
+            val zoomMode = prefs.getString("map_zoom_mode", "off") ?: "off"
+            if (zoomMode == "auto") zoomToFitRegions(regionData)
+        }
+    }
+
+    private fun zoomToFitRegions(regionData: List<RegionColorData>) {
+        val ctx = context ?: return
+        if (regionData.isEmpty()) return
+
+        var minLat = Double.MAX_VALUE; var maxLat = -Double.MAX_VALUE
+        var minLon = Double.MAX_VALUE; var maxLon = -Double.MAX_VALUE
+        var hasPoints = false
+
+        for (rd in regionData) {
+            val polyPoints = OrefPolygons.getPolygon(ctx, rd.region)
+            if (polyPoints != null) {
+                for (p in polyPoints) {
+                    minLat = minOf(minLat, p.latitude); maxLat = maxOf(maxLat, p.latitude)
+                    minLon = minOf(minLon, p.longitude); maxLon = maxOf(maxLon, p.longitude)
+                    hasPoints = true
+                }
+            } else {
+                val coords = OrefRegionCoords.coords[rd.region] ?: continue
+                minLat = minOf(minLat, coords.first); maxLat = maxOf(maxLat, coords.first)
+                minLon = minOf(minLon, coords.second); maxLon = maxOf(maxLon, coords.second)
+                hasPoints = true
+            }
+        }
+        if (!hasPoints) return
+
+        val latPad = (maxLat - minLat) * 0.15 + 0.01
+        val lonPad = (maxLon - minLon) * 0.15 + 0.01
+        val bbox = org.osmdroid.util.BoundingBox(
+            maxLat + latPad, maxLon + lonPad, minLat - latPad, minLon - lonPad
+        )
+        mapView.post { mapView.zoomToBoundingBox(bbox, true) }
+    }
+
+    private data class RegionColorData(
+        val region: String,
+        val color: Int,
+        val fillAlpha: Float,
+        val isSelectedRegion: Boolean
+    )
+
+    private fun drawOnMap(
+        regionData: List<RegionColorData>,
+        isActive: Boolean,
+        headerText: String?
+    ) {
+        val ctx = context ?: return
+        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+        val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
+        val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+
+        // Remove previous alert overlays (keep compass)
+        mapView.overlays.removeAll { it !is CompassOverlay }
+        applyDarkModeIfNeeded()
+
+        // Draw selected region borders (outline only, no fill) as base layer
+        val selectedRegions = getSelectedRegions(prefs)
+        for (region in selectedRegions) {
+            val polyPoints = OrefPolygons.getPolygon(ctx, region) ?: continue
+            if (polyPoints.size < 3) continue
+            val border = Polygon(mapView)
+            border.points = polyPoints
+            border.fillPaint.color = Color.TRANSPARENT
+            border.outlinePaint.color = Color.parseColor("#9C27B0") // Purple
+            border.outlinePaint.strokeWidth = 3f
+            border.outlinePaint.alpha = 180
+            mapView.overlays.add(border)
+        }
+
+        // Draw current location region border (blue, thicker)
+        val userRegion = OrefPolygons.findRegionContaining(ctx, userLat, userLon)
+        if (userRegion != null) {
+            val polyPoints = OrefPolygons.getPolygon(ctx, userRegion)
+            if (polyPoints != null && polyPoints.size >= 3) {
+                val border = Polygon(mapView)
+                border.points = polyPoints
+                border.fillPaint.color = Color.TRANSPARENT
+                border.outlinePaint.color = Color.parseColor("#2196F3") // Blue
+                border.outlinePaint.strokeWidth = 5f
+                border.outlinePaint.alpha = 220
+                mapView.overlays.add(border)
+            }
+        }
+
+        // Deduplicate: if a region appears multiple times, use the highest-priority color
+        // Latest alert per region wins, but yellow doesn't cancel red/orange
+        val regionMap = mutableMapOf<String, RegionColorData>()
+        for (rd in regionData) {
+            val existing = regionMap[rd.region]
+            if (existing == null || shouldOverwriteColor(existing.color, rd.color)) {
+                regionMap[rd.region] = rd
+            }
+        }
+
+        // Draw alert polygons for each region
+        for ((_, rd) in regionMap) {
+            val polyPoints = OrefPolygons.getPolygon(ctx, rd.region)
+            if (polyPoints != null && polyPoints.size >= 3) {
+                val polygon = Polygon(mapView)
+                polygon.points = polyPoints
+                polygon.fillPaint.color = rd.color
+                polygon.fillPaint.alpha = (rd.fillAlpha * 255).toInt()
+                polygon.outlinePaint.color = if (rd.isSelectedRegion) Color.parseColor("#9C27B0") else rd.color
+                polygon.outlinePaint.strokeWidth = if (rd.isSelectedRegion) 4f else 2f
+                polygon.outlinePaint.alpha = 200
+                polygon.title = rd.region
+                mapView.overlays.add(polygon)
+            } else {
+                // Fallback to dot for regions without polygon data
+                val coords = OrefRegionCoords.coords[rd.region] ?: continue
+                val dotOverlay = createDotOverlay(
+                    GeoPoint(coords.first, coords.second),
+                    rd.color, rd.isSelectedRegion, isActive
+                )
+                mapView.overlays.add(dotOverlay)
+            }
+        }
+
+        // Header overlay
+        val headerOverlay = object : org.osmdroid.views.overlay.Overlay() {
+            override fun draw(canvas: Canvas?, mapView: MapView?, shadow: Boolean) {
+                if (shadow || canvas == null || mapView == null) return
+                val paint = Paint().apply { isAntiAlias = true }
+
+                // Header strip
+                if (headerText != null) {
+                    paint.color = if (isActive) Color.parseColor("#CC000000") else Color.parseColor("#CC333333")
+                    paint.style = Paint.Style.FILL
+                    canvas.drawRect(0f, 0f, canvas.width.toFloat(), 56f, paint)
+
+                    paint.color = if (isActive) Color.RED else Color.WHITE
+                    paint.textSize = 30f
+                    paint.typeface = if (isActive) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                    canvas.drawText(headerText, 16f, 42f, paint)
+                    paint.typeface = Typeface.DEFAULT
                 }
             }
-            drawMarkersOnMap(markers, false, "$header$countStr")
         }
+        mapView.overlays.add(headerOverlay)
+        mapView.invalidate()
+    }
+
+    private fun createDotOverlay(
+        point: GeoPoint,
+        color: Int,
+        isSelected: Boolean,
+        isActive: Boolean
+    ): org.osmdroid.views.overlay.Overlay {
+        return object : org.osmdroid.views.overlay.Overlay() {
+            override fun draw(canvas: Canvas?, mapView: MapView?, shadow: Boolean) {
+                if (shadow || canvas == null || mapView == null) return
+                val pj = mapView.projection ?: return
+                val paint = Paint().apply { isAntiAlias = true }
+                val screenPos = pj.toPixels(point, null)
+                val bx = screenPos.x.toFloat()
+                val by = screenPos.y.toFloat()
+                val radius = if (isActive) 12f else 10f
+
+                paint.color = color
+                paint.style = Paint.Style.FILL
+                paint.alpha = if (isActive) 255 else 200
+                canvas.drawCircle(bx, by, radius, paint)
+
+                if (isSelected) {
+                    paint.color = Color.parseColor("#9C27B0")
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 3f
+                    paint.alpha = 255
+                    canvas.drawCircle(bx, by, radius + 2f, paint)
+                }
+
+                paint.color = Color.WHITE
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 2f
+                paint.alpha = 255
+                canvas.drawCircle(bx, by, radius, paint)
+            }
+        }
+    }
+
+    /**
+     * Whether a new (later) alert color should overwrite the existing one for a region.
+     * Yellow (warning) does NOT cancel red/orange (active missile/aircraft).
+     * Only green (event_ended) or another red/orange can overwrite red/orange.
+     */
+    private fun shouldOverwriteColor(existingColor: Int, newColor: Int): Boolean {
+        val isExistingActive = existingColor == Color.RED
+        val isNewWarning = newColor == Color.parseColor("#FFC107")
+        return !(isExistingActive && isNewWarning)
     }
 
     private fun getSelectedRegions(prefs: android.content.SharedPreferences): Set<String> {
@@ -263,121 +479,19 @@ class MapFragment : Fragment() {
         } catch (_: Exception) { emptySet() }
     }
 
-    private data class MarkerData(
-        val point: GeoPoint,
-        val region: String,
-        val color: Int,
-        val alpha: Float,
-        val isSelectedRegion: Boolean
-    )
-
-    private fun drawMarkersOnMap(markers: List<MarkerData>, isActive: Boolean, headerText: String?) {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
-        val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
-
-        // Group by location for stacking
-        val byLocation = markers.groupBy { "${it.point.latitude},${it.point.longitude}" }
-
-        val overlay = object : org.osmdroid.views.overlay.Overlay() {
-            override fun draw(canvas: Canvas?, mapView: MapView?, shadow: Boolean) {
-                if (shadow || canvas == null || mapView == null) return
-                val pj = mapView.projection ?: return
-                val paint = Paint().apply { isAntiAlias = true }
-
-                // Draw current location marker (blue dot) - always visible
-                val userPoint = GeoPoint(userLat, userLon)
-                val userScreen = pj.toPixels(userPoint, null)
-                paint.color = Color.BLUE
-                paint.style = Paint.Style.FILL
-                paint.alpha = 255
-                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 8f, paint)
-                paint.color = Color.WHITE
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 3f
-                canvas.drawCircle(userScreen.x.toFloat(), userScreen.y.toFloat(), 8f, paint)
-
-                // Draw alert markers — non-selected first, selected on top
-                val sortedLocations = byLocation.entries.sortedBy { entry ->
-                    entry.value.any { it.isSelectedRegion }
-                }
-                for ((_, locationMarkers) in sortedLocations) {
-                    if (locationMarkers.isEmpty()) continue
-                    val screenPos = pj.toPixels(locationMarkers[0].point, null)
-                    val bx = screenPos.x.toFloat()
-                    val by = screenPos.y.toFloat()
-
-                    for ((index, m) in locationMarkers.withIndex()) {
-                        val ox = (index % 3) * 6f - 6f
-                        val oy = (index / 3) * 6f
-                        val radius = if (isActive) 12f else 10f
-
-                        // Draw marker
-                        paint.color = m.color
-                        paint.style = Paint.Style.FILL
-                        paint.alpha = (m.alpha * 255).toInt()
-                        canvas.drawCircle(bx + ox, by + oy, radius, paint)
-
-                        // Selected region highlight: thicker yellow border
-                        if (m.isSelectedRegion) {
-                            paint.color = Color.YELLOW
-                            paint.style = Paint.Style.STROKE
-                            paint.strokeWidth = 3f
-                            paint.alpha = 255
-                            canvas.drawCircle(bx + ox, by + oy, radius + 2f, paint)
-                        }
-
-                        // White border
-                        paint.color = Color.WHITE
-                        paint.style = Paint.Style.STROKE
-                        paint.strokeWidth = 2f
-                        paint.alpha = 255
-                        canvas.drawCircle(bx + ox, by + oy, radius, paint)
-                    }
-
-                    // Count badge
-                    if (locationMarkers.size > 1) {
-                        paint.color = Color.BLACK
-                        paint.textSize = 14f
-                        paint.style = Paint.Style.FILL
-                        paint.alpha = 255
-                        canvas.drawText(locationMarkers.size.toString(), bx + 10f, by - 10f, paint)
-                    }
-                }
-
-                // Draw header text (bigger, bold, colored for active)
-                if (headerText != null) {
-                    // Background strip
-                    paint.color = if (isActive) Color.parseColor("#CC000000") else Color.parseColor("#CC333333")
-                    paint.style = Paint.Style.FILL
-                    canvas.drawRect(0f, 0f, canvas.width.toFloat(), 56f, paint)
-
-                    paint.color = if (isActive) Color.RED else Color.WHITE
-                    paint.textSize = 30f
-                    paint.style = Paint.Style.FILL
-                    paint.alpha = 255
-                    paint.typeface = if (isActive) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                    canvas.drawText(headerText, 16f, 42f, paint)
-                    paint.typeface = Typeface.DEFAULT
-                }
-            }
-        }
-
-        mapView.overlays.removeAll { it !is CompassOverlay }
-        mapView.overlays.add(overlay)
-        mapView.invalidate()
-    }
-
     private fun shouldShowAlertType(type: String): Boolean {
         return AlertTypeFilter.shouldShow(requireContext(), type)
     }
 
     private fun getAlertTypeColor(type: String): Int {
         return when (type.lowercase()) {
-            "missile" -> Color.RED
-            "aircraft" -> Color.parseColor("#FF9500")
-            "event" -> Color.GREEN
-            else -> Color.parseColor("#FF9800")
+            "alarm" -> Color.RED
+            "warning" -> Color.parseColor("#FFC107")     // Yellow
+            "event_ended" -> Color.parseColor("#4CAF50") // Green
+            // Legacy type names (old cached data)
+            "missile", "aircraft" -> Color.RED
+            "event" -> Color.parseColor("#FFC107")       // Legacy warning
+            else -> Color.RED
         }
     }
 

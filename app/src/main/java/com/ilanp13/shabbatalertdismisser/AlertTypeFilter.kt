@@ -12,8 +12,17 @@ object AlertTypeFilter {
 
     fun getSelectedTypes(context: Context): Set<String> {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        return prefs.getStringSet(PREF_KEY, null)
-            ?: setOf("missile", "aircraft", "event")  // Default: show all
+        val saved = prefs.getStringSet(PREF_KEY, null)
+            ?: return setOf("alarm", "warning", "event_ended")
+        // Migrate old filter keys to new ones
+        if (saved.contains("missile") || saved.contains("aircraft") || saved.contains("event")) {
+            val migrated = mutableSetOf<String>()
+            if (saved.contains("missile") || saved.contains("aircraft")) migrated.add("alarm")
+            if (saved.contains("event")) { migrated.add("warning"); migrated.add("event_ended") }
+            prefs.edit().putStringSet(PREF_KEY, migrated).apply()
+            return migrated
+        }
+        return saved
     }
 
     fun setSelectedTypes(context: Context, types: Set<String>) {
@@ -26,13 +35,11 @@ object AlertTypeFilter {
         val normalized = alertType.lowercase().trim()
 
         return when {
-            normalized.isEmpty() -> true  // Show alerts with no type (don't hide them)
-            normalized == "missile" || normalized == "missiles" || normalized.contains("rocket") -> selected.contains("missile")
-            normalized == "aircraft" -> selected.contains("aircraft")
-            normalized == "event" -> selected.contains("event")
-            normalized == "earthquake" -> selected.contains("earthquake")
-            normalized == "tsunami" -> selected.contains("tsunami")
-            else -> true  // Show unknown types by default
+            normalized.isEmpty() -> true
+            normalized == "alarm" || normalized == "missile" || normalized == "missiles" || normalized == "aircraft" || normalized.contains("rocket") -> selected.contains("alarm")
+            normalized == "warning" -> selected.contains("warning")
+            normalized == "event_ended" || normalized == "event" -> selected.contains("event_ended")
+            else -> true
         }
     }
 
