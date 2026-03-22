@@ -53,6 +53,8 @@ class StatusFragment : Fragment() {
     private lateinit var tvThreatSince: TextView
     private lateinit var btnDismissThreat: Button
 
+    private lateinit var btnShowAllIsrael: Button
+
     private lateinit var prefs: android.content.SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
     private var alertsPollRunnable: Runnable? = null
@@ -68,6 +70,8 @@ class StatusFragment : Fragment() {
     private var autoCycleDurationMs = 5000L  // Default 5 seconds
     private var isCyclerPaused = false
     private lateinit var btnPausePlay: Button
+    private val previousMiniMapRegions = mutableSetOf<String>()
+    private var blinkRunnable: Runnable? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -139,6 +143,12 @@ class StatusFragment : Fragment() {
         // Tap on mini map (not buttons area) to navigate to full map
         miniMapView.setOnClickListener {
             (activity as? MainActivity)?.navigateToTab(3)
+        }
+
+        // Show all Israel button
+        btnShowAllIsrael = view.findViewById(R.id.btnShowAllIsrael)
+        btnShowAllIsrael.setOnClickListener {
+            zoomToAllIsrael()
         }
 
         // Dismiss threat button with confirmation
@@ -218,14 +228,25 @@ class StatusFragment : Fragment() {
         feedRecentCachedAlertsToStateMachine()
         updateThreatBanner()
         loadCyclerSettings()
+        if (isLiveMode()) {
+            // Entering live mode — stop cycler, clear normal blocks, init live
+            stopAutoCycle()
+            initLiveMode()
+        } else {
+            // Normal mode — clear any leftover live blocks, force rebuild
+            RegionAlertTracker.clear()
+            alertBlocksContainer.removeAllViews()
+            blockHeaderViews.clear()
+            if (cachedAlertsList.isNotEmpty()) {
+                displayCachedAlertsGroup(currentMinuteGroupIndex, forceRebuild = true)
+                showAlertBlocks(true)
+            }
+            if (shouldStartCycler()) startAutoCycle()
+        }
         startAlertPolling()
-        // If polling is off, still do a single fetch when entering the app
         if (prefs.getInt("poll_frequency_seconds", 30) == 0) {
             updateActiveAlerts()
             backgroundHistoryRefresh()
-        }
-        if (cachedAlertsList.isNotEmpty() && shouldStartCycler()) {
-            startAutoCycle()
         }
     }
 
@@ -234,6 +255,7 @@ class StatusFragment : Fragment() {
         miniMapView.onPause()
         stopAlertPolling()
         stopAutoCycle()
+        blinkRunnable?.let { handler.removeCallbacks(it) }
     }
 
     private fun updateStatus() {
@@ -474,17 +496,25 @@ class StatusFragment : Fragment() {
                         feedRecentCachedAlertsToStateMachine()
                         updateThreatBanner()
 
-                        tvActiveAlerts.text = displayAlert.title
-                        displayCachedAlertsGroup(0)
-                        showAlertBlocks(true)
-                        updateMiniMap(displayAlert)
-                        miniMapContainer.visibility = View.VISIBLE
-                        if (shouldStartCycler()) startAutoCycle()
+                        if (isLiveMode()) {
+                            // Live mode: feed to region tracker
+                            RegionAlertTracker.processAlert(displayAlert)
+                            updateLiveModeDisplay()
+                        } else {
+                            tvActiveAlerts.text = displayAlert.title
+                            displayCachedAlertsGroup(0, forceRebuild = true)
+                            showAlertBlocks(true)
+                            updateMiniMap(displayAlert)
+                            miniMapContainer.visibility = View.VISIBLE
+                            if (shouldStartCycler()) startAutoCycle()
+                        }
                     }
                     isUnavailable -> {
-                        // Service unavailable — still show cached data if available
+                        // Service unavailable — still show cached/live data
                         loadCachedAlerts()
-                        if (cachedAlertsList.isNotEmpty()) {
+                        if (isLiveMode()) {
+                            updateLiveModeDisplay()
+                        } else if (cachedAlertsList.isNotEmpty()) {
                             tvActiveAlerts.text = ""
                             displayCachedAlertsGroup(currentMinuteGroupIndex)
                             showAlertBlocks(true)
@@ -496,35 +526,49 @@ class StatusFragment : Fragment() {
                         }
                     }
                     else -> {
-                        // No active alerts — update data, jump to newest only if genuinely new alert
                         loadCachedAlerts()
                         feedRecentCachedAlertsToStateMachine()
                         updateThreatBanner()
                         miniMapContainer.visibility = View.VISIBLE
 
-                        val newFingerprint = alertsFingerprint()
-                        val hasNewAlerts = newFingerprint != lastKnownAlertFingerprint && lastKnownAlertFingerprint.isNotEmpty()
-                        lastKnownAlertFingerprint = newFingerprint
-
-                        if (cachedAlertsList.isNotEmpty()) {
-                            tvActiveAlerts.text = ""
-                            if (hasNewAlerts) {
-                                // Genuinely new alerts — jump to first, force rebuild
-                                displayCachedAlertsGroup(0, forceRebuild = true)
-                                if (shouldStartCycler()) startAutoCycle()
-                            } else if (alertBlocksContainer.childCount <= 1) {
-                                // Blocks not built yet — initial build
-                                displayCachedAlertsGroup(currentMinuteGroupIndex, forceRebuild = true)
-                                if (shouldStartCycler()) startAutoCycle()
+                        if (isLiveMode()) {
+                            // Live mode: feed new alerts to tracker, update display
+                            val newFp = alertsFingerprint()
+                            if (newFp != lastKnownAlertFingerprint) {
+                                lastKnownAlertFingerprint = newFp
+                                // Feed only new alerts since last update
+                                val recentAlerts = cachedAlertsList.filter {
+                                    it.timestampMs > (RegionAlertTracker.getActiveRegions().values
+                                        .maxOfOrNull { s -> s.lastUpdate } ?: 0L)
+                                }
+                                if (recentAlerts.isNotEmpty()) {
+                                    RegionAlertTracker.processAlerts(recentAlerts)
+                                }
                             }
-                            // No new data + blocks exist → don't touch anything
-                            showAlertBlocks(true)
+                            updateLiveModeDisplay()
                         } else {
-                            stopAutoCycle()
-                            tvActiveAlerts.text = getString(R.string.active_alerts_none)
-                            showAlertBlocks(false)
-                            miniMapView.overlays.clear()
-                            miniMapView.invalidate()
+                            // Normal mode: history blocks
+                            val newFingerprint = alertsFingerprint()
+                            val hasNewAlerts = newFingerprint != lastKnownAlertFingerprint && lastKnownAlertFingerprint.isNotEmpty()
+                            lastKnownAlertFingerprint = newFingerprint
+
+                            if (cachedAlertsList.isNotEmpty()) {
+                                tvActiveAlerts.text = ""
+                                if (hasNewAlerts) {
+                                    displayCachedAlertsGroup(0, forceRebuild = true)
+                                    if (shouldStartCycler()) startAutoCycle()
+                                } else if (alertBlocksContainer.childCount <= 1) {
+                                    displayCachedAlertsGroup(currentMinuteGroupIndex, forceRebuild = true)
+                                    if (shouldStartCycler()) startAutoCycle()
+                                }
+                                showAlertBlocks(true)
+                            } else {
+                                stopAutoCycle()
+                                tvActiveAlerts.text = getString(R.string.active_alerts_none)
+                                showAlertBlocks(false)
+                                miniMapView.overlays.clear()
+                                miniMapView.invalidate()
+                            }
                         }
                     }
                 }
@@ -548,11 +592,20 @@ class StatusFragment : Fragment() {
                     loadCachedAlerts()
                     feedRecentCachedAlertsToStateMachine()
                     updateThreatBanner()
-                    // Only rebuild UI if genuinely new data arrived
                     val newFp = alertsFingerprint()
                     if (newFp != lastKnownAlertFingerprint) {
                         lastKnownAlertFingerprint = newFp
-                        displayCachedAlertsGroup(0, forceRebuild = true)
+                        if (isLiveMode()) {
+                            // Only feed recent alerts (last 30 min) — not full 24h cache
+                            val now = System.currentTimeMillis()
+                            val recentAlerts = cachedAlertsList.filter {
+                                (now - it.timestampMs) < 30 * 60 * 1000L
+                            }
+                            RegionAlertTracker.processAlerts(recentAlerts)
+                            updateLiveModeDisplay()
+                        } else {
+                            displayCachedAlertsGroup(0, forceRebuild = true)
+                        }
                     }
                 }
             }
@@ -1190,7 +1243,14 @@ class StatusFragment : Fragment() {
             }
         }
 
-        // Draw alert polygon overlays
+        // Identify newly added regions for blink animation
+        val currentRegionNames = regionMap.keys.toSet()
+        val newRegionNames = currentRegionNames - previousMiniMapRegions
+        previousMiniMapRegions.clear()
+        previousMiniMapRegions.addAll(currentRegionNames)
+
+        // Draw alert polygon overlays, collecting new ones for blink
+        val newPolygons = mutableListOf<org.osmdroid.views.overlay.Polygon>()
         for ((_, rd) in regionMap) {
             val polyPoints = OrefPolygons.getPolygon(ctx, rd.region)
             if (polyPoints != null && polyPoints.size >= 3) {
@@ -1202,6 +1262,7 @@ class StatusFragment : Fragment() {
                 polygon.outlinePaint.strokeWidth = if (rd.isSelected) 3f else 1.5f
                 polygon.outlinePaint.alpha = 200
                 miniMapView.overlays.add(polygon)
+                if (rd.region in newRegionNames) newPolygons.add(polygon)
             } else {
                 // Fallback dot
                 val coords = OrefRegionCoords.coords[rd.region] ?: continue
@@ -1263,6 +1324,35 @@ class StatusFragment : Fragment() {
         }
         miniMapView.overlays.add(headerOverlay)
         miniMapView.invalidate()
+
+        // Blink newly added regions to draw attention
+        if (newPolygons.isNotEmpty()) {
+            blinkPolygons(newPolygons, regionMap.filter { it.key in newRegionNames }.values.map { it.fillAlpha })
+        }
+    }
+
+    /** Flash new polygon overlays: bright → dim → bright → settle at normal alpha */
+    private fun blinkPolygons(polygons: List<org.osmdroid.views.overlay.Polygon>, normalAlphas: List<Float>) {
+        blinkRunnable?.let { handler.removeCallbacks(it) }
+        val normalAlpha = if (normalAlphas.isNotEmpty()) (normalAlphas.first() * 255).toInt() else 89
+        var step = 0
+        val alphaSequence = intArrayOf(255, 30, 220, 30, normalAlpha) // bright-dim-bright-dim-settle
+        blinkRunnable = object : Runnable {
+            override fun run() {
+                if (step >= alphaSequence.size) return
+                val alpha = alphaSequence[step]
+                for (p in polygons) {
+                    p.fillPaint.alpha = alpha
+                    p.outlinePaint.alpha = if (alpha < 50) 50 else 200
+                }
+                miniMapView.invalidate()
+                step++
+                if (step < alphaSequence.size) {
+                    handler.postDelayed(this, 250)
+                }
+            }
+        }
+        handler.post(blinkRunnable!!)
     }
 
     /**
@@ -1275,6 +1365,196 @@ class StatusFragment : Fragment() {
         val isNewWarning = newColor == android.graphics.Color.parseColor("#FFC107")
         // Yellow doesn't cancel red
         return !(isExistingActive && isNewWarning)
+    }
+
+    private fun isLiveMode(): Boolean {
+        return prefs.getString("cycler_mode", "off") == "live"
+    }
+
+    /** Initialize live mode — rebuild region states from recent cache */
+    private fun initLiveMode() {
+        val ctx = context ?: return
+        RegionAlertTracker.clear()
+        // Feed only recent alerts (last 30 min) — older ones are stale
+        val now = System.currentTimeMillis()
+        val recentAlerts = AlertCacheService.getLast24Hours(ctx)
+            .filter { (now - it.timestampMs) < 30 * 60 * 1000L }
+        RegionAlertTracker.processAlerts(recentAlerts)
+        RegionAlertTracker.processTick()
+        updateLiveModeDisplay()
+    }
+
+    /** Update the live mode map and block display */
+    private fun updateLiveModeDisplay() {
+        val ctx = context ?: return
+        RegionAlertTracker.processTick()
+
+        val activeRegions = RegionAlertTracker.getActiveRegions()
+        val selectedRegions = getSelectedRegions().toSet()
+        val showOther = prefs.getBoolean("show_other_regions", true)
+
+        // Build polygon data for all active regions
+        val regionData = activeRegions.mapNotNull { (region, state) ->
+            // Respect filters: show selected regions always, others only if showOther
+            if (!showOther && selectedRegions.isNotEmpty() && region !in selectedRegions) return@mapNotNull null
+            val color = RegionAlertTracker.getLevelColor(state.level)
+            if (color == android.graphics.Color.TRANSPARENT) return@mapNotNull null
+            MapRegionData(region, color, 0.35f, region in selectedRegions)
+        }
+
+        // Draw on mini map
+        val header = if (activeRegions.isEmpty()) getString(R.string.active_alerts_none)
+            else {
+                val alarmCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.ALARM }
+                val warningCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.WARNING }
+                val endedCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.EVENT_ENDED }
+                buildString {
+                    append("LIVE")
+                    if (alarmCount > 0) append(" 🔴$alarmCount")
+                    if (warningCount > 0) append(" 🟡$warningCount")
+                    if (endedCount > 0) append(" 🟢$endedCount")
+                }
+            }
+        drawMiniMapPolygons(regionData, activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM }, header)
+
+        // Update blocks area with live summary
+        updateLiveModeBlocks(activeRegions, selectedRegions)
+
+        miniMapContainer.visibility = View.VISIBLE
+        showAlertBlocks(if (activeRegions.isNotEmpty()) true else false)
+        tvActiveAlerts.text = ""
+    }
+
+    /** Build live mode blocks — grouped by alert level */
+    private fun updateLiveModeBlocks(
+        activeRegions: Map<String, RegionAlertTracker.RegionState>,
+        selectedRegions: Set<String>
+    ) {
+        val ctx = context ?: return
+        alertBlocksContainer.removeAllViews()
+        blockHeaderViews.clear()
+
+        if (activeRegions.isEmpty()) return
+
+        // Legend
+        val legendRow = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, (3 * resources.displayMetrics.density).toInt()) }
+        }
+        legendRow.addView(buildColorLegend(ctx))
+        legendRow.addView(View(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+        })
+        tvBlocksUpdatedTime = TextView(ctx).apply { textSize = 7f; alpha = 0.5f }
+        updateBlocksTimestamp()
+        legendRow.addView(tvBlocksUpdatedTime)
+        alertBlocksContainer.addView(legendRow)
+
+        val density = resources.displayMetrics.density
+        val dp4 = (4 * density).toInt()
+        val dp6 = (6 * density).toInt()
+        val dp3 = (3 * density).toInt()
+        val dp2 = (2 * density).toInt()
+
+        // Group active regions by level
+        val byLevel = activeRegions.entries.groupBy { it.value.level }
+        val levelOrder = listOf(
+            RegionAlertTracker.RegionLevel.ALARM,
+            RegionAlertTracker.RegionLevel.WARNING,
+            RegionAlertTracker.RegionLevel.EVENT_ENDED
+        )
+
+        for (level in levelOrder) {
+            val regions = byLevel[level] ?: continue
+            val color = RegionAlertTracker.getLevelColor(level)
+            val levelName = when (level) {
+                RegionAlertTracker.RegionLevel.ALARM -> getString(R.string.legend_missile)
+                RegionAlertTracker.RegionLevel.WARNING -> getString(R.string.legend_warning)
+                RegionAlertTracker.RegionLevel.EVENT_ENDED -> getString(R.string.legend_ended)
+                else -> ""
+            }
+            val regionNames = regions.map { it.key }
+                .sortedByDescending { it in selectedRegions }
+
+            val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
+            val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
+            val userRegion = OrefPolygons.findRegionContaining(ctx, userLat, userLon)
+            val hasSelected = regionNames.any { it in selectedRegions }
+            val hasUser = userRegion != null && userRegion in regionNames
+
+            // Row with optional left strip
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { setMargins(0, 0, 0, dp4) }
+            }
+
+            if (hasUser || hasSelected) {
+                val stripColor = if (hasUser) android.graphics.Color.parseColor("#2196F3")
+                    else android.graphics.Color.parseColor("#9C27B0")
+                row.addView(View(ctx).apply {
+                    layoutParams = LinearLayout.LayoutParams(dp3, LinearLayout.LayoutParams.MATCH_PARENT)
+                    val bg = android.graphics.drawable.GradientDrawable()
+                    bg.setColor(stripColor)
+                    bg.cornerRadii = floatArrayOf(dp4.toFloat(), dp4.toFloat(), 0f, 0f, 0f, 0f, dp4.toFloat(), dp4.toFloat())
+                    background = bg
+                })
+            }
+
+            val block = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp6, dp4, dp6, dp4)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                val bg = android.graphics.drawable.GradientDrawable()
+                val cornerRadii = if (hasUser || hasSelected)
+                    floatArrayOf(0f, 0f, dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), 0f, 0f)
+                else floatArrayOf(dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), dp4.toFloat(), dp4.toFloat())
+                bg.cornerRadii = cornerRadii
+                bg.setColor(android.graphics.Color.argb(40,
+                    android.graphics.Color.red(color),
+                    android.graphics.Color.green(color),
+                    android.graphics.Color.blue(color)))
+                bg.setStroke(1, color)
+                background = bg
+            }
+
+            block.addView(TextView(ctx).apply {
+                text = "$levelName (${regionNames.size})"
+                textSize = 10f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+            })
+
+            // Region text with bold for selected
+            val regionSpan = android.text.SpannableStringBuilder()
+            val maxShow = 8
+            val displayRegions = if (regionNames.size > maxShow) regionNames.take(maxShow) else regionNames
+            for ((i, r) in displayRegions.withIndex()) {
+                if (i > 0) regionSpan.append(", ")
+                val start = regionSpan.length
+                regionSpan.append(r)
+                if (r in selectedRegions || r == userRegion) {
+                    regionSpan.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                        start, regionSpan.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            }
+            if (regionNames.size > maxShow) regionSpan.append("… (+${regionNames.size - maxShow})")
+
+            block.addView(TextView(ctx).apply {
+                text = regionSpan
+                textSize = 9f
+                alpha = 0.8f
+                maxLines = 3
+            })
+
+            row.addView(block)
+            alertBlocksContainer.addView(row)
+        }
     }
 
     /** Zoom the mini map to fit all regions in the given alert group */
@@ -1320,6 +1600,16 @@ class StatusFragment : Fragment() {
         )
         miniMapView.post {
             miniMapView.zoomToBoundingBox(boundingBox, true)
+        }
+    }
+
+    /** Zoom mini map to show all of Israel */
+    private fun zoomToAllIsrael() {
+        val israelBounds = org.osmdroid.util.BoundingBox(
+            33.35, 35.90, 29.45, 34.20
+        )
+        miniMapView.post {
+            miniMapView.zoomToBoundingBox(israelBounds, true)
         }
     }
 

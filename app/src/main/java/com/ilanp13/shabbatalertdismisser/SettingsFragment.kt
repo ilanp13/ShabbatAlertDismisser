@@ -206,12 +206,14 @@ class SettingsFragment : Fragment() {
         radioCyclerMode.check(when (prefs.getString("cycler_mode", "off")) {
             "shabbat" -> R.id.radioCyclerShabbat
             "always" -> R.id.radioCyclerAlways
+            "live" -> R.id.radioCyclerLive
             else -> R.id.radioCyclerOff
         })
         radioCyclerMode.setOnCheckedChangeListener { _, id ->
             prefs.edit().putString("cycler_mode", when (id) {
                 R.id.radioCyclerShabbat -> "shabbat"
                 R.id.radioCyclerAlways -> "always"
+                R.id.radioCyclerLive -> "live"
                 else -> "off"
             }).apply()
         }

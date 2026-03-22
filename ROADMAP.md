@@ -80,11 +80,14 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 
 ## Planned Features
 
-### Phase 3.1 — Live Mode (Planned)
+### Phase 3.1 — Live Mode & Map UX (Complete)
 
-- [ ] **Live mode** — Real-time per-region coloring on map based on current alert state
-- [ ] **Per-region state tracking** — Each region tracks its own warning/alarm/ended state with timeouts
-- [ ] **Live mode cycler option** — New cycler mode showing real-time status instead of history cycling
+- [x] **Live mode** — Real-time per-region coloring on map based on current alert state
+- [x] **Per-region state tracking** — Each region tracks its own warning/alarm/ended state with timeouts
+- [x] **Live mode cycler option** — New cycler mode showing real-time status instead of history cycling
+- [x] **Show All Israel button** — One-tap zoom to full Israel view on mini map
+- [x] **New region blink** — Newly alerted regions flash on the map to draw attention
+- [x] **Live mode cache leak fix** — Only recent 30-minute alerts fed to tracker, not full 24h cache
 
 ### Phase 4 (Long-term)
 
@@ -177,10 +180,13 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 10. [x] Threat banner auto-timeout fix
 11. [x] Smart no-flicker block cycling
 
-**Phase 3.1 (Live Mode) — Planned:**
-1. [ ] Real-time per-region map coloring
-2. [ ] Per-region state tracking with timeouts
-3. [ ] Live mode cycler option
+**Phase 3.1 (Live Mode & Map UX) — Done:**
+1. [x] Real-time per-region map coloring
+2. [x] Per-region state tracking with timeouts
+3. [x] Live mode cycler option
+4. [x] Show All Israel button
+5. [x] New region blink animation
+6. [x] Live mode cache leak fix
 
 **Phase 4 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)

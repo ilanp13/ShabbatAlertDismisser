@@ -101,6 +101,7 @@
     <string name="cycler_off">כבוי</string>
     <string name="cycler_shabbat">שבת וחגים</string>
     <string name="cycler_always">תמיד</string>
+    <string name="cycler_live">🔴 חי — מצב אזורים בזמן אמת</string>
     <string name="cycler_duration_label">משך הצגה לכל התראה</string>
     <string name="cycler_duration_format">משך: %d שניות</string>
     <string name="filter_note_all_tabs">💡 סינוני הסוג (מלשונית המפה) חלים על כל ההתראות המוצגות כאן</string>
@@ -160,4 +161,5 @@
     <string name="btn_next">← הבא</string>
     <string name="btn_prev_arrow">→</string>
     <string name="btn_next_arrow">←</string>
+    <string name="btn_show_all_israel">🇮🇱</string>
 </resources>

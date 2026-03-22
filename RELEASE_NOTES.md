@@ -4,9 +4,12 @@
 
 ### English (en-US)
 
-**Version 2.1.0 — Polygon Maps, Color-Coded Alerts & Dark Mode**
+**Version 2.1.0 — Live Mode, Polygon Maps & Color-Coded Alerts**
 
 ✨ **New:**
+  • Live Mode — real-time per-region coloring on map with alarm/warning/ended states
+  • Show All Israel button (🇮🇱) — one-tap zoom to full Israel view on mini map
+  • New region blink — newly alerted regions flash on the map to draw attention
   • Polygon map regions — alert areas shown as filled polygons instead of dots
   • Dark mode map — map tiles invert automatically in dark theme
   • Color-coded alert types — red (alarm), yellow (warning), green (event ended)
@@ -14,9 +17,10 @@
   • Color legend on status screen
   • Selected region borders (purple) and current location border (blue) on maps
   • Map zoom setting — zoom to alert area on click or auto-focus
-  • Map swipe fix — panning no longer switches tabs
 
 🔧 **Fixes:**
+  • Live mode cache leak — entering live mode no longer briefly shows all 24h cached alerts
+  • Map swipe fix — panning no longer switches tabs
   • Alert type system — proper alarm/warning/event_ended classification
   • Event ended detection — title-based inference catches all variants
   • Threat banner auto-timeout — correctly clears after 10 minutes
@@ -27,9 +31,12 @@
 
 ### Hebrew (iw-IL)
 
-**גרסה 2.1.0 — מפות פוליגון, התראות צבעוניות ומצב כהה**
+**גרסה 2.1.0 — מצב חי, מפות פוליגון והתראות צבעוניות**
 
 ✨ **חדש:**
+  • מצב חי — צביעת אזורים בזמן אמת על המפה עם מצבי אזעקה/אזהרה/הסתיים
+  • כפתור הצג כל ישראל (🇮🇱) — לחיצה אחת לזום לתצוגת כל ישראל
+  • הבהוב אזור חדש — אזורים שזה עתה התעוררו מהבהבים על המפה
   • אזורי מפה כפוליגונים — שטחי התראה מוצגים כאזורים צבועים
   • מפה כהה — מצב כהה אוטומטי לפי ערכת העיצוב
   • התראות בקוד צבע — אדום (אזעקה), צהוב (אזהרה), ירוק (הסתיים)
@@ -37,9 +44,10 @@
   • מקרא צבעים במסך הסטטוס
   • גבולות אזורים נבחרים (סגול) ומיקום נוכחי (כחול) במפה
   • הגדרת זום מפה — זום לאזור התראה בלחיצה או אוטומטית
-  • תיקון גלילת מפה — החלקה לא מעבירה לשוניות
 
 🔧 **תיקונים:**
+  • דליפת מטמון במצב חי — כניסה למצב חי לא מציגה יותר את כל ההתראות הישנות
+  • תיקון גלילת מפה — החלקה לא מעבירה לשוניות
   • מערכת סוגי התראות — סיווג נכון של אזעקה/אזהרה/הסתיים
   • זיהוי "האירוע הסתיים" — זיהוי לפי כותרת תופס את כל הגרסאות
   • באנר איום נסגר אוטומטית — מתנקה נכון אחרי 10 דקות

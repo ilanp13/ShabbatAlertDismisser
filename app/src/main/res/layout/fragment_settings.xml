@@ -288,6 +288,13 @@
                 android:text="@string/cycler_always"
                 android:minHeight="48dp" />
 
+            <RadioButton
+                android:id="@+id/radioCyclerLive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cycler_live"
+                android:minHeight="48dp" />
+
         </RadioGroup>
 
         <TextView
