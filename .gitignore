@@ -10,3 +10,5 @@ build/
 local.properties
 release-keystore.jks
 keystore.properties
+*.json
+!app/src/main/res/raw/*.json
