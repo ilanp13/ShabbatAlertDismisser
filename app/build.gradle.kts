@@ -19,8 +19,8 @@ android {
         applicationId = "com.ilanp13.shabbatalertdismisser"
         minSdk = 26
         targetSdk = 35
-        versionCode = 24
-        versionName = "2.1.1"
+        versionCode = 26
+        versionName = "2.1.2"
     }
 
     signingConfigs {
@@ -70,5 +70,5 @@ play {
     serviceAccountCredentials.set(file("../play-publisher.json"))
     track.set("internal")
     defaultToAppBundles.set(true)
-    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT)
+    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.COMPLETED)
 }

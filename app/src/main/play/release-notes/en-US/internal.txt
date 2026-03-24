@@ -1,0 +1,10 @@
+v2.1.1 — Grayscale Maps, Map Tab Live Mode & Banner Reliability
+
+• Map tab live mode — real-time per-region coloring on full map
+• Grayscale map tiles — cleaner look in both light and dark mode
+• Collapsible filter panel & Show All Israel button on map tab
+• Zoom-to-fit on prev/next navigation (respects settings)
+• Instant map loading — cached data shown immediately
+• Alert groups split by type (no more mixed blocks)
+• Banner auto-timeout fix — event ended clears correctly
+• State machine driven by real-time alerts only
