@@ -200,15 +200,22 @@ class StatusFragment : Fragment() {
 
     private fun applyMiniMapDarkMode() {
         val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        val grayscale = android.graphics.ColorMatrix().apply { setSaturation(0f) }
         if (nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
-            val invertMatrix = android.graphics.ColorMatrix(floatArrayOf(
+            val invert = android.graphics.ColorMatrix(floatArrayOf(
                 -1f, 0f, 0f, 0f, 255f,
                 0f, -1f, 0f, 0f, 255f,
                 0f, 0f, -1f, 0f, 255f,
                 0f, 0f, 0f, 1f, 0f
             ))
+            val combined = android.graphics.ColorMatrix()
+            combined.setConcat(invert, grayscale)
             miniMapView.overlayManager.tilesOverlay.setColorFilter(
-                android.graphics.ColorMatrixColorFilter(invertMatrix)
+                android.graphics.ColorMatrixColorFilter(combined)
+            )
+        } else {
+            miniMapView.overlayManager.tilesOverlay.setColorFilter(
+                android.graphics.ColorMatrixColorFilter(grayscale)
             )
         }
     }
@@ -476,6 +483,9 @@ class StatusFragment : Fragment() {
                 pbAlertsLoading.visibility = View.GONE
                 btnRefreshAlerts.isEnabled = true
 
+                // Capture threat state before update to detect transitions
+                val prevThreatLevel = AlertStateMachine.getState(requireContext()).level
+
                 // Update timestamp
                 lastAlertUpdateMs = System.currentTimeMillis()
                 updateAlertTimestamp()
@@ -493,7 +503,6 @@ class StatusFragment : Fragment() {
                             timestampMs = displayAlert.timestampMs
                         ))
                         loadCachedAlerts()
-                        feedRecentCachedAlertsToStateMachine()
                         updateThreatBanner()
 
                         if (isLiveMode()) {
@@ -527,7 +536,8 @@ class StatusFragment : Fragment() {
                     }
                     else -> {
                         loadCachedAlerts()
-                        feedRecentCachedAlertsToStateMachine()
+                        val curThreatLevel = AlertStateMachine.getState(requireContext()).level
+                        val threatChanged = curThreatLevel != prevThreatLevel
                         updateThreatBanner()
                         miniMapContainer.visibility = View.VISIBLE
 
@@ -536,10 +546,10 @@ class StatusFragment : Fragment() {
                             val newFp = alertsFingerprint()
                             if (newFp != lastKnownAlertFingerprint) {
                                 lastKnownAlertFingerprint = newFp
-                                // Feed only new alerts since last update
+                                // Feed only alerts from last 30 min (not full 24h cache)
+                                val now = System.currentTimeMillis()
                                 val recentAlerts = cachedAlertsList.filter {
-                                    it.timestampMs > (RegionAlertTracker.getActiveRegions().values
-                                        .maxOfOrNull { s -> s.lastUpdate } ?: 0L)
+                                    (now - it.timestampMs) < 30 * 60 * 1000L
                                 }
                                 if (recentAlerts.isNotEmpty()) {
                                     RegionAlertTracker.processAlerts(recentAlerts)
@@ -554,7 +564,7 @@ class StatusFragment : Fragment() {
 
                             if (cachedAlertsList.isNotEmpty()) {
                                 tvActiveAlerts.text = ""
-                                if (hasNewAlerts) {
+                                if (hasNewAlerts || threatChanged) {
                                     displayCachedAlertsGroup(0, forceRebuild = true)
                                     if (shouldStartCycler()) startAutoCycle()
                                 } else if (alertBlocksContainer.childCount <= 1) {
@@ -590,7 +600,6 @@ class StatusFragment : Fragment() {
                 handler.post {
                     if (!isAdded) return@post
                     loadCachedAlerts()
-                    feedRecentCachedAlertsToStateMachine()
                     updateThreatBanner()
                     val newFp = alertsFingerprint()
                     if (newFp != lastKnownAlertFingerprint) {
@@ -653,7 +662,6 @@ class StatusFragment : Fragment() {
                 updateAlertTimestamp()
 
                 loadCachedAlerts()
-                feedRecentCachedAlertsToStateMachine()
                 updateThreatBanner()
 
                 val count = historyAlerts.size
@@ -1681,9 +1689,10 @@ class StatusFragment : Fragment() {
         val currentState = AlertStateMachine.getState(ctx)
         val recentThresholdMs = 60 * 60 * 1000L // 1 hour
 
-        // Only process alerts NEWER than the current state's last update
-        // This prevents replaying old alerts that keep resetting the timeout
-        val sinceMs = if (currentState.level != AlertStateMachine.ThreatLevel.CLEAR)
+        // Only process alerts NEWER than the current state's last update.
+        // Even when CLEAR, use lastUpdate if set — prevents replay loop where
+        // processTick clears EVENT_ENDED, then old cached alerts re-trigger it.
+        val sinceMs = if (currentState.lastUpdate > 0)
             currentState.lastUpdate else (now - recentThresholdMs)
 
         val allCached = AlertCacheService.getLast24Hours(ctx)

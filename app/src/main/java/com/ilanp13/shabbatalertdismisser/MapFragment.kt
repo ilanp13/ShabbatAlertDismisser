@@ -170,14 +170,19 @@ class MapFragment : Fragment() {
 
     private fun applyDarkModeIfNeeded() {
         val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        val grayscale = ColorMatrix().apply { setSaturation(0f) }
         if (nightMode == Configuration.UI_MODE_NIGHT_YES) {
-            val invertMatrix = ColorMatrix(floatArrayOf(
+            val invert = ColorMatrix(floatArrayOf(
                 -1f, 0f, 0f, 0f, 255f,
                 0f, -1f, 0f, 0f, 255f,
                 0f, 0f, -1f, 0f, 255f,
                 0f, 0f, 0f, 1f, 0f
             ))
-            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(invertMatrix))
+            val combined = ColorMatrix()
+            combined.setConcat(invert, grayscale)
+            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(combined))
+        } else {
+            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(grayscale))
         }
     }
 

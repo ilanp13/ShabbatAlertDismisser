@@ -88,6 +88,9 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Show All Israel button** — One-tap zoom to full Israel view on mini map
 - [x] **New region blink** — Newly alerted regions flash on the map to draw attention
 - [x] **Live mode cache leak fix** — Only recent 30-minute alerts fed to tracker, not full 24h cache
+- [x] **Grayscale map tiles** — Desaturated tiles remove topographic colors, cleaner in both themes
+- [x] **State machine real-time only** — Cache replay removed from poll loop, prevents banner timeout replay loop
+- [x] **Threat state change block rebuild** — Blocks update immediately when banner state transitions
 
 ### Phase 4 (Long-term)
 
@@ -187,6 +190,9 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 4. [x] Show All Israel button
 5. [x] New region blink animation
 6. [x] Live mode cache leak fix
+7. [x] Grayscale map tiles
+8. [x] State machine real-time only (no cache replay)
+9. [x] Threat state change block rebuild
 
 **Phase 4 (Long-term) — Not started:**
 1. Advanced analytics (trends, most common times)

@@ -1,8 +1,36 @@
 # Release Notes
 
-## Version 2.1.0 - Current Release
+## Version 2.1.1 - Current Release
 
 ### English (en-US)
+
+**Version 2.1.1 — Grayscale Maps & Banner Reliability**
+
+🔧 **Fixes:**
+  • Grayscale map tiles — removed distracting topographic colors in both light and dark mode
+  • Banner auto-timeout fix — event ended banner now correctly clears after 10 minutes (was stuck in replay loop)
+  • State machine driven by real-time data only — no more cache replay feeding stale alerts into threat banner
+  • Live mode cache leak — poll path no longer feeds full 24h cache to region tracker
+  • Threat state change forces immediate block rebuild — no more delay between banner and blocks
+
+---
+
+### Hebrew (iw-IL)
+
+**גרסה 2.1.1 — מפות אפורות ואמינות באנרים**
+
+🔧 **תיקונים:**
+  • אריחי מפה באפור — הסרת צבעים טופוגרפיים מסיחים במצב בהיר וכהה
+  • תיקון סגירת באנר — באנר "האירוע הסתיים" נסגר נכון אחרי 10 דקות
+  • מכונת מצב מונעת בזמן אמת בלבד — ללא השמעה חוזרת של התראות ישנות מהמטמון
+  • תיקון דליפת מטמון במצב חי — סקר לא מזין 24 שעות מלאות לעוקב אזורים
+  • שינוי מצב איום מרענן בלוקים מיידית — ללא עיכוב בין באנר לבלוקים
+
+---
+
+## Previous Versions
+
+### Version 2.1.0
 
 **Version 2.1.0 — Live Mode, Polygon Maps & Color-Coded Alerts**
 
@@ -14,49 +42,10 @@
   • Dark mode map — map tiles invert automatically in dark theme
   • Color-coded alert types — red (alarm), yellow (warning), green (event ended)
   • Multi-block alert display — all alert groups visible simultaneously with color coding
-  • Color legend on status screen
   • Selected region borders (purple) and current location border (blue) on maps
   • Map zoom setting — zoom to alert area on click or auto-focus
 
-🔧 **Fixes:**
-  • Live mode cache leak — entering live mode no longer briefly shows all 24h cached alerts
-  • Map swipe fix — panning no longer switches tabs
-  • Alert type system — proper alarm/warning/event_ended classification
-  • Event ended detection — title-based inference catches all variants
-  • Threat banner auto-timeout — correctly clears after 10 minutes
-  • Smart cycler — no flicker, preserves position, live time updates
-  • Filter migration to new type system
-
 ---
-
-### Hebrew (iw-IL)
-
-**גרסה 2.1.0 — מצב חי, מפות פוליגון והתראות צבעוניות**
-
-✨ **חדש:**
-  • מצב חי — צביעת אזורים בזמן אמת על המפה עם מצבי אזעקה/אזהרה/הסתיים
-  • כפתור הצג כל ישראל (🇮🇱) — לחיצה אחת לזום לתצוגת כל ישראל
-  • הבהוב אזור חדש — אזורים שזה עתה התעוררו מהבהבים על המפה
-  • אזורי מפה כפוליגונים — שטחי התראה מוצגים כאזורים צבועים
-  • מפה כהה — מצב כהה אוטומטי לפי ערכת העיצוב
-  • התראות בקוד צבע — אדום (אזעקה), צהוב (אזהרה), ירוק (הסתיים)
-  • תצוגת בלוקים — כל קבוצות ההתראות נראות בו-זמנית עם צבע
-  • מקרא צבעים במסך הסטטוס
-  • גבולות אזורים נבחרים (סגול) ומיקום נוכחי (כחול) במפה
-  • הגדרת זום מפה — זום לאזור התראה בלחיצה או אוטומטית
-
-🔧 **תיקונים:**
-  • דליפת מטמון במצב חי — כניסה למצב חי לא מציגה יותר את כל ההתראות הישנות
-  • תיקון גלילת מפה — החלקה לא מעבירה לשוניות
-  • מערכת סוגי התראות — סיווג נכון של אזעקה/אזהרה/הסתיים
-  • זיהוי "האירוע הסתיים" — זיהוי לפי כותרת תופס את כל הגרסאות
-  • באנר איום נסגר אוטומטית — מתנקה נכון אחרי 10 דקות
-  • מחזור חכם — ללא הבהוב, שומר מיקום, זמנים מתעדכנים
-  • מיגרציית מסננים למערכת סוגים חדשה
-
----
-
-## Previous Versions
 
 ### Version 2.0.2
 
