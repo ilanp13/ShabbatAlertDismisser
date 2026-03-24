@@ -12,3 +12,6 @@ release-keystore.jks
 keystore.properties
 *.json
 !app/src/main/res/raw/*.json
+*.aab
+.kotlin/
+.claude/worktrees/
