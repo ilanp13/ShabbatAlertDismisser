@@ -4,25 +4,41 @@
 
 ### English (en-US)
 
-**Version 2.1.1 — Grayscale Maps & Banner Reliability**
+**Version 2.1.1 — Grayscale Maps, Map Tab Live Mode & Banner Reliability**
+
+✨ **New:**
+  • Map tab live mode — full map shows real-time per-region coloring when live mode is active
+  • Map tab zoom-to-fit — respects zoom setting (off/click/auto) on prev/next navigation
+  • Show All Israel button (🇮🇱) on map tab
+  • Collapsible filter panel — tap ☰ to expand/collapse, saves map space
+  • Instant map loading — cached data shown immediately, network fetch in background
 
 🔧 **Fixes:**
   • Grayscale map tiles — removed distracting topographic colors in both light and dark mode
-  • Banner auto-timeout fix — event ended banner now correctly clears after 10 minutes (was stuck in replay loop)
-  • State machine driven by real-time data only — no more cache replay feeding stale alerts into threat banner
-  • Live mode cache leak — poll path no longer feeds full 24h cache to region tracker
-  • Threat state change forces immediate block rebuild — no more delay between banner and blocks
+  • Map tab alert grouping — split by type (was mixing alarm + warning + ended in one group)
+  • Banner auto-timeout fix — event ended banner correctly clears after 10 minutes
+  • State machine driven by real-time data only — no more cache replay loop
+  • Removed compass overlay and built-in zoom buttons (pinch-zoom + 🇮🇱 button)
 
 ---
 
 ### Hebrew (iw-IL)
 
-**גרסה 2.1.1 — מפות אפורות ואמינות באנרים**
+**גרסה 2.1.1 — מפות אפורות, מצב חי במפה ואמינות באנרים**
+
+✨ **חדש:**
+  • מצב חי בלשונית מפה — מפה מלאה מציגה צביעת אזורים בזמן אמת
+  • זום למפה בלחיצה — כפתורי הקודם/הבא מזימים לפי הגדרות
+  • כפתור הצג כל ישראל (🇮🇱) בלשונית מפה
+  • פאנל סינון מתקפל — לחיצה על ☰ לפתיחה/סגירה
+  • טעינה מיידית — נתונים מהמטמון מוצגים מיד
 
 🔧 **תיקונים:**
-  • אריחי מפה באפור — הסרת צבעים טופוגרפיים מסיחים במצב בהיר וכהה
-  • תיקון סגירת באנר — באנר "האירוע הסתיים" נסגר נכון אחרי 10 דקות
-  • מכונת מצב מונעת בזמן אמת בלבד — ללא השמעה חוזרת של התראות ישנות מהמטמון
+  • אריחי מפה באפור — הסרת צבעים טופוגרפיים מסיחים
+  • קיבוץ התראות במפה — הפרדה לפי סוג (היה מערבב אזעקה + אזהרה + הסתיים)
+  • באנר "האירוע הסתיים" נסגר נכון אחרי 10 דקות
+  • מכונת מצב מונעת בזמן אמת בלבד — ללא לולאת השמעה חוזרת
+  • הסרת מצפן וכפתורי זום מובנים
   • תיקון דליפת מטמון במצב חי — סקר לא מזין 24 שעות מלאות לעוקב אזורים
   • שינוי מצב איום מרענן בלוקים מיידית — ללא עיכוב בין באנר לבלוקים
 

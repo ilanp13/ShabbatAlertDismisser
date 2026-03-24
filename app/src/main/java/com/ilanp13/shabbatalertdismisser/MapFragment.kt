@@ -8,11 +8,14 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -21,7 +24,6 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polygon
-import org.osmdroid.views.overlay.compass.CompassOverlay
 import androidx.preference.PreferenceManager
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -38,11 +40,19 @@ class MapFragment : Fragment() {
     private lateinit var btnMapPrev: Button
     private lateinit var btnMapNext: Button
     private lateinit var tvMapCounter: TextView
+    private lateinit var filterContent: LinearLayout
+    private lateinit var btnFilterToggle: TextView
+    private lateinit var navBar: LinearLayout
+    private lateinit var btnMapShowIsrael: Button
 
     // Cycling state
     private var activeAlert: RedAlertService.ActiveAlert? = null
     private var alertsByMinute = listOf<List<AlertCacheService.CachedAlert>>()
     private var currentGroupIndex = 0
+
+    // Live mode polling
+    private val handler = Handler(Looper.getMainLooper())
+    private var livePollRunnable: Runnable? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,24 +73,46 @@ class MapFragment : Fragment() {
         btnMapPrev = view.findViewById(R.id.btnMapPrev)
         btnMapNext = view.findViewById(R.id.btnMapNext)
         tvMapCounter = view.findViewById(R.id.tvMapCounter)
+        filterContent = view.findViewById(R.id.filterContent)
+        btnFilterToggle = view.findViewById(R.id.btnFilterToggle)
+        navBar = view.findViewById(R.id.navBar)
+
+        btnMapShowIsrael = view.findViewById(R.id.btnMapShowIsrael)
+
+        // Collapsible filter panel
+        btnFilterToggle.setOnClickListener {
+            val isVisible = filterContent.visibility == View.VISIBLE
+            filterContent.visibility = if (isVisible) View.GONE else View.VISIBLE
+            btnFilterToggle.text = if (isVisible) "☰" else "✕"
+        }
+
+        // Show all Israel
+        btnMapShowIsrael.setOnClickListener {
+            val israelBounds = org.osmdroid.util.BoundingBox(33.35, 35.90, 29.45, 34.20)
+            mapView.post { mapView.zoomToBoundingBox(israelBounds, true) }
+        }
 
         loadFilterPreferences()
         setupFilterListeners()
         setupNavigationButtons()
         setupMap()
-        loadAlerts()
+    }
+
+    private fun isLiveMode(): Boolean {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        return prefs.getString("cycler_mode", "off") == "live"
     }
 
     private fun setupNavigationButtons() {
         btnMapPrev.setOnClickListener {
             if (alertsByMinute.isEmpty()) return@setOnClickListener
             currentGroupIndex = if (currentGroupIndex > 0) currentGroupIndex - 1 else alertsByMinute.size - 1
-            displayCurrentGroup()
+            displayCurrentGroup(isUserClick = true)
         }
         btnMapNext.setOnClickListener {
             if (alertsByMinute.isEmpty()) return@setOnClickListener
             currentGroupIndex = (currentGroupIndex + 1) % alertsByMinute.size
-            displayCurrentGroup()
+            displayCurrentGroup(isUserClick = true)
         }
     }
 
@@ -88,7 +120,7 @@ class MapFragment : Fragment() {
         val typeListener = View.OnClickListener {
             updateSelectedTypes()
             saveFilterPreferences()
-            loadAlerts()
+            if (isLiveMode()) displayLiveMode() else loadAlerts()
         }
         cbMissiles.setOnClickListener(typeListener)
         cbAircraft.setOnClickListener(typeListener)
@@ -97,7 +129,7 @@ class MapFragment : Fragment() {
         cbShowOtherRegions.setOnClickListener {
             val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
             prefs.edit().putBoolean("show_other_regions", cbShowOtherRegions.isChecked).apply()
-            loadAlerts()
+            if (isLiveMode()) displayLiveMode() else loadAlerts()
         }
     }
 
@@ -145,6 +177,8 @@ class MapFragment : Fragment() {
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.setDestroyMode(false)
+        // Hide built-in zoom buttons — user can pinch-zoom or use Show Israel button
+        mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
 
         // Prevent ViewPager2 from intercepting horizontal swipes on the map
         mapView.setOnTouchListener { v, event ->
@@ -162,10 +196,6 @@ class MapFragment : Fragment() {
         controller.setCenter(GeoPoint(31.5, 35.0))
 
         applyDarkModeIfNeeded()
-
-        val compass = CompassOverlay(requireContext(), mapView)
-        compass.enableCompass()
-        mapView.overlays.add(compass)
     }
 
     private fun applyDarkModeIfNeeded() {
@@ -186,9 +216,104 @@ class MapFragment : Fragment() {
         }
     }
 
-    private fun loadAlerts() {
-        pbMapLoading.visibility = View.VISIBLE
+    // ── Live Mode ──────────────────────────────────────────────
 
+    private fun startLivePolling() {
+        stopLivePolling()
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val pollMs = (prefs.getInt("poll_frequency_seconds", 30) * 1000L).coerceAtLeast(5000L)
+        livePollRunnable = object : Runnable {
+            override fun run() {
+                if (!isAdded) return
+                displayLiveMode()
+                handler.postDelayed(this, pollMs)
+            }
+        }
+        handler.postDelayed(livePollRunnable!!, pollMs)
+    }
+
+    private fun stopLivePolling() {
+        livePollRunnable?.let { handler.removeCallbacks(it) }
+        livePollRunnable = null
+    }
+
+    private fun displayLiveMode() {
+        val ctx = context ?: return
+        RegionAlertTracker.processTick()
+
+        val activeRegions = RegionAlertTracker.getActiveRegions()
+        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+        val selectedRegions = getSelectedRegions(prefs)
+        val showOther = prefs.getBoolean("show_other_regions", true)
+
+        // Filter by type checkboxes
+        val showAlarm = cbMissiles.isChecked
+        val showWarning = cbAircraft.isChecked
+        val showEnded = cbEvent.isChecked
+
+        val regionData = activeRegions.mapNotNull { (region, state) ->
+            // Filter by type
+            when (state.level) {
+                RegionAlertTracker.RegionLevel.ALARM -> if (!showAlarm) return@mapNotNull null
+                RegionAlertTracker.RegionLevel.WARNING -> if (!showWarning) return@mapNotNull null
+                RegionAlertTracker.RegionLevel.EVENT_ENDED -> if (!showEnded) return@mapNotNull null
+                else -> return@mapNotNull null
+            }
+            // Filter by region
+            if (!showOther && selectedRegions.isNotEmpty() && region !in selectedRegions) return@mapNotNull null
+            val color = RegionAlertTracker.getLevelColor(state.level)
+            if (color == Color.TRANSPARENT) return@mapNotNull null
+            RegionColorData(region, color, 0.35f, region in selectedRegions)
+        }
+
+        // Build header
+        val alarmCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.ALARM }
+        val warningCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.WARNING }
+        val endedCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.EVENT_ENDED }
+        val header = if (activeRegions.isEmpty()) {
+            "LIVE — ${getString(R.string.map_no_alerts)}"
+        } else {
+            buildString {
+                append("LIVE")
+                if (alarmCount > 0) append("  🔴$alarmCount")
+                if (warningCount > 0) append("  🟡$warningCount")
+                if (endedCount > 0) append("  🟢$endedCount")
+            }
+        }
+
+        tvMapCounter.text = header
+        val hasAlarm = activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM }
+        drawOnMap(regionData, hasAlarm, header)
+    }
+
+    // ── History Mode ───────────────────────────────────────────
+
+    private fun loadAlerts() {
+        // Show cached data immediately (no network wait)
+        val ctx = context ?: return
+        val mapPrefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+        val showOther = mapPrefs.getBoolean("show_other_regions", true)
+        val selRegions = getSelectedRegions(mapPrefs)
+
+        val cachedAlerts = AlertCacheService.getLast24Hours(ctx)
+            .filter { AlertTypeFilter.shouldShow(ctx, it.type) }
+            .filter { alert ->
+                showOther || selRegions.isEmpty() || alert.regions.any { it in selRegions }
+            }
+            .sortedByDescending { it.timestampMs }
+
+        // Split each time bucket by alert type (same as status tab)
+        val timeBuckets = AlertCacheService.groupByTimeBucket(cachedAlerts)
+        alertsByMinute = timeBuckets.flatMap { bucket ->
+            bucket.groupBy { it.type }.values.toList()
+                .sortedByDescending { it.first().timestampMs }
+        }
+        activeAlert = null
+        currentGroupIndex = currentGroupIndex.coerceIn(0, (alertsByMinute.size - 1).coerceAtLeast(0))
+        updateNavigationState()
+        displayCurrentGroup()
+
+        // Then fetch real-time alert in background
         Thread {
             try {
                 val activeResult = RedAlertService.fetch()
@@ -197,34 +322,16 @@ class MapFragment : Fragment() {
                     is RedAlertService.FetchResult.Unavailable -> null
                 }
 
-                val ctx = requireContext()
-                val mapPrefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-                val showOther = mapPrefs.getBoolean("show_other_regions", true)
-                val selRegions = getSelectedRegions(mapPrefs)
-
-                val historyAlerts = AlertCacheService.getLast24Hours(ctx)
-                    .filter { AlertTypeFilter.shouldShow(ctx, it.type) }
-                    .filter { alert ->
-                        showOther || selRegions.isEmpty() || alert.regions.any { it in selRegions }
+                requireActivity().runOnUiThread {
+                    if (!isAdded) return@runOnUiThread
+                    if (fetchedActive != null && shouldShowAlertType(fetchedActive.type)) {
+                        activeAlert = fetchedActive
+                        currentGroupIndex = 0
+                        updateNavigationState()
+                        displayCurrentGroup()
                     }
-                    .sortedByDescending { it.timestampMs }
-
-                val minuteGroups = AlertCacheService.groupByTimeBucket(historyAlerts)
-
-                requireActivity().runOnUiThread {
-                    activeAlert = if (fetchedActive != null && shouldShowAlertType(fetchedActive.type)) fetchedActive else null
-                    alertsByMinute = minuteGroups
-                    currentGroupIndex = 0
-                    updateNavigationState()
-                    displayCurrentGroup()
-                    pbMapLoading.visibility = View.GONE
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                requireActivity().runOnUiThread {
-                    pbMapLoading.visibility = View.GONE
-                }
-            }
+            } catch (_: Exception) {}
         }.start()
     }
 
@@ -235,7 +342,7 @@ class MapFragment : Fragment() {
         btnMapNext.isEnabled = hasMultiple
     }
 
-    private fun displayCurrentGroup() {
+    private fun displayCurrentGroup(isUserClick: Boolean = false) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val hasActive = activeAlert != null
         val totalGroups = alertsByMinute.size + (if (hasActive) 1 else 0)
@@ -248,6 +355,12 @@ class MapFragment : Fragment() {
 
         val selectedRegions = getSelectedRegions(prefs)
         val showOther = prefs.getBoolean("show_other_regions", true)
+        val zoomMode = prefs.getString("map_zoom_mode", "off") ?: "off"
+        val shouldZoom = when (zoomMode) {
+            "click" -> isUserClick
+            "auto" -> true
+            else -> false
+        }
 
         val displayIndex = currentGroupIndex % totalGroups
         val isShowingActive = hasActive && displayIndex == 0
@@ -262,27 +375,28 @@ class MapFragment : Fragment() {
                 alert.regions.filter { it in selectedRegions } else alert.regions
             val regionData = regions.map { RegionColorData(it, color, 0.35f, it in selectedRegions) }
             drawOnMap(regionData, true, getString(R.string.map_now_header, alert.title))
-            zoomToFitRegions(regionData)
+            zoomToFitRegions(regionData) // Always zoom for active alerts
         } else if (historyIndex in alertsByMinute.indices) {
             val group = alertsByMinute[historyIndex]
             val ctx = requireContext()
             val header = AlertCacheService.formatGroupHeader(ctx, group)
             val countStr = AlertCacheService.formatGroupCount(ctx, group)
-            tvMapCounter.text = "$header$countStr (${displayIndex + 1}/$totalGroups)"
+            val titles = group.map { it.title }.distinct().joinToString(", ")
+            tvMapCounter.text = "$header$countStr — $titles (${displayIndex + 1}/$totalGroups)"
 
-            // Process oldest-first so latest alert color wins per region
             val regionData = group.asReversed().flatMap { alert ->
                 val color = getAlertTypeColor(alert.type)
                 val regions = if (!showOther && selectedRegions.isNotEmpty())
                     alert.regions.filter { it in selectedRegions } else alert.regions
                 regions.map { RegionColorData(it, color, 0.25f, it in selectedRegions) }
             }
-            drawOnMap(regionData, false, "$header$countStr")
+            drawOnMap(regionData, false, "$header$countStr — $titles")
 
-            val zoomMode = prefs.getString("map_zoom_mode", "off") ?: "off"
-            if (zoomMode == "auto") zoomToFitRegions(regionData)
+            if (shouldZoom) zoomToFitRegions(regionData)
         }
     }
+
+    // ── Drawing ────────────────────────────────────────────────
 
     private fun zoomToFitRegions(regionData: List<RegionColorData>) {
         val ctx = context ?: return
@@ -334,8 +448,8 @@ class MapFragment : Fragment() {
         val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
         val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
 
-        // Remove previous alert overlays (keep compass)
-        mapView.overlays.removeAll { it !is CompassOverlay }
+        // Remove previous alert overlays
+        mapView.overlays.clear()
         applyDarkModeIfNeeded()
 
         // Draw selected region borders (outline only, no fill) as base layer
@@ -367,8 +481,7 @@ class MapFragment : Fragment() {
             }
         }
 
-        // Deduplicate: if a region appears multiple times, use the highest-priority color
-        // Latest alert per region wins, but yellow doesn't cancel red/orange
+        // Deduplicate: latest alert per region wins, but yellow doesn't cancel red
         val regionMap = mutableMapOf<String, RegionColorData>()
         for (rd in regionData) {
             val existing = regionMap[rd.region]
@@ -463,11 +576,8 @@ class MapFragment : Fragment() {
         }
     }
 
-    /**
-     * Whether a new (later) alert color should overwrite the existing one for a region.
-     * Yellow (warning) does NOT cancel red/orange (active missile/aircraft).
-     * Only green (event_ended) or another red/orange can overwrite red/orange.
-     */
+    // ── Helpers ─────────────────────────────────────────────────
+
     private fun shouldOverwriteColor(existingColor: Int, newColor: Int): Boolean {
         val isExistingActive = existingColor == Color.RED
         val isNewWarning = newColor == Color.parseColor("#FFC107")
@@ -500,15 +610,26 @@ class MapFragment : Fragment() {
         }
     }
 
+    // ── Lifecycle ───────────────────────────────────────────────
+
     override fun onResume() {
         super.onResume()
         mapView.onResume()
-        loadAlerts()
+        if (isLiveMode()) {
+            navBar.visibility = View.GONE
+            displayLiveMode()
+            startLivePolling()
+        } else {
+            navBar.visibility = View.VISIBLE
+            stopLivePolling()
+            loadAlerts()
+        }
     }
 
     override fun onPause() {
         super.onPause()
         mapView.onPause()
+        stopLivePolling()
     }
 
     override fun onDestroyView() {

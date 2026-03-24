@@ -91,6 +91,12 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Grayscale map tiles** — Desaturated tiles remove topographic colors, cleaner in both themes
 - [x] **State machine real-time only** — Cache replay removed from poll loop, prevents banner timeout replay loop
 - [x] **Threat state change block rebuild** — Blocks update immediately when banner state transitions
+- [x] **Map tab live mode** — Full map shows real-time RegionAlertTracker state with polling
+- [x] **Map tab zoom-to-fit** — Respects zoom setting (off/click/auto) on prev/next navigation
+- [x] **Map tab Show Israel button** — Same as status tab, physical-right for RTL
+- [x] **Collapsible filter panel** — Compact ☰ toggle, default collapsed
+- [x] **Instant map loading** — Cached data first, network fetch in background
+- [x] **Map tab type splitting** — Each time bucket split by alert type, no mixed groups
 
 ### Phase 4 (Long-term)
 

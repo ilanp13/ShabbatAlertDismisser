@@ -13,65 +13,102 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:indeterminate="true" />
+        android:indeterminate="true"
+        android:visibility="gone" />
 
-    <!-- Top-left: Filter panel -->
+    <!-- Top-right: Show All Israel button (use physical right, not end, for RTL) -->
+    <Button
+        android:id="@+id/btnMapShowIsrael"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|right"
+        android:layout_marginTop="60dp"
+        android:layout_marginRight="8dp"
+        android:text="@string/btn_show_all_israel"
+        android:textSize="12sp"
+        style="?attr/materialButtonOutlinedStyle"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:minWidth="0dp"
+        android:minHeight="32dp"
+        android:alpha="0.9" />
+
+    <!-- Top-left: Collapsible filter panel (below header overlay) -->
     <LinearLayout
         android:id="@+id/filterPanel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|left"
+        android:layout_marginTop="60dp"
         android:orientation="vertical"
-        android:padding="8dp"
         android:background="?android:attr/colorBackground"
         android:alpha="0.95">
 
+        <!-- Toggle button (always visible) -->
         <TextView
+            android:id="@+id/btnFilterToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/filter_by_type_label"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:text="☰"
+            android:textSize="14sp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:clickable="true"
+            android:focusable="true" />
 
-        <CheckBox
-            android:id="@+id/cbMissiles"
+        <!-- Expandable filter content -->
+        <LinearLayout
+            android:id="@+id/filterContent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/filter_alerts"
-            android:textSize="11sp"
-            android:layout_marginTop="4dp"
-            android:checked="true" />
+            android:orientation="vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone">
 
-        <CheckBox
-            android:id="@+id/cbAircraft"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/filter_warnings"
-            android:textSize="11sp"
-            android:checked="true" />
+            <CheckBox
+                android:id="@+id/cbMissiles"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_alerts"
+                android:textSize="11sp"
+                android:checked="true" />
 
-        <CheckBox
-            android:id="@+id/cbEvent"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/filter_ended"
-            android:textSize="11sp"
-            android:checked="true" />
+            <CheckBox
+                android:id="@+id/cbAircraft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_warnings"
+                android:textSize="11sp"
+                android:checked="true" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#40808080"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="4dp" />
+            <CheckBox
+                android:id="@+id/cbEvent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/filter_ended"
+                android:textSize="11sp"
+                android:checked="true" />
 
-        <CheckBox
-            android:id="@+id/cbShowOtherRegions"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/show_other_regions"
-            android:textSize="11sp"
-            android:checked="true" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#40808080"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="2dp" />
+
+            <CheckBox
+                android:id="@+id/cbShowOtherRegions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/show_other_regions"
+                android:textSize="11sp"
+                android:checked="true" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
