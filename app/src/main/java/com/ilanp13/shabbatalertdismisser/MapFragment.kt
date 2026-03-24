@@ -225,11 +225,30 @@ class MapFragment : Fragment() {
         livePollRunnable = object : Runnable {
             override fun run() {
                 if (!isAdded) return
-                displayLiveMode()
+                // Fetch real-time alerts and feed to tracker (Status tab is paused)
+                fetchAndFeedLiveAlert()
                 handler.postDelayed(this, pollMs)
             }
         }
+        // First poll immediately
+        fetchAndFeedLiveAlert()
         handler.postDelayed(livePollRunnable!!, pollMs)
+    }
+
+    /** Fetch real-time alert and feed to RegionAlertTracker, then update display */
+    private fun fetchAndFeedLiveAlert() {
+        Thread {
+            val result = RedAlertService.fetch()
+            val ctx = context ?: return@Thread
+            if (result is RedAlertService.FetchResult.Success && result.alert != null) {
+                AlertCacheService.save(ctx, result.alert)
+                RegionAlertTracker.processAlert(result.alert)
+            }
+            handler.post {
+                if (!isAdded) return@post
+                displayLiveMode()
+            }
+        }.start()
     }
 
     private fun stopLivePolling() {
@@ -552,7 +571,7 @@ class MapFragment : Fragment() {
                 val screenPos = pj.toPixels(point, null)
                 val bx = screenPos.x.toFloat()
                 val by = screenPos.y.toFloat()
-                val radius = if (isActive) 12f else 10f
+                val radius = if (isActive) 6f else 5f
 
                 paint.color = color
                 paint.style = Paint.Style.FILL
