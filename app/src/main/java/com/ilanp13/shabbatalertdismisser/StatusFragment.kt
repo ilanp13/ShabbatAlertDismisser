@@ -16,7 +16,6 @@ import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import org.json.JSONArray
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import java.text.SimpleDateFormat
@@ -173,7 +172,6 @@ class StatusFragment : Fragment() {
             osmdroidBasePath = requireContext().cacheDir
         }
 
-        miniMapView.setTileSource(TileSourceFactory.MAPNIK)
         miniMapView.setMultiTouchControls(true)
         miniMapView.isClickable = true
         miniMapView.isFocusable = true
@@ -194,30 +192,13 @@ class StatusFragment : Fragment() {
         controller.setZoom(8.0)
         controller.setCenter(GeoPoint(31.5, 35.0))
 
-        applyMiniMapDarkMode()
+        applyMiniMapStyle()
         miniMapContainer.visibility = View.GONE
     }
 
-    private fun applyMiniMapDarkMode() {
-        val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        val grayscale = android.graphics.ColorMatrix().apply { setSaturation(0f) }
-        if (nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
-            val invert = android.graphics.ColorMatrix(floatArrayOf(
-                -1f, 0f, 0f, 0f, 255f,
-                0f, -1f, 0f, 0f, 255f,
-                0f, 0f, -1f, 0f, 255f,
-                0f, 0f, 0f, 1f, 0f
-            ))
-            val combined = android.graphics.ColorMatrix()
-            combined.setConcat(invert, grayscale)
-            miniMapView.overlayManager.tilesOverlay.setColorFilter(
-                android.graphics.ColorMatrixColorFilter(combined)
-            )
-        } else {
-            miniMapView.overlayManager.tilesOverlay.setColorFilter(
-                android.graphics.ColorMatrixColorFilter(grayscale)
-            )
-        }
+    private fun applyMiniMapStyle() {
+        val style = prefs.getString("map_style", "minimal") ?: "minimal"
+        MapTileHelper.applyStyle(miniMapView, resources, style)
     }
 
 
@@ -1208,7 +1189,6 @@ class StatusFragment : Fragment() {
     ) {
         val ctx = context ?: return
         miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
-        applyMiniMapDarkMode()
 
         val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
         val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()

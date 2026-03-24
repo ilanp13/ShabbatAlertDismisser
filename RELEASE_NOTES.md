@@ -1,46 +1,43 @@
 # Release Notes
 
-## Version 2.1.1 - Current Release
+## Version 2.1.3 - Current Release
 
 ### English (en-US)
 
-**Version 2.1.1 — Grayscale Maps, Map Tab Live Mode & Banner Reliability**
+**Version 2.1.3 — Map Style Selector & CartoDB Tiles**
 
 ✨ **New:**
-  • Map tab live mode — full map shows real-time per-region coloring when live mode is active
-  • Map tab zoom-to-fit — respects zoom setting (off/click/auto) on prev/next navigation
-  • Show All Israel button (🇮🇱) on map tab
-  • Collapsible filter panel — tap ☰ to expand/collapse, saves map space
-  • Instant map loading — cached data shown immediately, network fetch in background
-
-🔧 **Fixes:**
-  • Grayscale map tiles — removed distracting topographic colors in both light and dark mode
-  • Map tab alert grouping — split by type (was mixing alarm + warning + ended in one group)
-  • Banner auto-timeout fix — event ended banner correctly clears after 10 minutes
-  • State machine driven by real-time data only — no more cache replay loop
-  • Removed compass overlay and built-in zoom buttons (pinch-zoom + 🇮🇱 button)
+  • Map style toggle — 3 options in filter panel: Minimal (CartoDB), Grayscale, Detailed (color)
+  • CartoDB tiles — clean, sparse map tiles for both dark and light mode (default)
+  • Setting applies to both map tab and status tab mini map
 
 ---
 
 ### Hebrew (iw-IL)
 
-**גרסה 2.1.1 — מפות אפורות, מצב חי במפה ואמינות באנרים**
+**גרסה 2.1.3 — בחירת סגנון מפה ואריחי CartoDB**
 
 ✨ **חדש:**
-  • מצב חי בלשונית מפה — מפה מלאה מציגה צביעת אזורים בזמן אמת
-  • זום למפה בלחיצה — כפתורי הקודם/הבא מזימים לפי הגדרות
-  • כפתור הצג כל ישראל (🇮🇱) בלשונית מפה
-  • פאנל סינון מתקפל — לחיצה על ☰ לפתיחה/סגירה
-  • טעינה מיידית — נתונים מהמטמון מוצגים מיד
+  • בוחר סגנון מפה — 3 אפשרויות בפאנל סינון: מינימלי (CartoDB), אפור, מפורט (צבעוני)
+  • אריחי CartoDB — מפה נקייה ומינימלית במצב כהה ובהיר (ברירת מחדל)
+  • ההגדרה משפיעה על שתי המפות
 
-🔧 **תיקונים:**
-  • אריחי מפה באפור — הסרת צבעים טופוגרפיים מסיחים
-  • קיבוץ התראות במפה — הפרדה לפי סוג (היה מערבב אזעקה + אזהרה + הסתיים)
-  • באנר "האירוע הסתיים" נסגר נכון אחרי 10 דקות
-  • מכונת מצב מונעת בזמן אמת בלבד — ללא לולאת השמעה חוזרת
-  • הסרת מצפן וכפתורי זום מובנים
-  • תיקון דליפת מטמון במצב חי — סקר לא מזין 24 שעות מלאות לעוקב אזורים
-  • שינוי מצב איום מרענן בלוקים מיידית — ללא עיכוב בין באנר לבלוקים
+---
+
+## Previous Versions
+
+### Version 2.1.2
+
+**Version 2.1.2 — Grayscale Maps, Map Tab Live Mode & Banner Reliability**
+
+✨ **New:**
+  • Map tab live mode — full map shows real-time per-region coloring
+  • Map tab zoom-to-fit — respects zoom setting on prev/next
+  • Show All Israel button (🇮🇱) and collapsible filter panel on map tab
+  • Instant map loading from cache
+
+🔧 **Fixes:**
+  • Banner auto-timeout, state machine real-time only, alert grouping by type
 
 ---
 

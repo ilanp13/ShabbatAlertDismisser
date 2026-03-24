@@ -97,6 +97,8 @@ This document outlines planned features and improvements for Shabbat Alert Dismi
 - [x] **Collapsible filter panel** — Compact ☰ toggle, default collapsed
 - [x] **Instant map loading** — Cached data first, network fetch in background
 - [x] **Map tab type splitting** — Each time bucket split by alert type, no mixed groups
+- [x] **Map style selector** — 3-option toggle in filter panel: Minimal (CartoDB), Grayscale, Detailed
+- [x] **CartoDB tile source** — Clean, sparse tiles via MapTileHelper shared by both map views
 
 ### Phase 4 (Long-term)
 

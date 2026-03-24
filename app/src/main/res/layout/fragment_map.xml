@@ -108,6 +108,23 @@
                 android:textSize="11sp"
                 android:checked="true" />
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#40808080"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:id="@+id/btnMapStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/map_style_minimal"
+                android:textSize="11sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="4dp" />
+
         </LinearLayout>
 
     </LinearLayout>

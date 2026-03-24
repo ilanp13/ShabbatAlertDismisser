@@ -1,10 +1,7 @@
 package com.ilanp13.shabbatalertdismisser
 
-import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
@@ -44,6 +41,7 @@ class MapFragment : Fragment() {
     private lateinit var btnFilterToggle: TextView
     private lateinit var navBar: LinearLayout
     private lateinit var btnMapShowIsrael: Button
+    private lateinit var btnMapStyle: TextView
 
     // Cycling state
     private var activeAlert: RedAlertService.ActiveAlert? = null
@@ -78,6 +76,22 @@ class MapFragment : Fragment() {
         navBar = view.findViewById(R.id.navBar)
 
         btnMapShowIsrael = view.findViewById(R.id.btnMapShowIsrael)
+        btnMapStyle = view.findViewById(R.id.btnMapStyle)
+
+        // Map style toggle — cycles through minimal → grayscale → detailed
+        updateMapStyleLabel()
+        btnMapStyle.setOnClickListener {
+            val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val current = prefs.getString("map_style", "minimal") ?: "minimal"
+            val next = when (current) {
+                "minimal" -> "grayscale"
+                "grayscale" -> "detailed"
+                else -> "minimal"
+            }
+            prefs.edit().putString("map_style", next).apply()
+            updateMapStyleLabel()
+            applyMapStyle()
+        }
 
         // Collapsible filter panel
         btnFilterToggle.setOnClickListener {
@@ -174,10 +188,8 @@ class MapFragment : Fragment() {
             osmdroidBasePath = requireContext().cacheDir
         }
 
-        mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.setDestroyMode(false)
-        // Hide built-in zoom buttons — user can pinch-zoom or use Show Israel button
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
 
         // Prevent ViewPager2 from intercepting horizontal swipes on the map
@@ -188,31 +200,29 @@ class MapFragment : Fragment() {
                 android.view.MotionEvent.ACTION_UP,
                 android.view.MotionEvent.ACTION_CANCEL -> v.parent?.requestDisallowInterceptTouchEvent(false)
             }
-            false // Let map handle the event normally
+            false
         }
 
         val controller = mapView.controller
         controller.setZoom(9.5)
         controller.setCenter(GeoPoint(31.5, 35.0))
 
-        applyDarkModeIfNeeded()
+        applyMapStyle()
     }
 
-    private fun applyDarkModeIfNeeded() {
-        val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        val grayscale = ColorMatrix().apply { setSaturation(0f) }
-        if (nightMode == Configuration.UI_MODE_NIGHT_YES) {
-            val invert = ColorMatrix(floatArrayOf(
-                -1f, 0f, 0f, 0f, 255f,
-                0f, -1f, 0f, 0f, 255f,
-                0f, 0f, -1f, 0f, 255f,
-                0f, 0f, 0f, 1f, 0f
-            ))
-            val combined = ColorMatrix()
-            combined.setConcat(invert, grayscale)
-            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(combined))
-        } else {
-            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(grayscale))
+    private fun applyMapStyle() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val style = prefs.getString("map_style", "minimal") ?: "minimal"
+        MapTileHelper.applyStyle(mapView, resources, style)
+    }
+
+    private fun updateMapStyleLabel() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val style = prefs.getString("map_style", "minimal") ?: "minimal"
+        btnMapStyle.text = when (style) {
+            "minimal" -> getString(R.string.map_style_minimal)
+            "grayscale" -> getString(R.string.map_style_grayscale)
+            else -> getString(R.string.map_style_detailed)
         }
     }
 
@@ -469,7 +479,6 @@ class MapFragment : Fragment() {
 
         // Remove previous alert overlays
         mapView.overlays.clear()
-        applyDarkModeIfNeeded()
 
         // Draw selected region borders (outline only, no fill) as base layer
         val selectedRegions = getSelectedRegions(prefs)

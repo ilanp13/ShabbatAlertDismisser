@@ -157,6 +157,9 @@
     <string name="map_zoom_off">Disabled</string>
     <string name="map_zoom_click">On click only</string>
     <string name="map_zoom_auto">On click and auto-focus</string>
+    <string name="map_style_minimal">🗺 Minimal</string>
+    <string name="map_style_grayscale">🗺 Grayscale</string>
+    <string name="map_style_detailed">🗺 Detailed</string>
     <string name="btn_prev">← Previous</string>
     <string name="btn_next">Next →</string>
     <string name="btn_prev_arrow">←</string>

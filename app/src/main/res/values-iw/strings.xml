@@ -157,6 +157,9 @@
     <string name="map_zoom_off">כבוי</string>
     <string name="map_zoom_click">בלחיצה בלבד</string>
     <string name="map_zoom_auto">בלחיצה ובפוקוס אוטומטי</string>
+    <string name="map_style_minimal">🗺 מינימלי</string>
+    <string name="map_style_grayscale">🗺 אפור</string>
+    <string name="map_style_detailed">🗺 מפורט</string>
     <string name="btn_prev">הקודם →</string>
     <string name="btn_next">← הבא</string>
     <string name="btn_prev_arrow">→</string>
