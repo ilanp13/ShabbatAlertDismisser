@@ -517,6 +517,7 @@ class StatusFragment : Fragment() {
                     }
                     else -> {
                         loadCachedAlerts()
+                        feedRecentCachedAlertsToStateMachine()
                         val curThreatLevel = AlertStateMachine.getState(requireContext()).level
                         val threatChanged = curThreatLevel != prevThreatLevel
                         updateThreatBanner()
@@ -581,6 +582,7 @@ class StatusFragment : Fragment() {
                 handler.post {
                     if (!isAdded) return@post
                     loadCachedAlerts()
+                    feedRecentCachedAlertsToStateMachine()
                     updateThreatBanner()
                     val newFp = alertsFingerprint()
                     if (newFp != lastKnownAlertFingerprint) {

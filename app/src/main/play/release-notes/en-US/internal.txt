@@ -1,6 +1,4 @@
-v2.1.3 — Map Style Selector & CartoDB Tiles
+v2.1.4 — Banner sync fix
 
-• Map style toggle — 3 options: Minimal, Grayscale, Detailed
-• CartoDB tiles — clean, sparse tiles (default)
-• Applies to both map tab and status mini map
-• Works in light and dark mode
+• Banner now updates alongside blocks when new alerts arrive from history
+• Fixes stale "event ended" banner while blocks show new alarms
