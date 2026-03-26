@@ -49,27 +49,20 @@ object AlertStateMachine {
             return current
         }
 
+        // For ALL categories (including event_ended), only process if regions match
+        val matchingRegions = alert.regions.filter { it in selectedRegions }
+        if (matchingRegions.isEmpty()) return current
+
         // Event ended (cat 13): if already EVENT_ENDED, don't reset the timeout
         if (category == 13 && current.level == ThreatLevel.EVENT_ENDED) {
             return current
         }
-        // Event ended (cat 13): if we're in WARNING/ALARM, transition to EVENT_ENDED
-        if (category == 13 && (current.level == ThreatLevel.WARNING || current.level == ThreatLevel.ALARM)) {
-            Log.d(TAG, "Event ended (cat 13) while in ${current.level} -> EVENT_ENDED")
-            val ended = ThreatState(ThreatLevel.EVENT_ENDED, current.title, current.regions, alertTime, now)
-            saveState(context, ended)
-            return ended
-        }
-
-        // For all other categories, only process alerts that affect selected regions
-        val matchingRegions = alert.regions.filter { it in selectedRegions }
-        if (matchingRegions.isEmpty()) return current
 
         val newState = when {
             // Event ended -> EVENT_ENDED (green banner) or CLEAR if already cleared
             category == 13 -> {
                 if (current.level == ThreatLevel.WARNING || current.level == ThreatLevel.ALARM) {
-                    Log.d(TAG, "Event ended (cat 13) -> EVENT_ENDED")
+                    Log.d(TAG, "Event ended (cat 13) while ${current.level} -> EVENT_ENDED")
                     ThreatState(ThreatLevel.EVENT_ENDED, current.title, matchingRegions, alertTime, now)
                 } else {
                     Log.d(TAG, "Event ended (cat 13) while ${current.level} -> CLEAR")

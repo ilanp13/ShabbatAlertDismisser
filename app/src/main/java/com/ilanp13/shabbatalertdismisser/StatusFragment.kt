@@ -1682,9 +1682,8 @@ class StatusFragment : Fragment() {
             .filter { alert ->
                 if (alert.timestampMs <= sinceMs) return@filter false
                 if ((now - alert.timestampMs) >= recentThresholdMs) return@filter false
-                val cat = if (alert.category > 0) alert.category
-                    else RedAlertService.inferCategoryFromTitle(alert.title)
-                cat == 13 || alert.regions.any { it in selectedRegions }
+                // Only process alerts that match selected regions (all categories)
+                alert.regions.any { it in selectedRegions }
             }
             .sortedBy { it.timestampMs }
 
