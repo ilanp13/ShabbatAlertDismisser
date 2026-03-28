@@ -50,9 +50,19 @@ object HebcalService {
         return try {
             val tzId = TimeZone.getDefault().id
             val url = URL(
-                "https://www.hebcal.com/shabbat?cfg=json" +
-                        "&latitude=$lat&longitude=$lon&tzid=$tzId" +
-                        "&b=$candleMins&m=$havdalahMins"
+                buildString {
+                    // Use the calendar API with 2-week range for full holiday coverage
+                    val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                    val startDate = sdf.format(java.util.Date())
+                    val cal = java.util.Calendar.getInstance()
+                    cal.add(java.util.Calendar.DAY_OF_YEAR, 14)
+                    val endDate = sdf.format(cal.time)
+                    append("https://www.hebcal.com/hebcal?v=1&cfg=json&i=on")
+                    append("&latitude=$lat&longitude=$lon&tzid=$tzId")
+                    append("&b=$candleMins&m=$havdalahMins")
+                    append("&start=$startDate&end=$endDate")
+                    append("&c=on&s=on&maj=on&ss=on") // candles, havdalah, major holidays, parasha
+                }
             )
             Log.d(TAG, "Fetching: $url")
 
@@ -77,8 +87,9 @@ object HebcalService {
 
         val candleTimes = mutableListOf<Long>()
         val havdalahTimes = mutableListOf<Long>()
-        // Collect holiday names with their dates for association with windows
-        val holidayNames = mutableListOf<Pair<Long, String>>() // (dateMs, hebrewName)
+        // Holiday items with Hebrew names and dates (for labeling windows)
+        data class HolidayInfo(val dateMs: Long, val hebrew: String, val subcat: String)
+        val holidays = mutableListOf<HolidayInfo>()
 
         for (i in 0 until items.length()) {
             val item = items.getJSONObject(i)
@@ -88,12 +99,20 @@ object HebcalService {
                 "parashat" -> {
                     val hebrewText = item.optString("hebrew")
                     if (hebrewText.isNotEmpty()) parasha = hebrewText
+                    // Also store as a holiday-like item for window labeling
+                    val dateStr = item.optString("date")
+                    if (dateStr.isNotEmpty()) {
+                        try { holidays.add(HolidayInfo(parseDateLoose(dateStr), hebrewText, "parashat")) }
+                        catch (_: Exception) {}
+                    }
                 }
                 "holiday" -> {
                     val hebrewText = item.optString("hebrew")
                     val dateStr = item.optString("date")
+                    val subcat = item.optString("subcat")
                     if (hebrewText.isNotEmpty() && dateStr.isNotEmpty()) {
-                        try { holidayNames.add(parseDate(dateStr) to hebrewText) } catch (_: Exception) {}
+                        try { holidays.add(HolidayInfo(parseDateLoose(dateStr), hebrewText, subcat)) }
+                        catch (_: Exception) {}
                     }
                 }
             }
@@ -101,32 +120,42 @@ object HebcalService {
 
         if (candleTimes.isEmpty() || havdalahTimes.isEmpty()) return null
 
-        // Sort both lists chronologically
         candleTimes.sort()
         havdalahTimes.sort()
 
-        // Pair candles with havdalahs: each candle matches with the next havdalah after it
+        // Pair candles with havdalahs
         val windows = mutableListOf<ShabbatWindow>()
         var hIdx = 0
         for (candle in candleTimes) {
             while (hIdx < havdalahTimes.size && havdalahTimes[hIdx] <= candle) hIdx++
             if (hIdx < havdalahTimes.size) {
-                // Find the best label: holiday name near this candle, or parasha
-                val nearbyHoliday = holidayNames.find { (dateMs, _) ->
-                    kotlin.math.abs(dateMs - candle) < 48 * 3600 * 1000L // within 48h
-                }?.second
-                val label = nearbyHoliday ?: parasha
-                windows.add(ShabbatWindow(candle, havdalahTimes[hIdx], label))
+                val havdalah = havdalahTimes[hIdx]
+                // Find the best Hebrew label for this window:
+                // Look for major holidays within the window, then parasha
+                // Find the actual holiday (not "erev") that falls within candle→havdalah
+                // Holiday dates are midnight, candle is evening — so allow a small backward buffer
+                val majorHoliday = holidays
+                    .filter { h ->
+                        h.subcat == "major" && !h.hebrew.startsWith("ערב") &&
+                        h.dateMs >= candle - 6 * 3600_000L && h.dateMs <= havdalah
+                    }
+                    .minByOrNull { it.dateMs } // prefer the earliest matching holiday
+                val parashat = holidays.find { h ->
+                    h.subcat == "parashat" &&
+                    h.dateMs >= candle - 6 * 3600_000L && h.dateMs <= havdalah
+                }
+                // Prefer major holiday name; fall back to parasha
+                val label = majorHoliday?.hebrew ?: parashat?.hebrew
+                windows.add(ShabbatWindow(candle, havdalah, label))
                 hIdx++
             }
         }
 
         if (windows.isEmpty()) return null
 
-        // Merge overlapping/adjacent windows
         val merged = mergeWindows(windows)
-        Log.d(TAG, "Parsed ${candleTimes.size} candles, ${havdalahTimes.size} havdalahs -> " +
-                "${windows.size} pairs -> ${merged.size} merged windows")
+        Log.d(TAG, "Parsed ${candleTimes.size} candles, ${havdalahTimes.size} havdalahs, " +
+                "${holidays.size} holidays -> ${windows.size} pairs -> ${merged.size} merged")
 
         return FetchResult(merged, parasha)
     }
@@ -180,7 +209,7 @@ object HebcalService {
                 ShabbatWindow(
                     obj.getLong("candle"),
                     obj.getLong("havdalah"),
-                    obj.optString("parasha", null)
+                    obj.optString("parasha", "").ifEmpty { null }
                 )
             }
         } catch (e: Exception) {
@@ -196,4 +225,16 @@ object HebcalService {
 
     private fun parseDate(s: String): Long =
         OffsetDateTime.parse(s).toInstant().toEpochMilli()
+
+    /** Parse both ISO datetime ("2026-04-01T18:42:00+03:00") and date-only ("2026-04-01") */
+    private fun parseDateLoose(s: String): Long {
+        return if (s.contains("T")) {
+            parseDate(s)
+        } else {
+            // Date-only: treat as noon on that day in default timezone
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            sdf.timeZone = TimeZone.getDefault()
+            sdf.parse(s)?.time ?: throw IllegalArgumentException("Invalid date: $s")
+        }
+    }
 }

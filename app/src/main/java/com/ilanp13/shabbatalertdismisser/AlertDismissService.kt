@@ -201,9 +201,11 @@ class AlertDismissService : AccessibilityService() {
 
             val result = HebcalService.fetch(lat, lon, candleMins, havdalahMins)
             if (result != null) {
-                val next = result.nextWindow(now)
-                candleMs = next?.candleMs ?: 0L
-                havMs = next?.havdalahMs ?: 0L
+                val next = result.nextWindow(now) ?: result.windows.lastOrNull()
+                if (next != null) {
+                    candleMs = next.candleMs
+                    havMs = next.havdalahMs
+                }
                 prefs.edit()
                     .putString("hebcal_windows_json", HebcalService.windowsToJson(result.windows))
                     .putLong("hebcal_candle_ms", candleMs)

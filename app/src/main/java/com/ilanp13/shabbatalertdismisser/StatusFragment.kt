@@ -293,25 +293,44 @@ class StatusFragment : Fragment() {
         val nextWindow = activeWindow ?: windows.filter { it.candleMs > now }.minByOrNull { it.candleMs }
         val displayWindow = activeWindow ?: nextWindow
 
-        if (displayWindow != null) {
+        // If all windows are past, skip to fallback (local calculation for next week)
+        if (displayWindow != null && (activeWindow != null || nextWindow != null)) {
             val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
             val havdalahDisplayMs = ((displayWindow.havdalahMs + 30_000L) / 60_000L) * 60_000L
             tvShabbatTimes.text = getString(R.string.shabbat_times_format,
                 fmt.format(Date(displayWindow.candleMs)),
                 fmt.format(Date(havdalahDisplayMs)))
-            tvShabbatTimesTitle.text = if (activeWindow != null) {
-                getString(R.string.shabbat_times_current)
-            } else {
-                getString(R.string.shabbat_times_next)
+
+            // Determine if this window is Shabbat or Yom Tov by checking candle day
+            val cal = java.util.Calendar.getInstance()
+            cal.timeInMillis = displayWindow.candleMs
+            val isFridayCandle = cal.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY
+            val label = displayWindow.parasha
+
+            tvShabbatTimesTitle.text = when {
+                activeWindow != null && isFridayCandle -> getString(R.string.shabbat_times_current)
+                activeWindow != null -> label ?: getString(R.string.shabbat_times_current)
+                isFridayCandle -> getString(R.string.shabbat_times_next)
+                else -> label ?: getString(R.string.shabbat_times_next)
             }
-            updateParashaDisplay()
+
+            // Show holiday name or parasha in the parasha section
+            tvShabbatParasha.text = if (label != null && !isFridayCandle) {
+                label // Holiday name (e.g., "Erev Pesach")
+            } else if (label != null) {
+                label // Parasha name
+            } else {
+                getString(R.string.parasha_unavailable)
+            }
+            // Always refresh in background to keep labels/times current
+            backgroundHebcalRefresh()
             return
         }
 
-        // Fallback to single-pair cache or local calculation
+        // Fallback to single-pair cache (only if still current or upcoming)
         val candleMs = prefs.getLong("hebcal_candle_ms", 0)
         val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
-        if (candleMs > 0 && havdalahMs > now - 7 * 86_400_000L) {
+        if (candleMs > 0 && havdalahMs > now) {
             val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
             val havdalahDisplayMs = ((havdalahMs + 30_000L) / 60_000L) * 60_000L
             tvShabbatTimes.text = getString(R.string.shabbat_times_format,
@@ -323,6 +342,7 @@ class StatusFragment : Fragment() {
             return
         }
 
+        // All cached data is past — use local calculation for next Shabbat
         val lat = prefs.getFloat("latitude", 31.7683f).toDouble()
         val lon = prefs.getFloat("longitude", 35.2137f).toDouble()
         val candle = prefs.getInt("candle_lighting_minutes", 18)
@@ -338,7 +358,48 @@ class StatusFragment : Fragment() {
             tvShabbatTimes.text = getString(R.string.shabbat_times_unavailable)
         }
         tvShabbatTimesTitle.text = getString(R.string.shabbat_times_next)
-        updateParashaDisplay()
+        // Clear stale parasha — will update when Hebcal refreshes
+        tvShabbatParasha.text = getString(R.string.parasha_unavailable)
+
+        backgroundHebcalRefresh()
+    }
+
+    private var hebcalRefreshPending = false
+    private fun backgroundHebcalRefresh() {
+        if (hebcalRefreshPending) return
+        hebcalRefreshPending = true
+        val lat = prefs.getFloat("latitude", 31.7683f).toDouble()
+        val lon = prefs.getFloat("longitude", 35.2137f).toDouble()
+        Thread {
+            val profile = MinhagProfiles.byKey(prefs.getString("minhag_key", "ashkenaz") ?: "ashkenaz")
+            val useRt = prefs.getBoolean("use_rabenu_tam", false)
+            val havMins = if (useRt) profile.rtMins else profile.graMins
+            val result = HebcalService.fetch(lat, lon, profile.candleMins, havMins)
+            if (result != null) {
+                val n = System.currentTimeMillis()
+                val next = result.nextWindow(n) ?: result.windows.lastOrNull()
+                val editor = prefs.edit()
+                    .putString("hebcal_windows_json", HebcalService.windowsToJson(result.windows))
+                    .putLong("hebcal_cache_timestamp_ms", n)
+                if (next != null) {
+                    editor.putLong("hebcal_candle_ms", next.candleMs)
+                    editor.putLong("hebcal_havdalah_ms", next.havdalahMs)
+                }
+                if (!result.parasha.isNullOrEmpty()) {
+                    editor.putString("hebcal_parasha", result.parasha)
+                }
+                editor.apply()
+                handler.post {
+                    hebcalRefreshPending = false
+                    if (isAdded) {
+                        updateShabbatTimes()
+                        updateSyncStatus()
+                    }
+                }
+            } else {
+                handler.post { hebcalRefreshPending = false }
+            }
+        }.start()
     }
 
     private fun updateParashaDisplay() {

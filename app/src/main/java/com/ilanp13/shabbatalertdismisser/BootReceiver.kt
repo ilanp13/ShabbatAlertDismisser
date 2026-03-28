@@ -27,11 +27,14 @@ class BootReceiver : BroadcastReceiver() {
             val result = HebcalService.fetch(lat, lon, profile.candleMins, havMins)
             if (result != null) {
                 val now = System.currentTimeMillis()
-                val next = result.nextWindow(now)
+                val next = result.nextWindow(now) ?: result.windows.lastOrNull()
                 val editor = prefs.edit()
                     .putString("hebcal_windows_json", HebcalService.windowsToJson(result.windows))
-                    .putLong("hebcal_candle_ms", next?.candleMs ?: 0L)
-                    .putLong("hebcal_havdalah_ms", next?.havdalahMs ?: 0L)
+                if (next != null) {
+                    editor.putLong("hebcal_candle_ms", next.candleMs)
+                    editor.putLong("hebcal_havdalah_ms", next.havdalahMs)
+                }
+                editor
                     .putLong("hebcal_cache_timestamp_ms", now)
                 if (!result.parasha.isNullOrEmpty()) {
                     editor.putString("hebcal_parasha", result.parasha)
