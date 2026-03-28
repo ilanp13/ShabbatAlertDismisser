@@ -24,17 +24,20 @@ class BootReceiver : BroadcastReceiver() {
         val havMins = if (useRt) profile.rtMins else profile.graMins
 
         Thread {
-            val window = HebcalService.fetch(lat, lon, profile.candleMins, havMins)
-            if (window != null) {
+            val result = HebcalService.fetch(lat, lon, profile.candleMins, havMins)
+            if (result != null) {
+                val now = System.currentTimeMillis()
+                val next = result.nextWindow(now)
                 val editor = prefs.edit()
-                    .putLong("hebcal_candle_ms",   window.candleMs)
-                    .putLong("hebcal_havdalah_ms", window.havdalahMs)
-                    .putLong("hebcal_cache_timestamp_ms", System.currentTimeMillis())
-                if (!window.parasha.isNullOrEmpty()) {
-                    editor.putString("hebcal_parasha", window.parasha)
+                    .putString("hebcal_windows_json", HebcalService.windowsToJson(result.windows))
+                    .putLong("hebcal_candle_ms", next?.candleMs ?: 0L)
+                    .putLong("hebcal_havdalah_ms", next?.havdalahMs ?: 0L)
+                    .putLong("hebcal_cache_timestamp_ms", now)
+                if (!result.parasha.isNullOrEmpty()) {
+                    editor.putString("hebcal_parasha", result.parasha)
                 }
                 editor.apply()
-                Log.d("BootReceiver", "Hebcal times refreshed after boot")
+                Log.d("BootReceiver", "Hebcal times refreshed: ${result.windows.size} windows")
             }
         }.start()
     }

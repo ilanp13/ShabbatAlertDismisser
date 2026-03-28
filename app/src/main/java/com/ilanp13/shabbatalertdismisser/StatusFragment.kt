@@ -268,17 +268,15 @@ class StatusFragment : Fragment() {
     private fun updateShabbatBanner() {
         val mode = prefs.getString("mode", "shabbat_only")
         val now = System.currentTimeMillis()
-        val candleMs = prefs.getLong("hebcal_candle_ms", 0)
-        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
-        val isShabbatNow = candleMs > 0 && havdalahMs > 0 && now in candleMs..havdalahMs
+        val windows = HebcalService.windowsFromJson(prefs.getString("hebcal_windows_json", null))
+        val activeWindow = windows.find { now in it.candleMs..it.havdalahMs }
         val isAlwaysMode = mode == "always"
 
-        if (isShabbatNow) {
+        if (activeWindow != null) {
             shabbatBanner.visibility = View.VISIBLE
             val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
-            tvShabbatBanner.text = getString(R.string.shabbat_banner, fmt.format(Date(havdalahMs)))
+            tvShabbatBanner.text = getString(R.string.shabbat_banner, fmt.format(Date(activeWindow.havdalahMs)))
         } else if (isAlwaysMode) {
-            // Preview: show banner when in "always" mode so user can see how it looks
             shabbatBanner.visibility = View.VISIBLE
             tvShabbatBanner.text = getString(R.string.shabbat_banner_always)
         } else {
@@ -287,23 +285,40 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateShabbatTimes() {
+        val now = System.currentTimeMillis()
+        val windows = HebcalService.windowsFromJson(prefs.getString("hebcal_windows_json", null))
+
+        // Find the current or next window
+        val activeWindow = windows.find { now in it.candleMs..it.havdalahMs }
+        val nextWindow = activeWindow ?: windows.filter { it.candleMs > now }.minByOrNull { it.candleMs }
+        val displayWindow = activeWindow ?: nextWindow
+
+        if (displayWindow != null) {
+            val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
+            val havdalahDisplayMs = ((displayWindow.havdalahMs + 30_000L) / 60_000L) * 60_000L
+            tvShabbatTimes.text = getString(R.string.shabbat_times_format,
+                fmt.format(Date(displayWindow.candleMs)),
+                fmt.format(Date(havdalahDisplayMs)))
+            tvShabbatTimesTitle.text = if (activeWindow != null) {
+                getString(R.string.shabbat_times_current)
+            } else {
+                getString(R.string.shabbat_times_next)
+            }
+            updateParashaDisplay()
+            return
+        }
+
+        // Fallback to single-pair cache or local calculation
         val candleMs = prefs.getLong("hebcal_candle_ms", 0)
         val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
-        val now = System.currentTimeMillis()
-
         if (candleMs > 0 && havdalahMs > now - 7 * 86_400_000L) {
             val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
             val havdalahDisplayMs = ((havdalahMs + 30_000L) / 60_000L) * 60_000L
             tvShabbatTimes.text = getString(R.string.shabbat_times_format,
                 fmt.format(Date(candleMs)),
                 fmt.format(Date(havdalahDisplayMs)))
-            // Set title based on whether we're in Shabbat
-            val isInShabbat = now in candleMs..havdalahMs
-            tvShabbatTimesTitle.text = if (isInShabbat) {
-                getString(R.string.shabbat_times_current)
-            } else {
-                getString(R.string.shabbat_times_next)
-            }
+            tvShabbatTimesTitle.text = if (now in candleMs..havdalahMs)
+                getString(R.string.shabbat_times_current) else getString(R.string.shabbat_times_next)
             updateParashaDisplay()
             return
         }
@@ -315,10 +330,10 @@ class StatusFragment : Fragment() {
         val times = ShabbatCalculator(lat, lon).getShabbatTimes(candle, havdala)
         if (times != null) {
             val fmt = SimpleDateFormat("EEEE HH:mm", Locale.getDefault())
-            val havdalahMs = ((times.second.time.time + 30_000L) / 60_000L) * 60_000L
+            val havdalahMs2 = ((times.second.time.time + 30_000L) / 60_000L) * 60_000L
             tvShabbatTimes.text = getString(R.string.shabbat_times_format,
                 fmt.format(times.first.time),
-                fmt.format(Date(havdalahMs)))
+                fmt.format(Date(havdalahMs2)))
         } else {
             tvShabbatTimes.text = getString(R.string.shabbat_times_unavailable)
         }
@@ -327,7 +342,14 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateParashaDisplay() {
-        val parasha = prefs.getString("hebcal_parasha", null)
+        // Show parasha/holiday name from the next upcoming window
+        val now = System.currentTimeMillis()
+        val windows = HebcalService.windowsFromJson(prefs.getString("hebcal_windows_json", null))
+        val activeWindow = windows.find { now in it.candleMs..it.havdalahMs }
+        val nextWindow = activeWindow ?: windows.filter { it.candleMs > now }.minByOrNull { it.candleMs }
+        val windowLabel = (activeWindow ?: nextWindow)?.parasha
+
+        val parasha = windowLabel ?: prefs.getString("hebcal_parasha", null)
         tvShabbatParasha.text = if (parasha.isNullOrEmpty()) {
             getString(R.string.parasha_unavailable)
         } else {

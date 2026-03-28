@@ -184,9 +184,12 @@ class AlertDismissService : AccessibilityService() {
 
         fun fmtHav(ms: Long) = fmt.format(Date((ms + 30_000L) / 60_000L * 60_000L))
 
-        // Detect stale cache: if now > havMs (past Shabbat) or cache is older than 7 days
+        // Detect stale cache: if all windows are past or cache is older than 7 days
         val cacheTimestampMs = prefs.getLong("hebcal_cache_timestamp_ms", 0)
-        val isCacheStale = havMs > 0 && now > havMs ||
+        val windows = HebcalService.windowsFromJson(prefs.getString("hebcal_windows_json", null))
+        val allWindowsPast = if (windows.isNotEmpty())
+            windows.all { it.havdalahMs < now } else (havMs > 0 && now > havMs)
+        val isCacheStale = allWindowsPast ||
                           (cacheTimestampMs > 0 && now - cacheTimestampMs > 7 * 86_400_000L)
 
         if (isCacheStale) {
@@ -196,11 +199,13 @@ class AlertDismissService : AccessibilityService() {
             val candleMins = prefs.getInt("candle_lighting_minutes", 18)
             val havdalahMins = prefs.getInt("havdalah_minutes", 40)
 
-            val window = HebcalService.fetch(lat, lon, candleMins, havdalahMins)
-            if (window != null) {
-                candleMs = window.candleMs
-                havMs = window.havdalahMs
+            val result = HebcalService.fetch(lat, lon, candleMins, havdalahMins)
+            if (result != null) {
+                val next = result.nextWindow(now)
+                candleMs = next?.candleMs ?: 0L
+                havMs = next?.havdalahMs ?: 0L
                 prefs.edit()
+                    .putString("hebcal_windows_json", HebcalService.windowsToJson(result.windows))
                     .putLong("hebcal_candle_ms", candleMs)
                     .putLong("hebcal_havdalah_ms", havMs)
                     .putLong("hebcal_cache_timestamp_ms", now)
@@ -289,13 +294,23 @@ class AlertDismissService : AccessibilityService() {
      * falls back to local NOAA sunset calculation otherwise.
      */
     private fun isShabbatNow(lat: Double, lon: Double, candleMins: Int, havdalahMins: Int): Boolean {
-        val candleMs  = prefs.getLong("hebcal_candle_ms",   0)
-        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
         val now = System.currentTimeMillis()
 
+        // Check multi-window cache first (handles holidays + Shabbat correctly)
+        val windowsJson = prefs.getString("hebcal_windows_json", null)
+        val windows = HebcalService.windowsFromJson(windowsJson)
+        if (windows.isNotEmpty()) {
+            val result = HebcalService.isInAnyWindow(windows, now)
+            Log.d(TAG, "Hebcal windows (${windows.size}) — isShabbat=$result")
+            return result
+        }
+
+        // Fallback to single-window cache (backward compat)
+        val candleMs = prefs.getLong("hebcal_candle_ms", 0)
+        val havdalahMs = prefs.getLong("hebcal_havdalah_ms", 0)
         if (candleMs > 0 && havdalahMs > 0 && havdalahMs > now - 30 * 60_000L) {
             val result = now in candleMs..havdalahMs
-            Log.d(TAG, "Hebcal cache hit — isShabbat=$result")
+            Log.d(TAG, "Hebcal single window — isShabbat=$result")
             return result
         }
 

@@ -1,5 +1,7 @@
-v2.1.5 — Banner region filtering fix
+v2.2.0 — Holiday time windows
 
-• Event ended only clears banner if it matches your selected regions
-• Prevents alerts from other regions affecting your threat banner
-• All alert types now go through the same region filter
+• Multi-window Shabbat/Yom Tov handling from Hebcal
+• Separate windows for holidays and Shabbat (no merged gaps)
+• Holiday names shown (Pesach, Shavuot, etc.)
+• Parasha updates after havdalah
+• Handles all cases: standalone Yom Tov, Yom Tov+Shabbat, gaps
