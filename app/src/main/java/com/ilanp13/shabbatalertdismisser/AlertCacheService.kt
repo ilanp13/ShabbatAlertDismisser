@@ -81,26 +81,46 @@ object AlertCacheService {
     }
 
     /**
-     * Save a batch of alerts at once (single write to SharedPreferences).
-     * Replaces the entire cache. Used for history refetch.
-     * No time filtering - saves all provided alerts (filtering happens on read).
+     * Save a batch of history alerts, merging with existing cache.
+     * Preserves live-caught alerts that aren't yet in the history API.
      */
     fun saveBatch(context: Context, alerts: List<RedAlertService.ActiveAlert>) {
         if (alerts.isEmpty()) return  // Don't clear cache on empty fetch
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         try {
             val now = System.currentTimeMillis()
+
+            // Build dedup keys for all incoming history alerts
+            val seen = mutableSetOf<String>()
             val cacheArray = JSONArray()
 
-            // Deduplicate by title+type+sorted regions+timestamp (rounded to minute)
-            val seen = mutableSetOf<String>()
             for (alert in alerts) {
                 val timestamp = if (alert.timestampMs > 0) alert.timestampMs else now
                 val minuteKey = timestamp / 60_000
                 val dedupeKey = "${alert.title}|${alert.type}|${alert.regions.sorted()}|$minuteKey"
                 if (!seen.add(dedupeKey)) continue
-
                 cacheArray.put(alertToJson(alert, timestamp))
+            }
+
+            // Merge: preserve existing cached alerts not covered by the history batch
+            val existingJson = prefs.getString(CACHE_KEY, "[]") ?: "[]"
+            val existingArray = JSONArray(existingJson)
+            for (i in 0 until existingArray.length()) {
+                val obj = existingArray.getJSONObject(i)
+                val ts = obj.getLong("timestampMs")
+                val title = obj.optString("title", "")
+                val type = obj.optString("type", "")
+                val regionsArr = obj.optJSONArray("regions")
+                val regions = mutableListOf<String>()
+                if (regionsArr != null) {
+                    for (j in 0 until regionsArr.length()) regions.add(regionsArr.getString(j))
+                }
+                val minuteKey = ts / 60_000
+                val dedupeKey = "$title|$type|${regions.sorted()}|$minuteKey"
+                if (seen.add(dedupeKey)) {
+                    // This cached alert isn't in the history batch — preserve it
+                    cacheArray.put(obj)
+                }
             }
 
             prefs.edit().putString(CACHE_KEY, cacheArray.toString()).apply()
