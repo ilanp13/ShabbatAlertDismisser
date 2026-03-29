@@ -11,7 +11,7 @@ class MainPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapte
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> StatusFragment()
-            1 -> SettingsFragment()
+            1 -> CalendarFragment()
             2 -> HistoryFragment()
             3 -> MapFragment()
             4 -> AlertsFragment()

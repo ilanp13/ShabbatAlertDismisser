@@ -58,6 +58,7 @@
     <string name="accessibility_disclosure_button_settings">פתח הגדרות נגישות</string>
     <string name="tab_status">סטטוס</string>
     <string name="tab_settings">הגדרות</string>
+    <string name="tab_calendar">לוח שנה</string>
     <string name="tab_history">היסטוריה</string>
     <string name="tab_map">מפה</string>
     <string name="tab_alerts">התראות</string>

@@ -354,9 +354,11 @@ object RedAlertService {
 
             // Infer category from title if cat field is missing
             val category = if (cat > 0) cat else inferCategoryFromTitle(title)
+            // Resolve type from category (API type field can be empty/inconsistent)
+            val resolvedType = if (category > 0) mapCategoryToType(category) else type.ifEmpty { "alarm" }
 
             if (title.isNotEmpty() && regions.isNotEmpty()) {
-                ActiveAlert(title, regions, description, type, category)
+                ActiveAlert(title, regions, description, resolvedType, category)
             } else {
                 null
             }

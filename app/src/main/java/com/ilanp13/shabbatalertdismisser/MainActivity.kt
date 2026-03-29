@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
         TabLayoutMediator(tabs, pager) { tab, pos ->
             tab.text = when (pos) {
                 0 -> getString(R.string.tab_status)
-                1 -> getString(R.string.tab_settings)
+                1 -> getString(R.string.tab_calendar)
                 2 -> getString(R.string.tab_history)
                 3 -> getString(R.string.tab_map)
                 4 -> getString(R.string.tab_alerts)

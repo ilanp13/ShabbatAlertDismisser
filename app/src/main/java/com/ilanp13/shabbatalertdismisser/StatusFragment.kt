@@ -87,6 +87,10 @@ class StatusFragment : Fragment() {
         tvShabbatTimesTitle = view.findViewById(R.id.tvShabbatTimesTitle)
         tvShabbatTimes = view.findViewById(R.id.tvShabbatTimes)
         tvSyncStatus = view.findViewById(R.id.tvSyncStatus)
+        val tvMinhagInfo = view.findViewById<TextView>(R.id.tvMinhagInfo)
+        val mProfile = MinhagProfiles.byKey(prefs.getString("minhag_key", "ashkenaz") ?: "ashkenaz")
+        val mUseRt = prefs.getBoolean("use_rabenu_tam", false)
+        tvMinhagInfo.text = "${mProfile.display} · ${if (mUseRt) "ר״ת" else "גר״א"}"
         tvShabbatParasha = view.findViewById(R.id.tvShabbatParasha)
         tvDismissalCount = view.findViewById(R.id.tvDismissalCount)
         tvActiveAlerts = view.findViewById(R.id.tvActiveAlerts)
@@ -148,6 +152,12 @@ class StatusFragment : Fragment() {
         btnShowAllIsrael = view.findViewById(R.id.btnShowAllIsrael)
         btnShowAllIsrael.setOnClickListener {
             zoomToAllIsrael()
+        }
+
+        // Settings gear button
+        view.findViewById<TextView>(R.id.btnSettings).setOnClickListener {
+            val intent = android.content.Intent(requireContext(), SettingsActivity::class.java)
+            startActivity(intent)
         }
 
         // Dismiss threat button with confirmation
@@ -1118,7 +1128,7 @@ class StatusFragment : Fragment() {
             val allRegions = group.flatMap { it.regions }.distinct().let { regions ->
                 if (!showOther && selectedRegions.isNotEmpty()) regions.filter { it in selectedRegions }
                 else regions
-            }.sortedByDescending { it in selectedRegions }
+            }.sortedWith(compareByDescending<String> { it in selectedRegions }.thenBy { it })
 
             // Build region text with selected regions bold
             val displayRegions = if (allRegions.size > maxRegionsShown)
@@ -1551,7 +1561,7 @@ class StatusFragment : Fragment() {
                 else -> ""
             }
             val regionNames = regions.map { it.key }
-                .sortedByDescending { it in selectedRegions }
+                .sortedWith(compareByDescending<String> { it in selectedRegions }.thenBy { it })
 
             val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
             val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()

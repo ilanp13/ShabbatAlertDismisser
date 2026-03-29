@@ -1,7 +1,8 @@
-v2.2.0 — Holiday time windows
+v2.3.0 — Calendar tab, Settings gear & fixes
 
-• Multi-window Shabbat/Yom Tov handling from Hebcal
-• Separate windows for holidays and Shabbat (no merged gaps)
-• Holiday names shown (Pesach, Shavuot, etc.)
-• Parasha updates after havdalah
-• Handles all cases: standalone Yom Tov, Yom Tov+Shabbat, gaps
+• Calendar tab — full Hebrew year of Shabbatot & holidays
+• Settings accessible via gear icon on status page
+• Hebrew dates and month names in calendar
+• Alert color fix — warnings show yellow immediately
+• ABC sorting in alert blocks
+• Minhag info shown on status page

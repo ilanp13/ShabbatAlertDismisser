@@ -45,5 +45,10 @@
                 android:resource="@xml/accessibility_config" />
         </service>
 
+        <activity
+            android:name=".SettingsActivity"
+            android:theme="@style/Theme.Material3.DayNight"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 </manifest>

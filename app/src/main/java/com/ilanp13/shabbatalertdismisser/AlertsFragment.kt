@@ -219,7 +219,7 @@ class AlertsFragment : Fragment() {
 
     private fun formatRegionsHighlighted(regions: List<String>): CharSequence {
         val selectedRegions = getSelectedRegions()
-        val sorted = regions.sortedByDescending { it in selectedRegions }
+        val sorted = regions.sortedWith(compareByDescending<String> { it in selectedRegions }.thenBy { it })
         val builder = android.text.SpannableStringBuilder()
         for ((i, region) in sorted.withIndex()) {
             if (i > 0) builder.append(", ")
