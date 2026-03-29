@@ -257,13 +257,12 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateStatus() {
-        val mode = prefs.getString("mode", "shabbat_only")
+        val mode = prefs.getString("mode", "shabbat_holidays")
         val base = when {
             !isAccessibilityServiceEnabled() -> getString(R.string.status_no_accessibility)
             mode == "disabled" -> getString(R.string.status_disabled)
             mode == "always" -> getString(R.string.status_always)
-            mode == "shabbat_holidays" -> getString(R.string.status_shabbat_holidays)
-            else -> getString(R.string.status_shabbat_only)
+            else -> getString(R.string.status_shabbat_holidays)
         }
         val screenOnMode = prefs.getString("screen_on_mode", "off")
         val screenOnLine = when {
@@ -276,7 +275,7 @@ class StatusFragment : Fragment() {
     }
 
     private fun updateShabbatBanner() {
-        val mode = prefs.getString("mode", "shabbat_only")
+        val mode = prefs.getString("mode", "shabbat_holidays")
         val now = System.currentTimeMillis()
         val windows = HebcalService.windowsFromJson(prefs.getString("hebcal_windows_json", null))
         val activeWindow = windows.find { now in it.candleMs..it.havdalahMs }

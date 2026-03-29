@@ -28,10 +28,10 @@
             android:layout_marginBottom="24dp">
 
             <RadioButton
-                android:id="@+id/radioShabbatOnly"
+                android:id="@+id/radioDisabled"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/mode_shabbat_only"
+                android:text="@string/mode_disabled"
                 android:minHeight="48dp" />
 
             <RadioButton
@@ -46,13 +46,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/mode_always"
-                android:minHeight="48dp" />
-
-            <RadioButton
-                android:id="@+id/radioDisabled"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_disabled"
                 android:minHeight="48dp" />
 
         </RadioGroup>

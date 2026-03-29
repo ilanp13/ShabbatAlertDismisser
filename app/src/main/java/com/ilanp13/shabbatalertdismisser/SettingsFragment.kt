@@ -106,19 +106,21 @@ class SettingsFragment : Fragment() {
     }
 
     private fun setupModeRadio() {
-        when (prefs.getString("mode", "shabbat_only")) {
-            "shabbat_only" -> radioMode.check(R.id.radioShabbatOnly)
+        // Migrate old "shabbat_only" to "shabbat_holidays"
+        if (prefs.getString("mode", "shabbat_holidays") == "shabbat_only") {
+            prefs.edit().putString("mode", "shabbat_holidays").apply()
+        }
+        when (prefs.getString("mode", "shabbat_holidays")) {
             "shabbat_holidays" -> radioMode.check(R.id.radioShabbatAndHolidays)
             "always" -> radioMode.check(R.id.radioAlways)
             "disabled" -> radioMode.check(R.id.radioDisabled)
         }
         radioMode.setOnCheckedChangeListener { _, id ->
             prefs.edit().putString("mode", when (id) {
-                R.id.radioShabbatOnly -> "shabbat_only"
                 R.id.radioShabbatAndHolidays -> "shabbat_holidays"
                 R.id.radioAlways -> "always"
                 R.id.radioDisabled -> "disabled"
-                else -> "shabbat_only"
+                else -> "shabbat_holidays"
             }).apply()
         }
         updateModeRadioButtonsState()
@@ -429,7 +431,6 @@ class SettingsFragment : Fragment() {
     private fun updateModeRadioButtonsState() {
         val enabled = isAccessibilityServiceEnabled()
         val buttons = listOf(
-            view?.findViewById<RadioButton>(R.id.radioShabbatOnly),
             view?.findViewById<RadioButton>(R.id.radioShabbatAndHolidays),
             view?.findViewById<RadioButton>(R.id.radioAlways)
         )

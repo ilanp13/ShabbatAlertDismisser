@@ -97,7 +97,7 @@ class AlertDismissService : AccessibilityService() {
      * with FLAG_KEEP_SCREEN_ON — no extra permissions required for accessibility services.
      */
     private fun updateScreenOn() {
-        val modeDisabled = prefs.getString("mode", "shabbat_only") == "disabled"
+        val modeDisabled = prefs.getString("mode", "shabbat_holidays") == "disabled"
         val wantScreenOn = !modeDisabled && when (prefs.getString("screen_on_mode", "off")) {
             "always"  -> true
             "shabbat" -> isShabbatOrHolidayNow()
@@ -139,7 +139,7 @@ class AlertDismissService : AccessibilityService() {
 
     /** Returns true if auto-dismiss is currently active (respects mode setting). */
     private fun isActiveNow(): Boolean {
-        val mode = prefs.getString("mode", "shabbat_only")
+        val mode = prefs.getString("mode", "shabbat_holidays")
         if (mode == "disabled") return false
         if (mode == "always")   return true
         return isShabbatOrHolidayNow()
@@ -176,7 +176,7 @@ class AlertDismissService : AccessibilityService() {
             return
         }
 
-        val mode      = prefs.getString("mode", "shabbat_only")
+        val mode      = prefs.getString("mode", "shabbat_holidays")
         var candleMs  = prefs.getLong("hebcal_candle_ms",   0)
         var havMs     = prefs.getLong("hebcal_havdalah_ms", 0)
         val now       = System.currentTimeMillis()
@@ -264,7 +264,7 @@ class AlertDismissService : AccessibilityService() {
 
         Log.d(TAG, "Cell broadcast alert detected from: $packageName")
 
-        val mode = prefs.getString("mode", "shabbat_only")
+        val mode = prefs.getString("mode", "shabbat_holidays")
         if (mode == "disabled") return
 
         if (mode != "always") {
