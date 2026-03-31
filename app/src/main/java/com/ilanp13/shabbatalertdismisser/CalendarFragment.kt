@@ -1,5 +1,6 @@
 package com.ilanp13.shabbatalertdismisser
 
+import com.ilanp13.shabbatalertdismisser.shared.MinhagProfiles
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler

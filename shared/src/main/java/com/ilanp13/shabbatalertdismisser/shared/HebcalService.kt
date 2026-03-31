@@ -1,4 +1,4 @@
-package com.ilanp13.shabbatalertdismisser
+package com.ilanp13.shabbatalertdismisser.shared
 
 import android.util.Log
 import org.json.JSONArray

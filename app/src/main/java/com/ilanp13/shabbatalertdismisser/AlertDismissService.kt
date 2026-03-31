@@ -1,5 +1,8 @@
 package com.ilanp13.shabbatalertdismisser
 
+import com.ilanp13.shabbatalertdismisser.shared.HebcalService
+import com.ilanp13.shabbatalertdismisser.shared.HolidayCalculator
+import com.ilanp13.shabbatalertdismisser.shared.ShabbatCalculator
 import android.accessibilityservice.AccessibilityService
 import android.app.NotificationChannel
 import android.app.NotificationManager

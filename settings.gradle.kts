@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ShabbatAlertDismisser"
-include(":app")
+include(":app", ":shared")

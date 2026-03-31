@@ -1,5 +1,8 @@
 package com.ilanp13.shabbatalertdismisser
 
+import com.ilanp13.shabbatalertdismisser.shared.HebcalService
+import com.ilanp13.shabbatalertdismisser.shared.MinhagProfiles
+import com.ilanp13.shabbatalertdismisser.shared.ShabbatCalculator
 import android.app.AlertDialog
 import android.os.Bundle
 import android.os.Handler

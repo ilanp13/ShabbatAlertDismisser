@@ -1,4 +1,4 @@
-package com.ilanp13.shabbatalertdismisser
+package com.ilanp13.shabbatalertdismisser.shared
 
 import java.util.Calendar
 import java.util.GregorianCalendar

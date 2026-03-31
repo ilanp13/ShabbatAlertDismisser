@@ -1,4 +1,4 @@
-package com.ilanp13.shabbatalertdismisser
+package com.ilanp13.shabbatalertdismisser.shared
 
 object MinhagProfiles {
 

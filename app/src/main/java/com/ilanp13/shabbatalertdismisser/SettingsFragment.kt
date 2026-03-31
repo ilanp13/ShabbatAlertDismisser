@@ -1,5 +1,7 @@
 package com.ilanp13.shabbatalertdismisser
 
+import com.ilanp13.shabbatalertdismisser.shared.HebcalService
+import com.ilanp13.shabbatalertdismisser.shared.MinhagProfiles
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
