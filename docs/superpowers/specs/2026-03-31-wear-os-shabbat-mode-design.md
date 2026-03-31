@@ -47,8 +47,7 @@ shabbat-alert-dismisser/
 │       ├── WearDataReceiver.kt          # Receives synced data from phone
 │       ├── AlertBannerManager.kt        # Passive emergency alert display
 │       ├── NotificationFilterService.kt # Filters notifications to whitelist
-│       ├── ButtonInterceptService.kt    # Disables physical buttons
-│       ├── EmergencyDialogActivity.kt   # Long-press emergency popup
+│       ├── EmergencyDialogActivity.kt   # Long-press emergency popup (button interception in ShabbatWatchFaceActivity)
 │       ├── BatteryOptimizer.kt          # Manages radio/sensor toggles
 │       ├── IdleStatusActivity.kt        # Non-Shabbat status screen
 │       └── ui/                          # Compose for Wear OS
