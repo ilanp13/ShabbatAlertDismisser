@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">שעון שבת</string>
+    <string name="shabbat_shalom">שבת שלום</string>
+    <string name="chag_sameach">חג %s</string>
+    <string name="havdalah_label">יציאה: %s</string>
+    <string name="havdalah_motzash">מוצ״ש: %s</string>
+    <string name="havdalah_motzei_chag">מוצאי חג: %s</string>
+    <string name="parasha_label">פרשת %s</string>
+    <string name="next_candle_lighting">הבא: %s</string>
+    <string name="shabbat_mode_active">מצב שבת פעיל</string>
+    <string name="activate_early">כניסה למצב שבת</string>
+    <string name="emergency_title">חירום</string>
+    <string name="emergency_sos">שיחת חירום</string>
+    <string name="emergency_last_alert">התראה אחרונה</string>
+    <string name="emergency_end_shabbat">יציאה ממצב שבת</string>
+    <string name="emergency_cancel">ביטול</string>
+    <string name="emergency_confirm_title">לצאת ממצב שבת?</string>
+    <string name="emergency_confirm_early">שבת/חג עדיין לא הסתיימו. לצאת ממצב שבת?</string>
+    <string name="emergency_confirm_yes">כן, לצאת</string>
+    <string name="emergency_confirm_no">לא, להישאר</string>
+    <string name="no_schedule">לא סונכרנו זמנים</string>
+    <string name="sync_from_phone">פתח את האפליקציה בטלפון לסנכרון</string>
+</resources>

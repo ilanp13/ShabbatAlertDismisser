@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shabbat Watch</string>
+    <string name="shabbat_shalom">Shabbat Shalom</string>
+    <string name="chag_sameach">Chag %s</string>
+    <string name="havdalah_label">Ends: %s</string>
+    <string name="havdalah_motzash">Motzei Shabbat: %s</string>
+    <string name="havdalah_motzei_chag">Motzei Chag: %s</string>
+    <string name="parasha_label">Parashat %s</string>
+    <string name="next_candle_lighting">Next: %s</string>
+    <string name="shabbat_mode_active">Shabbat Mode Active</string>
+    <string name="activate_early">Enter Shabbat Mode</string>
+    <string name="emergency_title">Emergency</string>
+    <string name="emergency_sos">SOS Call</string>
+    <string name="emergency_last_alert">Last Alert</string>
+    <string name="emergency_end_shabbat">End Shabbat Mode</string>
+    <string name="emergency_cancel">Cancel</string>
+    <string name="emergency_confirm_title">End Shabbat Mode?</string>
+    <string name="emergency_confirm_early">Shabbat/holiday hasn\'t ended yet. Exit Shabbat mode?</string>
+    <string name="emergency_confirm_yes">Yes, exit</string>
+    <string name="emergency_confirm_no">No, stay</string>
+    <string name="no_schedule">No schedule synced</string>
+    <string name="sync_from_phone">Open phone app to sync</string>
+</resources>
