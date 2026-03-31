@@ -62,8 +62,16 @@ class AlertDismissService : AccessibilityService() {
 
     private val notifUpdateRunnable = object : Runnable {
         override fun run() {
-            postStatusNotification()
-            updateScreenOn()
+            try {
+                postStatusNotification()
+            } catch (e: Exception) {
+                Log.w(TAG, "postStatusNotification failed: ${e.message}")
+            }
+            try {
+                updateScreenOn()
+            } catch (e: Exception) {
+                Log.w(TAG, "updateScreenOn failed: ${e.message}")
+            }
             handler.postDelayed(this, NOTIF_UPDATE_MS)
         }
     }
@@ -149,14 +157,22 @@ class AlertDismissService : AccessibilityService() {
      * Returns true if it is currently Shabbat or a holiday — always based on
      * actual halachic times, regardless of the dismiss mode setting.
      * Used for screen-on so it never stays on outside Shabbat.
+     *
+     * Defaults to false on any error so the screen-on overlay is never left
+     * stuck due to a detection failure.
      */
     private fun isShabbatOrHolidayNow(): Boolean {
-        val lat          = prefs.getFloat("latitude",  31.7683f).toDouble()
-        val lon          = prefs.getFloat("longitude", 35.2137f).toDouble()
-        val candleMins   = prefs.getInt("candle_lighting_minutes", 18)
-        val havdalahMins = prefs.getInt("havdalah_minutes", 40)
-        return isShabbatNow(lat, lon, candleMins, havdalahMins) ||
-               HolidayCalculator.isYomTovToday(candleMins, havdalahMins, lat, lon)
+        return try {
+            val lat          = prefs.getFloat("latitude",  31.7683f).toDouble()
+            val lon          = prefs.getFloat("longitude", 35.2137f).toDouble()
+            val candleMins   = prefs.getInt("candle_lighting_minutes", 18)
+            val havdalahMins = prefs.getInt("havdalah_minutes", 40)
+            isShabbatNow(lat, lon, candleMins, havdalahMins) ||
+                   HolidayCalculator.isYomTovToday(candleMins, havdalahMins, lat, lon)
+        } catch (e: Exception) {
+            Log.w(TAG, "isShabbatOrHolidayNow check failed, defaulting to false: ${e.message}")
+            false
+        }
     }
 
     // ── Notification ──────────────────────────────────────────────────────────
