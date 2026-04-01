@@ -43,6 +43,10 @@ class AlertDismissService : AccessibilityService() {
             "Close",
             "Dismiss"
         )
+
+        // Static so the reference survives service recreation within the same process.
+        // This prevents orphaned overlays that keep the screen on forever.
+        private var screenOnView: View? = null
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -76,7 +80,7 @@ class AlertDismissService : AccessibilityService() {
         }
     }
 
-    private var screenOnView: View? = null
+    // screenOnView is in companion object (static) — see above
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -103,6 +107,11 @@ class AlertDismissService : AccessibilityService() {
     /**
      * Keeps the screen awake using a zero-size TYPE_ACCESSIBILITY_OVERLAY window
      * with FLAG_KEEP_SCREEN_ON — no extra permissions required for accessibility services.
+     *
+     * The screenOnView reference is stored in the companion object (static) so it
+     * survives service recreation within the same process. This prevents the bug
+     * where the overlay becomes orphaned (no reference to remove it) after the
+     * service is destroyed and recreated, leaving the screen on forever.
      */
     private fun updateScreenOn() {
         val modeDisabled = prefs.getString("mode", "shabbat_holidays") == "disabled"
@@ -141,8 +150,8 @@ class AlertDismissService : AccessibilityService() {
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to remove screen-on overlay: ${e.message}")
             }
-            screenOnView = null
         }
+        screenOnView = null
     }
 
     /** Returns true if auto-dismiss is currently active (respects mode setting). */

@@ -19,8 +19,8 @@ android {
         applicationId = "com.ilanp13.shabbatalertdismisser"
         minSdk = 26
         targetSdk = 35
-        versionCode = 36
-        versionName = "2.3.3"
+        versionCode = 37
+        versionName = "2.3.4"
     }
 
     signingConfigs {
