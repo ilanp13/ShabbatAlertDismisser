@@ -410,6 +410,7 @@ class SettingsFragment : Fragment() {
                     editor.putString("hebcal_parasha", result.parasha)
                 }
                 editor.apply()
+                WatchSyncService.syncSchedule(requireContext())
             }
         }.start()
     }
