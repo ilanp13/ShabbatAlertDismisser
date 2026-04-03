@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 class ShabbatWatchFaceActivity : ComponentActivity() {
 
@@ -76,24 +77,29 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
             ShabbatWatchTheme {
                 val alertText by bannerManager.alertText.collectAsState()
 
-                val windowInfo = controller.getCurrentWindowInfo()
+                var windowInfo by remember { mutableStateOf(controller.getCurrentWindowInfo()) }
+                var hebrewDate by remember { mutableStateOf(formatHebrewDate()) }
+
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        delay(60_000L)
+                        windowInfo = controller.getCurrentWindowInfo()
+                        hebrewDate = formatHebrewDate()
+                    }
+                }
+
                 val havdalahMs = windowInfo?.second ?: 0L
                 val parasha = windowInfo?.first
 
-                val hebrewDate = remember { formatHebrewDate() }
-                val havdalahFormatted = remember(havdalahMs) {
-                    if (havdalahMs > 0) {
-                        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-                        getString(R.string.havdalah_motzash, sdf.format(Date(havdalahMs)))
-                    } else ""
-                }
+                val havdalahFormatted = if (havdalahMs > 0) {
+                    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    getString(R.string.havdalah_motzash, sdf.format(Date(havdalahMs)))
+                } else ""
 
-                val indicator = remember {
-                    if (parasha != null && parasha != getString(R.string.shabbat_shalom)) {
-                        parasha
-                    } else {
-                        getString(R.string.shabbat_shalom)
-                    }
+                val indicator = if (parasha != null && parasha != getString(R.string.shabbat_shalom)) {
+                    parasha
+                } else {
+                    getString(R.string.shabbat_shalom)
                 }
 
                 ShabbatFace(
