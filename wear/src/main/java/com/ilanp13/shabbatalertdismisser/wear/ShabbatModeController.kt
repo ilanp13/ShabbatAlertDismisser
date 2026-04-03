@@ -58,6 +58,9 @@ class ShabbatModeController(private val context: Context) {
         } else if (now < activateTime) {
             scheduleActivation(activateTime)
             scheduleDeactivation(deactivateTime)
+        } else {
+            // activateTime is past but deactivateTime is also past — skip
+            Log.d(TAG, "Window already passed, skipping")
         }
 
         Log.d(TAG, "Scheduled: activate=$activateTime, deactivate=$deactivateTime")
