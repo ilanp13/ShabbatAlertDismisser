@@ -1,6 +1,9 @@
 package com.ilanp13.shabbatalertdismisser.wear
 
+import android.app.admin.DevicePolicyManager
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.net.wifi.WifiManager
 import android.provider.Settings
 import android.util.Log
@@ -17,6 +20,7 @@ class BatteryOptimizer(private val context: Context) {
         private const val PREF_PREV_WIFI = "prev_wifi_enabled"
         private const val PREF_PREV_TILT_WAKE = "prev_tilt_to_wake"
         private const val PREF_PREV_TOUCH_WAKE = "prev_touch_to_wake"
+        private const val PREF_PREV_BODY_SENSORS = "prev_body_sensors_enabled"
     }
 
     private val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -62,7 +66,40 @@ class BatteryOptimizer(private val context: Context) {
             }
         }
 
+        // Health sensors — best-effort disable via permission revocation
+        val anyHealthDisabled = prefs.getBoolean(WearDataReceiver.PREF_DISABLE_HEART_RATE, true) ||
+            prefs.getBoolean(WearDataReceiver.PREF_DISABLE_SPO2, true) ||
+            prefs.getBoolean(WearDataReceiver.PREF_DISABLE_STEP_COUNTER, true) ||
+            prefs.getBoolean(WearDataReceiver.PREF_DISABLE_BODY_SENSORS, true)
+        if (anyHealthDisabled) {
+            editor.putBoolean(PREF_PREV_BODY_SENSORS, true)
+            setSensorPermission(false)
+            Log.d(TAG, "Health sensors disabled")
+        }
+
         editor.apply()
+    }
+
+    private fun setSensorPermission(granted: Boolean) {
+        if (!AdminReceiver.isDeviceOwner(context)) {
+            Log.w(TAG, "Not device owner — cannot manage sensor permissions")
+            return
+        }
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val admin = AdminReceiver.getComponentName(context)
+        val grantState = if (granted)
+            DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED
+        else
+            DevicePolicyManager.PERMISSION_GRANT_STATE_DENIED
+        try {
+            dpm.setPermissionGrantState(
+                admin, context.packageName,
+                android.Manifest.permission.BODY_SENSORS, grantState
+            )
+            Log.d(TAG, "BODY_SENSORS permission ${if (granted) "granted" else "denied"}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not set BODY_SENSORS permission: ${e.message}")
+        }
     }
 
     fun restoreSettings() {
@@ -96,6 +133,12 @@ class BatteryOptimizer(private val context: Context) {
             } catch (e: Exception) {
                 Log.w(TAG, "Could not restore touch-to-wake: ${e.message}")
             }
+        }
+
+        // Health sensors
+        if (prefs.getBoolean(PREF_PREV_BODY_SENSORS, false)) {
+            setSensorPermission(true)
+            Log.d(TAG, "Health sensors restored")
         }
     }
 }
