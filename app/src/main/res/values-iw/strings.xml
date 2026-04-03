@@ -204,4 +204,13 @@
     <string name="watch_setup_title">נדרשת הגדרת Device Owner</string>
     <string name="watch_setup_instructions">מצב נעילת משימה דורש הגדרת device owner דרך ADB:\n\nadb -s WATCH_SERIAL shell dpm set-device-owner com.ilanp13.shabbatalertdismisser.wear/.AdminReceiver</string>
     <string name="watch_unlock_sent">פקודת ביטול נשלחה</string>
+    <string name="watch_activation_always">תמיד פעיל (יציאה ידנית בלבד)</string>
+    <string name="watch_long_press_label">משך לחיצה ארוכה לביטול נעילה</string>
+    <string name="watch_long_press_format">%d שניות</string>
+    <string name="watch_lock_screen_title">מסך נעילה</string>
+    <string name="watch_health_title">חיישני בריאות</string>
+    <string name="watch_disable_heart_rate">כבה מד דופק</string>
+    <string name="watch_disable_spo2">כבה מד חמצן בדם</string>
+    <string name="watch_disable_step_counter">כבה מונה צעדים</string>
+    <string name="watch_disable_body_sensors">כבה חיישני גוף נוספים</string>
 </resources>

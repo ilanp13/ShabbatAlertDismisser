@@ -204,4 +204,13 @@
     <string name="watch_setup_title">Device Owner Setup Required</string>
     <string name="watch_setup_instructions">Lock Task Mode requires device owner setup via ADB:\n\nadb -s WATCH_SERIAL shell dpm set-device-owner com.ilanp13.shabbatalertdismisser.wear/.AdminReceiver</string>
     <string name="watch_unlock_sent">Unlock command sent</string>
+    <string name="watch_activation_always">Always on (manual exit only)</string>
+    <string name="watch_long_press_label">Long press duration to unlock</string>
+    <string name="watch_long_press_format">%d seconds</string>
+    <string name="watch_lock_screen_title">Lock Screen</string>
+    <string name="watch_health_title">Health Sensors</string>
+    <string name="watch_disable_heart_rate">Disable heart rate monitor</string>
+    <string name="watch_disable_spo2">Disable blood oxygen (SpO2)</string>
+    <string name="watch_disable_step_counter">Disable step counter</string>
+    <string name="watch_disable_body_sensors">Disable other body sensors</string>
 </resources>
