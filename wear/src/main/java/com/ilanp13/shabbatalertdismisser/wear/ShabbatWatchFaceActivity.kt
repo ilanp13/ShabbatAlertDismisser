@@ -39,6 +39,13 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         }
     }
 
+    private val alertNotificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val text = intent.getStringExtra("alert_text") ?: return
+            bannerManager.onAlertReceived(text)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         controller = ShabbatModeController(this)
@@ -53,6 +60,13 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
             registerReceiver(stopLockTaskReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(stopLockTaskReceiver, filter)
+        }
+
+        val alertFilter = IntentFilter("com.ilanp13.shabbatalertdismisser.wear.ALERT_NOTIFICATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(alertNotificationReceiver, alertFilter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(alertNotificationReceiver, alertFilter)
         }
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -141,6 +155,9 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         super.onDestroy()
         try {
             unregisterReceiver(stopLockTaskReceiver)
+        } catch (e: Exception) { /* ignore */ }
+        try {
+            unregisterReceiver(alertNotificationReceiver)
         } catch (e: Exception) { /* ignore */ }
     }
 
