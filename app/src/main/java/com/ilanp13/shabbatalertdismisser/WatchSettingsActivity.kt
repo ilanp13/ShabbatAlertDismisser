@@ -146,8 +146,13 @@ class WatchSettingsActivity : AppCompatActivity() {
         val current = prefs.getInt("watch_banner_timeout_sec", 30)
         spinner.setSelection(values.indexOf(current).coerceAtLeast(0))
 
+        var ignoreInit = true
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                if (ignoreInit) {
+                    ignoreInit = false
+                    return
+                }
                 prefs.edit().putInt("watch_banner_timeout_sec", values[pos]).apply()
                 WatchSyncService.syncSettings(this@WatchSettingsActivity)
             }
