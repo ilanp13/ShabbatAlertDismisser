@@ -26,7 +26,7 @@ fun AnalogClock(
 ) {
     var calendar by remember { mutableStateOf(Calendar.getInstance()) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isAmbient) {
         while (true) {
             calendar = Calendar.getInstance()
             delay(if (isAmbient) 60_000L else 1_000L)

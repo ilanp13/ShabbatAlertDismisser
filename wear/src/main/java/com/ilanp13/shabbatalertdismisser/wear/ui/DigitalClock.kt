@@ -21,7 +21,7 @@ fun DigitalClock(
 ) {
     var time by remember { mutableStateOf(formatTime()) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isAmbient) {
         while (true) {
             time = formatTime()
             delay(if (isAmbient) 60_000L else 1_000L)
