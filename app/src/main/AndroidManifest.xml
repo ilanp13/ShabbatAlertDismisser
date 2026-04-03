@@ -50,5 +50,10 @@
             android:theme="@style/Theme.Material3.DayNight"
             android:parentActivityName=".MainActivity" />
 
+        <activity
+            android:name=".WatchSettingsActivity"
+            android:theme="@style/Theme.Material3.DayNight"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 </manifest>
