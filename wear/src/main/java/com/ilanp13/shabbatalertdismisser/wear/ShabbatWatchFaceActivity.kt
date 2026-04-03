@@ -1,0 +1,183 @@
+package com.ilanp13.shabbatalertdismisser.wear
+
+import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.Bundle
+import android.util.Log
+import android.view.KeyEvent
+import android.view.WindowManager
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.*
+import androidx.preference.PreferenceManager
+import com.ilanp13.shabbatalertdismisser.shared.HolidayCalculator
+import com.ilanp13.shabbatalertdismisser.wear.ui.ShabbatFace
+import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+class ShabbatWatchFaceActivity : ComponentActivity() {
+
+    companion object {
+        private const val TAG = "ShabbatWatchFace"
+        private const val LONG_PRESS_THRESHOLD_MS = 3000L
+    }
+
+    private lateinit var controller: ShabbatModeController
+    private lateinit var bannerManager: AlertBannerManager
+    private var buttonDownTime = 0L
+
+    private val stopLockTaskReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            exitLockTaskAndFinish()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        controller = ShabbatModeController(this)
+        bannerManager = AlertBannerManager(this)
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        enterLockTask()
+
+        val filter = IntentFilter("com.ilanp13.shabbatalertdismisser.wear.STOP_LOCK_TASK")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(stopLockTaskReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(stopLockTaskReceiver, filter)
+        }
+
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val useAnalog = prefs.getString(WearDataReceiver.PREF_FACE_STYLE, "digital") == "analog"
+
+        setContent {
+            ShabbatWatchTheme {
+                val alertText by bannerManager.alertText.collectAsState()
+
+                val windowInfo = controller.getCurrentWindowInfo()
+                val havdalahMs = windowInfo?.second ?: 0L
+                val parasha = windowInfo?.first
+
+                val hebrewDate = remember { formatHebrewDate() }
+                val havdalahFormatted = remember(havdalahMs) {
+                    if (havdalahMs > 0) {
+                        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+                        getString(R.string.havdalah_motzash, sdf.format(Date(havdalahMs)))
+                    } else ""
+                }
+
+                val indicator = remember {
+                    if (parasha != null && parasha != getString(R.string.shabbat_shalom)) {
+                        parasha
+                    } else {
+                        getString(R.string.shabbat_shalom)
+                    }
+                }
+
+                ShabbatFace(
+                    indicator = indicator,
+                    hebrewDate = hebrewDate,
+                    parasha = parasha,
+                    havdalahTime = havdalahFormatted,
+                    alertText = alertText,
+                    useAnalog = useAnalog,
+                    isAmbient = false
+                )
+            }
+        }
+    }
+
+    private fun enterLockTask() {
+        if (AdminReceiver.isDeviceOwner(this)) {
+            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            val admin = AdminReceiver.getComponentName(this)
+            dpm.setLockTaskPackages(admin, arrayOf(packageName))
+            startLockTask()
+            Log.d(TAG, "Lock Task Mode entered")
+        } else {
+            Log.w(TAG, "Not device owner — Lock Task Mode unavailable")
+        }
+    }
+
+    private fun exitLockTaskAndFinish() {
+        try {
+            stopLockTask()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not stop lock task: ${e.message}")
+        }
+        finish()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        buttonDownTime = System.currentTimeMillis()
+        return true
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        val pressDuration = System.currentTimeMillis() - buttonDownTime
+        if (pressDuration >= LONG_PRESS_THRESHOLD_MS) {
+            val intent = Intent(this, EmergencyDialogActivity::class.java)
+                .putExtra("last_alert", bannerManager.lastAlertText)
+            startActivity(intent)
+        }
+        return true
+    }
+
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        // Block back button
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(stopLockTaskReceiver)
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    private fun formatHebrewDate(): String {
+        val hd = HolidayCalculator.gregorianToHebrew(Calendar.getInstance())
+        val dayStr = hebrewNumeral(hd.day)
+        val monthStr = hebrewMonthName(hd.month)
+        val yearStr = hebrewNumeral(hd.year % 1000)
+        return "$dayStr $monthStr $yearStr"
+    }
+
+    private fun hebrewMonthName(month: Int): String {
+        return when (month) {
+            1 -> "ניסן"; 2 -> "אייר"; 3 -> "סיוון"; 4 -> "תמוז"
+            5 -> "אב"; 6 -> "אלול"; 7 -> "תשרי"; 8 -> "חשוון"
+            9 -> "כסלו"; 10 -> "טבת"; 11 -> "שבט"; 12 -> "אדר"
+            13 -> "אדר ב׳"; else -> ""
+        }
+    }
+
+    private fun hebrewNumeral(n: Int): String {
+        if (n <= 0) return ""
+        val ones = arrayOf("", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט")
+        val tens = arrayOf("", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ")
+        val hundreds = arrayOf("", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק")
+
+        val h = (n / 100).coerceAtMost(9)
+        val t = (n % 100) / 10
+        val o = n % 10
+
+        var result = hundreds[h] + tens[t] + ones[o]
+        result = result.replace("יה", "טו").replace("יו", "טז")
+
+        return when {
+            result.length == 1 -> "$result׳"
+            result.length > 1 -> result.dropLast(1) + "״" + result.last()
+            else -> result
+        }
+    }
+}
