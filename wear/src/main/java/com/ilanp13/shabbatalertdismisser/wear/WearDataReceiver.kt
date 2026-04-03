@@ -29,6 +29,11 @@ class WearDataReceiver : WearableListenerService() {
         const val PREF_EMERGENCY_SOS = "watch_emergency_sos"
         const val PREF_EMERGENCY_LAST_ALERT = "watch_emergency_last_alert"
         const val PREF_LANGUAGE = "watch_language"
+        const val PREF_LONG_PRESS_SECONDS = "watch_long_press_seconds"
+        const val PREF_DISABLE_HEART_RATE = "watch_disable_heart_rate"
+        const val PREF_DISABLE_SPO2 = "watch_disable_spo2"
+        const val PREF_DISABLE_STEP_COUNTER = "watch_disable_step_counter"
+        const val PREF_DISABLE_BODY_SENSORS = "watch_disable_body_sensors"
         const val PREF_LAST_SYNC_MS = "watch_last_sync_ms"
     }
 
@@ -62,11 +67,16 @@ class WearDataReceiver : WearableListenerService() {
                     editor.putBoolean(PREF_DISABLE_TILT_WAKE, data.getBoolean("disable_tilt_wake", true))
                     editor.putBoolean(PREF_DISABLE_TOUCH_WAKE, data.getBoolean("disable_touch_wake", false))
                     editor.putBoolean(PREF_DISABLE_LTE, data.getBoolean("disable_lte", false))
+                    editor.putBoolean(PREF_DISABLE_HEART_RATE, data.getBoolean("disable_heart_rate", true))
+                    editor.putBoolean(PREF_DISABLE_SPO2, data.getBoolean("disable_spo2", true))
+                    editor.putBoolean(PREF_DISABLE_STEP_COUNTER, data.getBoolean("disable_step_counter", true))
+                    editor.putBoolean(PREF_DISABLE_BODY_SENSORS, data.getBoolean("disable_body_sensors", true))
                     editor.putString(PREF_WHITELISTED_PACKAGES, data.getString("whitelisted_packages", "[]"))
                     editor.putInt(PREF_BANNER_TIMEOUT_SEC, data.getInt("banner_timeout_sec", 30))
                     editor.putBoolean(PREF_EMERGENCY_SOS, data.getBoolean("emergency_sos", true))
                     editor.putBoolean(PREF_EMERGENCY_LAST_ALERT, data.getBoolean("emergency_last_alert", true))
                     editor.putString(PREF_LANGUAGE, data.getString("language", "iw"))
+                    editor.putInt(PREF_LONG_PRESS_SECONDS, data.getInt("long_press_seconds", 10))
                     editor.apply()
                     Log.d(TAG, "Settings synced")
                 }

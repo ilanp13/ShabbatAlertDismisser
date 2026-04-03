@@ -27,7 +27,6 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "ShabbatWatchFace"
-        private const val LONG_PRESS_THRESHOLD_MS = 3000L
     }
 
     private lateinit var controller: ShabbatModeController
@@ -142,8 +141,10 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val thresholdMs = prefs.getInt(WearDataReceiver.PREF_LONG_PRESS_SECONDS, 10) * 1000L
         val pressDuration = System.currentTimeMillis() - buttonDownTime
-        if (pressDuration >= LONG_PRESS_THRESHOLD_MS) {
+        if (pressDuration >= thresholdMs) {
             val intent = Intent(this, EmergencyDialogActivity::class.java)
                 .putExtra("last_alert", bannerManager.lastAlertText)
             startActivity(intent)
