@@ -47,6 +47,7 @@ class SettingsFragment : Fragment() {
     private lateinit var spinnerTheme: Spinner
     private lateinit var tvSelectedRegions: TextView
     private lateinit var btnSelectRegions: Button
+    private lateinit var btnWatchSettings: Button
     private lateinit var prefs: android.content.SharedPreferences
 
     override fun onCreateView(
@@ -97,6 +98,7 @@ class SettingsFragment : Fragment() {
         setupLanguageSpinner()
         setupThemeSpinner()
         setupRegionPicker()
+        setupWatchSettingsButton()
 
         updateLocationText()
         updateRegionPickerLabel()
@@ -350,6 +352,19 @@ class SettingsFragment : Fragment() {
                 }
                 prefs.edit().putString("app_theme", themeValue).apply()
                 applyTheme(themeValue)
+            }
+        }
+
+    }
+
+    private fun setupWatchSettingsButton() {
+        btnWatchSettings = requireView().findViewById(R.id.btnWatchSettings)
+        btnWatchSettings.setOnClickListener {
+            startActivity(Intent(requireContext(), WatchSettingsActivity::class.java))
+        }
+        WatchSyncService.checkWatchConnected(requireContext()) { connected ->
+            activity?.runOnUiThread {
+                btnWatchSettings.visibility = if (connected) View.VISIBLE else View.GONE
             }
         }
     }
