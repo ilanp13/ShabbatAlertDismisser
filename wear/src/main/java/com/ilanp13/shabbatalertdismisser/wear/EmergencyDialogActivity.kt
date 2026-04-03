@@ -52,7 +52,8 @@ class EmergencyDialogActivity : ComponentActivity() {
                         showLastAlert = showLastAlert && lastAlert != null,
                         lastAlert = lastAlert,
                         onSos = {
-                            val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:100"))
+                            val number = getString(R.string.emergency_number)
+                            val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
                             startActivity(callIntent)
                         },
                         onEndShabbat = { showConfirm = true },

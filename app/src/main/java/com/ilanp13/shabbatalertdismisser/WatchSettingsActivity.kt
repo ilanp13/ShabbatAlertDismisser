@@ -173,7 +173,7 @@ class WatchSettingsActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnUnlockShabbat).setOnClickListener {
             WatchSyncService.sendUnlockCommand(this)
-            Toast.makeText(this, "Unlock command sent", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.watch_unlock_sent), Toast.LENGTH_SHORT).show()
         }
     }
 

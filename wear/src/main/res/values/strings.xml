@@ -21,4 +21,5 @@
     <string name="emergency_confirm_no">No, stay</string>
     <string name="no_schedule">No schedule synced</string>
     <string name="sync_from_phone">Open phone app to sync</string>
+    <string name="emergency_number">100</string>
 </resources>

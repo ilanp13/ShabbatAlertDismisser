@@ -70,7 +70,8 @@ object WatchSyncService {
             dataMap.putInt("banner_timeout_sec", prefs.getInt("watch_banner_timeout_sec", 30))
             dataMap.putBoolean("emergency_sos", prefs.getBoolean("watch_emergency_sos", true))
             dataMap.putBoolean("emergency_last_alert", prefs.getBoolean("watch_emergency_last_alert", true))
-            dataMap.putString("language", prefs.getString("app_language", "iw") ?: "iw")
+            val lang = prefs.getString("app_language", "iw") ?: "iw"
+            dataMap.putString("language", if (lang == "he") "iw" else lang)
             dataMap.putLong("timestamp", System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
 
