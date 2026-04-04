@@ -22,6 +22,7 @@ class WatchSettingsActivity : AppCompatActivity() {
         setupActivationMode()
         setupOffsets()
         setupBatteryToggles()
+        setupHealthToggles()
         setupBannerTimeout()
         setupLongPress()
         setupEmergencyToggles()
@@ -159,6 +160,13 @@ class WatchSettingsActivity : AppCompatActivity() {
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
+    }
+
+    private fun setupHealthToggles() {
+        setupToggle(R.id.switchDisableHeartRate, "watch_disable_heart_rate", true)
+        setupToggle(R.id.switchDisableSpo2, "watch_disable_spo2", true)
+        setupToggle(R.id.switchDisableStepCounter, "watch_disable_step_counter", true)
+        setupToggle(R.id.switchDisableBodySensors, "watch_disable_body_sensors", true)
     }
 
     private fun setupLongPress() {

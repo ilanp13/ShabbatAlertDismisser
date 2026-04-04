@@ -179,6 +179,45 @@
             android:visibility="gone"
             android:layout_marginBottom="16dp" />
 
+        <!-- Health Sensors -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_health_title"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchDisableHeartRate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_disable_heart_rate"
+            android:checked="true" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchDisableSpo2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_disable_spo2"
+            android:checked="true" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchDisableStepCounter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_disable_step_counter"
+            android:checked="true" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchDisableBodySensors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_disable_body_sensors"
+            android:checked="true"
+            android:layout_marginBottom="16dp" />
+
         <!-- Alert Banner Timeout -->
         <TextView
             android:layout_width="wrap_content"
