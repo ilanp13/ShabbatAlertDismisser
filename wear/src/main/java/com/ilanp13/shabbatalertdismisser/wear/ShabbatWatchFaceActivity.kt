@@ -8,8 +8,11 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.WindowManager
+import android.os.BatteryManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
@@ -78,12 +81,14 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
 
                 var windowInfo by remember { mutableStateOf(controller.getCurrentWindowInfo()) }
                 var hebrewDate by remember { mutableStateOf(formatHebrewDate()) }
+                var batteryLevel by remember { mutableStateOf(getBatteryLevel()) }
 
                 LaunchedEffect(Unit) {
                     while (true) {
                         delay(60_000L)
                         windowInfo = controller.getCurrentWindowInfo()
                         hebrewDate = formatHebrewDate()
+                        batteryLevel = getBatteryLevel()
                     }
                 }
 
@@ -107,6 +112,7 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     parasha = parasha,
                     havdalahTime = havdalahFormatted,
                     alertText = alertText,
+                    batteryLevel = batteryLevel,
                     useAnalog = useAnalog,
                     isAmbient = false
                 )
@@ -158,6 +164,27 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         // Block back button
     }
 
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
+        // Block rotary bezel/crown input (Samsung, Pixel Watch)
+        if (event?.source?.and(InputDevice.SOURCE_ROTARY_ENCODER) != 0) {
+            return true // Consume rotary events
+        }
+        return true // Consume all generic motion events during lock
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
+        // Allow normal touch for Compose UI but block edge swipe gestures
+        // by consuming ACTION_MOVE events that start near screen edges
+        if (event != null && event.action == MotionEvent.ACTION_MOVE) {
+            val x = event.x
+            val width = window.decorView.width.toFloat()
+            if (x < 20f || x > width - 20f) {
+                return true // Consume edge swipes
+            }
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {
@@ -166,6 +193,11 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         try {
             unregisterReceiver(alertNotificationReceiver)
         } catch (e: Exception) { /* ignore */ }
+    }
+
+    private fun getBatteryLevel(): Int {
+        val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        return bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
     }
 
     private fun formatHebrewDate(): String {
