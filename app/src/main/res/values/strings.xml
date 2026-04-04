@@ -202,7 +202,7 @@
     <string name="watch_synced">Synced!</string>
     <string name="watch_unlock_shabbat">End Watch Shabbat Mode</string>
     <string name="watch_setup_title">Device Owner Setup Required</string>
-    <string name="watch_setup_instructions">Lock Task Mode requires device owner setup via ADB:\n\nadb -s WATCH_SERIAL shell dpm set-device-owner com.ilanp13.shabbatalertdismisser.wear/.AdminReceiver</string>
+    <string name="watch_setup_instructions">Lock Task Mode requires device owner setup via ADB:\n\nadb -s WATCH_SERIAL shell dpm set-device-owner com.ilanp13.shabbatalertdismisser/com.ilanp13.shabbatalertdismisser.wear.AdminReceiver</string>
     <string name="watch_unlock_sent">Unlock command sent</string>
     <string name="watch_activation_always">Always on (manual exit only)</string>
     <string name="watch_long_press_label">Long press duration to unlock</string>
