@@ -60,13 +60,17 @@ class WatchSettingsActivity : AppCompatActivity() {
     private fun setupActivationMode() {
         val radioGroup = findViewById<RadioGroup>(R.id.radioActivation)
         val current = prefs.getString("watch_activation_mode", "auto")
-        if (current == "manual") {
-            radioGroup.check(R.id.radioManual)
-        } else {
-            radioGroup.check(R.id.radioAuto)
+        when (current) {
+            "manual" -> radioGroup.check(R.id.radioManual)
+            "always" -> radioGroup.check(R.id.radioAlways)
+            else -> radioGroup.check(R.id.radioAuto)
         }
         radioGroup.setOnCheckedChangeListener { _, checkedId ->
-            val mode = if (checkedId == R.id.radioManual) "manual" else "auto"
+            val mode = when (checkedId) {
+                R.id.radioManual -> "manual"
+                R.id.radioAlways -> "always"
+                else -> "auto"
+            }
             prefs.edit().putString("watch_activation_mode", mode).apply()
             WatchSyncService.syncSettings(this)
         }
