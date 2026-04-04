@@ -3,10 +3,13 @@ package com.ilanp13.shabbatalertdismisser.wear
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +27,18 @@ import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
 
 class EmergencyDialogActivity : ComponentActivity() {
 
+    private val handler = Handler(Looper.getMainLooper())
+    private var autoDismissMs = 10_000L
+
+    private fun startAutoDismissTimer() {
+        handler.removeCallbacksAndMessages(null)
+        handler.postDelayed({ finish() }, autoDismissMs)
+    }
+
+    private fun cancelAutoDismissTimer() {
+        handler.removeCallbacksAndMessages(null)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -32,19 +47,29 @@ class EmergencyDialogActivity : ComponentActivity() {
         val showLastAlert = prefs.getBoolean(WearDataReceiver.PREF_EMERGENCY_LAST_ALERT, true)
         val lastAlert = intent.getStringExtra("last_alert")
 
+        autoDismissMs = prefs.getInt(WearDataReceiver.PREF_LONG_PRESS_SECONDS, 10) * 1000L
+        startAutoDismissTimer()
+
         setContent {
             ShabbatWatchTheme {
                 var showConfirm by remember { mutableStateOf(false) }
 
                 if (showConfirm) {
+                    // Restart timer on confirmation screen
+                    LaunchedEffect(Unit) { startAutoDismissTimer() }
+
                     EndShabbatConfirmation(
                         isAfterHavdalah = isAfterHavdalah(),
                         onConfirm = {
+                            cancelAutoDismissTimer()
                             ShabbatModeController(this@EmergencyDialogActivity)
                                 .deactivateShabbatMode()
                             finish()
                         },
-                        onCancel = { showConfirm = false }
+                        onCancel = {
+                            showConfirm = false
+                            startAutoDismissTimer()
+                        }
                     )
                 } else {
                     EmergencyMenu(
@@ -52,16 +77,28 @@ class EmergencyDialogActivity : ComponentActivity() {
                         showLastAlert = showLastAlert && lastAlert != null,
                         lastAlert = lastAlert,
                         onSos = {
+                            cancelAutoDismissTimer()
                             val number = getString(R.string.emergency_number)
                             val callIntent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
                             startActivity(callIntent)
                         },
-                        onEndShabbat = { showConfirm = true },
-                        onCancel = { finish() }
+                        onEndShabbat = {
+                            cancelAutoDismissTimer()
+                            showConfirm = true
+                        },
+                        onCancel = {
+                            cancelAutoDismissTimer()
+                            finish()
+                        }
                     )
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cancelAutoDismissTimer()
     }
 
     private fun isAfterHavdalah(): Boolean {
