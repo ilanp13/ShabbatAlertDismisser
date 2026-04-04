@@ -23,6 +23,7 @@ class WatchSettingsActivity : AppCompatActivity() {
         setupOffsets()
         setupBatteryToggles()
         setupBannerTimeout()
+        setupLongPress()
         setupEmergencyToggles()
         setupActionButtons()
     }
@@ -158,6 +159,25 @@ class WatchSettingsActivity : AppCompatActivity() {
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
+    }
+
+    private fun setupLongPress() {
+        val seekBar = findViewById<SeekBar>(R.id.seekLongPress)
+        val tvValue = findViewById<TextView>(R.id.tvLongPress)
+
+        seekBar.progress = prefs.getInt("watch_long_press_seconds", 10)
+        tvValue.text = getString(R.string.watch_long_press_format, seekBar.progress)
+
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                tvValue.text = getString(R.string.watch_long_press_format, progress)
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {
+                prefs.edit().putInt("watch_long_press_seconds", sb?.progress ?: 10).apply()
+                WatchSyncService.syncSettings(this@WatchSettingsActivity)
+            }
+        })
     }
 
     private fun setupEmergencyToggles() {

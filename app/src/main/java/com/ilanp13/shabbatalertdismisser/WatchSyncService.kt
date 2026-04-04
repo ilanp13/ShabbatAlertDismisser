@@ -68,6 +68,7 @@ object WatchSyncService {
             dataMap.putBoolean("disable_lte", prefs.getBoolean("watch_disable_lte", false))
             dataMap.putString("whitelisted_packages", prefs.getString("watch_whitelisted_packages", "[]") ?: "[]")
             dataMap.putInt("banner_timeout_sec", prefs.getInt("watch_banner_timeout_sec", 30))
+            dataMap.putInt("long_press_seconds", prefs.getInt("watch_long_press_seconds", 10))
             dataMap.putBoolean("emergency_sos", prefs.getBoolean("watch_emergency_sos", true))
             dataMap.putBoolean("emergency_last_alert", prefs.getBoolean("watch_emergency_last_alert", true))
             val lang = prefs.getString("app_language", "iw") ?: "iw"

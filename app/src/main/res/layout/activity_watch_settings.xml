@@ -194,6 +194,37 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
 
+        <!-- Lock Screen -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_lock_screen_title"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_long_press_label"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
+
+        <SeekBar
+            android:id="@+id/seekLongPress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:min="3"
+            android:max="15"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvLongPress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:layout_marginBottom="16dp" />
+
         <!-- Emergency Long-Press -->
         <TextView
             android:layout_width="wrap_content"
