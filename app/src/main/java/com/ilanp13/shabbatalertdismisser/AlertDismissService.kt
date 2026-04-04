@@ -76,6 +76,7 @@ class AlertDismissService : AccessibilityService() {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onServiceConnected() {
+        removeScreenOnOverlay()  // Clean up any stale overlay from previous instance
         createNotificationChannel()
         postStatusNotification()
         updateScreenOn()
@@ -106,6 +107,7 @@ class AlertDismissService : AccessibilityService() {
             "shabbat" -> isShabbatOrHolidayNow()
             else      -> false
         }
+        Log.d(TAG, "updateScreenOn: want=$wantScreenOn, hasView=${screenOnView != null}")
         if (wantScreenOn && screenOnView == null) {
             try {
                 val params = WindowManager.LayoutParams(
@@ -123,20 +125,19 @@ class AlertDismissService : AccessibilityService() {
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to add screen-on overlay: ${e.message}")
             }
-        } else if (!wantScreenOn) {
+        } else if (!wantScreenOn && screenOnView != null) {
             removeScreenOnOverlay()
         }
     }
 
     private fun removeScreenOnOverlay() {
-        screenOnView?.let {
-            try {
-                getSystemService(WindowManager::class.java).removeView(it)
-                Log.d(TAG, "Screen-on overlay removed")
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to remove screen-on overlay: ${e.message}")
-            }
-            screenOnView = null
+        val view = screenOnView ?: return
+        screenOnView = null
+        try {
+            getSystemService(WindowManager::class.java).removeViewImmediate(view)
+            Log.d(TAG, "Screen-on overlay removed")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to remove screen-on overlay: ${e.message}")
         }
     }
 
