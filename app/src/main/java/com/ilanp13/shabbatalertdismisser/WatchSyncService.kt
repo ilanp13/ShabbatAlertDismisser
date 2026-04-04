@@ -20,13 +20,31 @@ object WatchSyncService {
      * Check if a watch with the Shabbat app is connected.
      */
     fun checkWatchConnected(context: Context, callback: (Boolean) -> Unit) {
+        // First try capability check (specific to our watch app)
         Wearable.getCapabilityClient(context)
             .getCapability(CAPABILITY_WATCH_APP, CapabilityClient.FILTER_REACHABLE)
             .addOnSuccessListener { capabilityInfo ->
-                callback(capabilityInfo.nodes.isNotEmpty())
+                if (capabilityInfo.nodes.isNotEmpty()) {
+                    callback(true)
+                } else {
+                    // Fallback: check if any watch node is connected at all
+                    checkAnyWatchNode(context, callback)
+                }
             }
             .addOnFailureListener {
-                Log.w(TAG, "Failed to check watch capability: ${it.message}")
+                Log.w(TAG, "Capability check failed: ${it.message}, falling back to node check")
+                checkAnyWatchNode(context, callback)
+            }
+    }
+
+    private fun checkAnyWatchNode(context: Context, callback: (Boolean) -> Unit) {
+        Wearable.getNodeClient(context).connectedNodes
+            .addOnSuccessListener { nodes ->
+                Log.d(TAG, "Connected nodes: ${nodes.size}")
+                callback(nodes.isNotEmpty())
+            }
+            .addOnFailureListener {
+                Log.w(TAG, "Node check failed: ${it.message}")
                 callback(false)
             }
     }
