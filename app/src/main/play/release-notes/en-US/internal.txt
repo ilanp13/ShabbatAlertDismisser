@@ -1,8 +1,12 @@
-v2.3.0 — Calendar tab, Settings gear & fixes
+v2.4.0 — Wear OS Shabbat Mode
 
-• Calendar tab — full Hebrew year of Shabbatot & holidays
-• Settings accessible via gear icon on status page
-• Hebrew dates and month names in calendar
-• Alert color fix — warnings show yellow immediately
-• ABC sorting in alert blocks
-• Minhag info shown on status page
+New: Wear OS Shabbat Mode
+• Locks watch with Shabbat display — clock, Hebrew date, parasha, havdalah time, battery
+• Auto-activates from synced Shabbat times or "Always On" mode
+• Configurable long-press to exit with emergency SOS & last alert
+• Health sensors, Wi-Fi, GPS toggles during Shabbat
+• Notification filtering with alert banners
+• Bezel & swipe blocking
+• Phone-side watch settings with sync
+
+Fixes: screen-on overlay leak, notification banners
