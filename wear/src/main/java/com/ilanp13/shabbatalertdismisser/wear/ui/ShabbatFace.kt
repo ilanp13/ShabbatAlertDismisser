@@ -19,6 +19,7 @@ fun ShabbatFace(
     parasha: String?,
     havdalahTime: String,
     alertText: String?,
+    batteryLevel: Int,
     useAnalog: Boolean,
     isAmbient: Boolean
 ) {
@@ -29,6 +30,16 @@ fun ShabbatFace(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+        // Battery level indicator — top-right corner
+        Text(
+            text = "$batteryLevel%",
+            fontSize = 10.sp,
+            color = textColor.copy(alpha = 0.6f),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 16.dp, end = 12.dp)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
