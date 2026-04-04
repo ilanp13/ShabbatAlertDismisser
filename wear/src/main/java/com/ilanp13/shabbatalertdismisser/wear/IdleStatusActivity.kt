@@ -3,6 +3,7 @@ package com.ilanp13.shabbatalertdismisser.wear
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.preference.PreferenceManager
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
@@ -33,6 +34,14 @@ class IdleStatusActivity : ComponentActivity() {
                 Intent(this, ShabbatWatchFaceActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             )
+            finish()
+            return
+        }
+
+        // If "always" mode, redirect to Shabbat watch face
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (prefs.getString(WearDataReceiver.PREF_ACTIVATION_MODE, "auto") == "always") {
+            controller.activateShabbatMode()
             finish()
             return
         }

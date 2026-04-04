@@ -30,6 +30,14 @@ class ShabbatModeController(private val context: Context) {
     private val batteryOptimizer = BatteryOptimizer(context)
 
     fun scheduleFromSyncedWindows() {
+        val mode = prefs.getString(WearDataReceiver.PREF_ACTIVATION_MODE, "auto")
+        if (mode == "always") {
+            if (!isShabbatModeActive()) {
+                activateShabbatMode()
+            }
+            return
+        }
+
         val json = prefs.getString(WearDataReceiver.PREF_SCHEDULE_JSON, "[]") ?: "[]"
         val windows = HebcalService.windowsFromJson(json)
         if (windows.isEmpty()) {
