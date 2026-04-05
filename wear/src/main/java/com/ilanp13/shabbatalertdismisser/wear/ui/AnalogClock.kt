@@ -84,9 +84,9 @@ fun AnalogClock(
                 )
             }
 
-            // === Hour numerals (skip 12, 3, 9 where sub-dials are) ===
+            // === Hour numerals (skip 6, 3, 9 where sub-dials are) ===
             val skipPositions = mutableSetOf<Int>()
-            if (showBattery) skipPositions.add(12)
+            if (showBattery) skipPositions.add(6)
             skipPositions.add(9)
             if (showHebrewDate) skipPositions.add(3)
 
@@ -108,58 +108,58 @@ fun AnalogClock(
                 )
             }
 
-            // === Sub-dial: Battery (12 o'clock) ===
+            // === Sub-dial: Battery (6 o'clock — bottom) ===
             if (showBattery) {
                 val bx = C.x
-                val by = C.y - 100f * scaleFactor
-                val br = 50f * scaleFactor
+                val by = C.y + 100f * scaleFactor
+                val br = 55f * scaleFactor
                 drawSubDial(C = Offset(bx, by), radius = br, bg = darkBg, border = dimColor)
-                drawBatteryArc(Offset(bx, by), br - 10f, batteryLevel, accent, ambient)
+                drawBatteryArc(Offset(bx, by), br - 12f, batteryLevel, accent, ambient)
                 val battPaint = android.graphics.Paint().apply {
                     this.color = textColor.toArgb()
-                    textSize = 14f * scaleFactor
+                    textSize = 18f * scaleFactor
                     textAlign = android.graphics.Paint.Align.CENTER
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
                 }
                 drawContext.canvas.nativeCanvas.drawText(
-                    "$batteryLevel%", bx, by + 5f, battPaint
+                    "$batteryLevel%", bx, by + 6f, battPaint
                 )
                 val labelPaint = android.graphics.Paint().apply {
                     this.color = (if (ambient) ShabbatAmbientGray else Color(0xFF888888)).toArgb()
-                    textSize = 10f * scaleFactor
+                    textSize = 12f * scaleFactor
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                 }
                 drawContext.canvas.nativeCanvas.drawText(
-                    "BATTERY", bx, by + 18f, labelPaint
+                    "BATTERY", bx, by + 22f, labelPaint
                 )
             }
 
             // === Sub-dial: Shabbat status (9 o'clock) ===
             val sx = C.x - 110f * scaleFactor
-            val sy = C.y + 15f * scaleFactor
-            val sr = 50f * scaleFactor
+            val sy = C.y
+            val sr = 55f * scaleFactor
             drawSubDial(Offset(sx, sy), sr, darkBg, dimColor)
             drawCandles(Offset(sx, sy), accent, ambient, scaleFactor)
             if (!isShabbatActive && candleLightingCountdown != null) {
                 val countPaint = android.graphics.Paint().apply {
                     this.color = (if (ambient) ShabbatAmbientGray else Color(0xFF888888)).toArgb()
-                    textSize = 9f * scaleFactor
+                    textSize = 12f * scaleFactor
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                 }
                 drawContext.canvas.nativeCanvas.drawText(
                     candleLightingCountdown, sx, sy + 24f * scaleFactor, countPaint
                 )
-                countPaint.textSize = 8f * scaleFactor
+                countPaint.textSize = 10f * scaleFactor
                 drawContext.canvas.nativeCanvas.drawText(
                     "הדלקת נרות", sx, sy + 34f * scaleFactor, countPaint
                 )
             } else {
                 val shabPaint = android.graphics.Paint().apply {
                     this.color = (if (ambient) ShabbatAmbientGray else Color(0xFF888888)).toArgb()
-                    textSize = 10f * scaleFactor
+                    textSize = 13f * scaleFactor
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                 }
@@ -171,12 +171,12 @@ fun AnalogClock(
             // === Sub-dial: Hebrew date (3 o'clock) ===
             if (showHebrewDate) {
                 val hx = C.x + 110f * scaleFactor
-                val hy = C.y + 15f * scaleFactor
-                val hr = 50f * scaleFactor
+                val hy = C.y
+                val hr = 55f * scaleFactor
                 drawSubDial(Offset(hx, hy), hr, darkBg, dimColor)
                 val dayPaint = android.graphics.Paint().apply {
                     this.color = textColor.toArgb()
-                    textSize = 16f * scaleFactor
+                    textSize = 20f * scaleFactor
                     textAlign = android.graphics.Paint.Align.CENTER
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
@@ -186,7 +186,7 @@ fun AnalogClock(
                 )
                 val monthPaint = android.graphics.Paint().apply {
                     this.color = accent.toArgb()
-                    textSize = 13f * scaleFactor
+                    textSize = 16f * scaleFactor
                     textAlign = android.graphics.Paint.Align.CENTER
                     typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                     isAntiAlias = true
