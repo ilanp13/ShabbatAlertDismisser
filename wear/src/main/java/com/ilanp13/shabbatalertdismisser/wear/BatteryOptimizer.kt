@@ -82,17 +82,9 @@ class BatteryOptimizer(private val context: Context) {
         }
 
         // Ensure Always-On Display is enabled (keeps screen on in ambient mode)
-        try {
-            val prevAod = Settings.Global.getInt(context.contentResolver, "aod_mode", 0)
-            editor.putInt(PREF_PREV_AOD, prevAod)
-            Settings.Global.putInt(context.contentResolver, "aod_mode", 1)
-            editor.putBoolean("aod_auto_enabled", true)
-            Log.d(TAG, "AOD enabled for Shabbat mode")
-        } catch (e: Exception) {
-            // WRITE_SECURE_SETTINGS not granted — can't change AOD programmatically
-            editor.putBoolean("aod_auto_enabled", false)
-            Log.w(TAG, "Could not enable AOD (no permission): ${e.message}")
-        }
+        // Samsung Wear OS uses different setting names across versions
+        val aodEnabled = tryEnableAod(editor)
+        editor.putBoolean("aod_auto_enabled", aodEnabled)
 
         editor.apply()
     }
@@ -102,13 +94,61 @@ class BatteryOptimizer(private val context: Context) {
         return prefs.getBoolean("aod_auto_enabled", false)
     }
 
+    // Samsung Wear OS AOD setting names to try (varies by firmware version)
+    private val aodSettingNames = arrayOf(
+        "aod_mode",                    // Standard Wear OS
+        "aod_tap_to_show_mode",        // Samsung specific
+        "always_on_display",           // Alternative
+    )
+
+    private fun tryEnableAod(editor: android.content.SharedPreferences.Editor): Boolean {
+        for (name in aodSettingNames) {
+            try {
+                val prev = Settings.Global.getInt(context.contentResolver, name, -1)
+                if (prev != -1) {
+                    // Found a valid setting
+                    editor.putString("prev_aod_setting_name", name)
+                    editor.putInt(PREF_PREV_AOD, prev)
+                    Settings.Global.putInt(context.contentResolver, name, 1)
+                    Log.d(TAG, "AOD enabled via '$name' (was $prev)")
+                    return true
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not set AOD via '$name': ${e.message}")
+            }
+        }
+        // Also try Secure settings
+        for (name in aodSettingNames) {
+            try {
+                val prev = Settings.Secure.getInt(context.contentResolver, name, -1)
+                if (prev != -1) {
+                    editor.putString("prev_aod_setting_name", "secure:$name")
+                    editor.putInt(PREF_PREV_AOD, prev)
+                    Settings.Secure.putInt(context.contentResolver, name, 1)
+                    Log.d(TAG, "AOD enabled via secure '$name' (was $prev)")
+                    return true
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not set AOD via secure '$name': ${e.message}")
+            }
+        }
+        Log.w(TAG, "Could not enable AOD — no matching setting found")
+        return false
+    }
+
     /** Returns true if AOD is currently enabled on the device */
     fun isAodEnabled(): Boolean {
-        return try {
-            Settings.Global.getInt(context.contentResolver, "aod_mode", 0) == 1
-        } catch (e: Exception) {
-            false
+        for (name in aodSettingNames) {
+            try {
+                val v = Settings.Global.getInt(context.contentResolver, name, -1)
+                if (v == 1) return true
+            } catch (_: Exception) {}
+            try {
+                val v = Settings.Secure.getInt(context.contentResolver, name, -1)
+                if (v == 1) return true
+            } catch (_: Exception) {}
         }
+        return false
     }
 
     private fun setSensorPermission(granted: Boolean) {
@@ -172,11 +212,18 @@ class BatteryOptimizer(private val context: Context) {
             Log.d(TAG, "Health sensors restored")
         }
 
-        // AOD
+        // AOD — restore using the same setting name that was used to enable
         try {
-            val prevAod = prefs.getInt(PREF_PREV_AOD, 1)
-            Settings.Global.putInt(context.contentResolver, "aod_mode", prevAod)
-            Log.d(TAG, "AOD restored to $prevAod")
+            val prevAod = prefs.getInt(PREF_PREV_AOD, -1)
+            val settingName = prefs.getString("prev_aod_setting_name", null)
+            if (prevAod >= 0 && settingName != null) {
+                if (settingName.startsWith("secure:")) {
+                    Settings.Secure.putInt(context.contentResolver, settingName.removePrefix("secure:"), prevAod)
+                } else {
+                    Settings.Global.putInt(context.contentResolver, settingName, prevAod)
+                }
+                Log.d(TAG, "AOD restored to $prevAod via '$settingName'")
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Could not restore AOD: ${e.message}")
         }

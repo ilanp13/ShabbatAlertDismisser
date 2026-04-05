@@ -223,12 +223,13 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
     private val tapTimestamps = mutableListOf<Long>()
 
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
-        // Safety escape: 5 rapid taps within 3 seconds opens emergency dialog
+        // Safety escape: 7 rapid taps within 4 seconds opens emergency dialog
+        // (NOT 5 — Samsung SOS triggers on 5 rapid home button presses)
         if (event?.action == MotionEvent.ACTION_DOWN) {
             val now = System.currentTimeMillis()
             tapTimestamps.add(now)
-            tapTimestamps.removeAll { now - it > 3000L }
-            if (tapTimestamps.size >= 5) {
+            tapTimestamps.removeAll { now - it > 4000L }
+            if (tapTimestamps.size >= 7) {
                 tapTimestamps.clear()
                 Log.d(TAG, "5-tap escape triggered — opening emergency dialog")
                 val intent = Intent(this, EmergencyDialogActivity::class.java)
