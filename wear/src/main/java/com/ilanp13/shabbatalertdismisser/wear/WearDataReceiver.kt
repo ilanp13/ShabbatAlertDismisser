@@ -31,6 +31,12 @@ class WearDataReceiver : WearableListenerService() {
         const val PREF_LANGUAGE = "watch_language"
         const val PREF_LONG_PRESS_SECONDS = "watch_long_press_seconds"
         const val PREF_SHOW_SECONDS = "watch_show_seconds"
+        const val PREF_ACCENT_COLOR = "watch_accent_color"
+        const val PREF_CLOCK_SIZE = "watch_clock_size"
+        const val PREF_SHOW_BATTERY = "watch_show_battery"
+        const val PREF_SHOW_HEBREW_DATE = "watch_show_hebrew_date"
+        const val PREF_SHOW_PARASHA = "watch_show_parasha"
+        const val PREF_SHOW_HAVDALAH = "watch_show_havdalah"
         const val PREF_DISABLE_HEART_RATE = "watch_disable_heart_rate"
         const val PREF_DISABLE_SPO2 = "watch_disable_spo2"
         const val PREF_DISABLE_STEP_COUNTER = "watch_disable_step_counter"
@@ -79,6 +85,12 @@ class WearDataReceiver : WearableListenerService() {
                     editor.putString(PREF_LANGUAGE, data.getString("language", "iw"))
                     editor.putInt(PREF_LONG_PRESS_SECONDS, data.getInt("long_press_seconds", 10))
                     editor.putBoolean(PREF_SHOW_SECONDS, data.getBoolean("show_seconds", true))
+                    editor.putString(PREF_ACCENT_COLOR, data.getString("accent_color", "gold"))
+                    editor.putString(PREF_CLOCK_SIZE, data.getString("clock_size", "medium"))
+                    editor.putBoolean(PREF_SHOW_BATTERY, data.getBoolean("show_battery", true))
+                    editor.putBoolean(PREF_SHOW_HEBREW_DATE, data.getBoolean("show_hebrew_date", true))
+                    editor.putBoolean(PREF_SHOW_PARASHA, data.getBoolean("show_parasha", true))
+                    editor.putBoolean(PREF_SHOW_HAVDALAH, data.getBoolean("show_havdalah", true))
                     editor.apply()
                     Log.d(TAG, "Settings synced")
 

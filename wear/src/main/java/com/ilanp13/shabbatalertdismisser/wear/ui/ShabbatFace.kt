@@ -4,11 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material3.Text
-import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatGold
 import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWhite
 import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatAmbientGray
 
@@ -22,10 +22,22 @@ fun ShabbatFace(
     batteryLevel: Int,
     useAnalog: Boolean,
     showSeconds: Boolean,
+    accentColor: Color,
+    clockSize: String,
+    showBattery: Boolean,
+    showHebrewDate: Boolean,
+    showParasha: Boolean,
+    showHavdalah: Boolean,
     isAmbient: Boolean
 ) {
     val textColor = if (isAmbient) ShabbatAmbientGray else ShabbatWhite
-    val accentColor = if (isAmbient) ShabbatAmbientGray else ShabbatGold
+    val accent = if (isAmbient) ShabbatAmbientGray else accentColor
+
+    val clockWeight = when (clockSize) {
+        "small" -> 0.7f
+        "large" -> 1.3f
+        else -> 1f // medium
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -49,28 +61,30 @@ fun ShabbatFace(
                 Text(
                     text = indicator,
                     fontSize = 14.sp,
-                    color = accentColor,
+                    color = accent,
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "$batteryLevel%",
-                    fontSize = 10.sp,
-                    color = textColor.copy(alpha = 0.5f)
-                )
+                if (showBattery) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "$batteryLevel%",
+                        fontSize = 10.sp,
+                        color = textColor.copy(alpha = 0.5f)
+                    )
+                }
             }
 
             if (useAnalog) {
                 AnalogClock(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(clockWeight),
                     color = textColor,
-                    accentColor = accentColor,
+                    accentColor = accent,
                     showSeconds = showSeconds,
                     isAmbient = isAmbient
                 )
             } else {
                 DigitalClock(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(clockWeight),
                     color = textColor,
                     showSeconds = showSeconds,
                     isAmbient = isAmbient
@@ -81,13 +95,15 @@ fun ShabbatFace(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(bottom = 4.dp)
             ) {
-                Text(
-                    text = hebrewDate,
-                    fontSize = 12.sp,
-                    color = textColor,
-                    textAlign = TextAlign.Center
-                )
-                if (parasha != null) {
+                if (showHebrewDate) {
+                    Text(
+                        text = hebrewDate,
+                        fontSize = 12.sp,
+                        color = textColor,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                if (showParasha && parasha != null) {
                     Text(
                         text = parasha,
                         fontSize = 11.sp,
@@ -95,12 +111,14 @@ fun ShabbatFace(
                         textAlign = TextAlign.Center
                     )
                 }
-                Text(
-                    text = havdalahTime,
-                    fontSize = 12.sp,
-                    color = accentColor,
-                    textAlign = TextAlign.Center
-                )
+                if (showHavdalah && havdalahTime.isNotEmpty()) {
+                    Text(
+                        text = havdalahTime,
+                        fontSize = 12.sp,
+                        color = accent,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
 
             if (alertText != null) {

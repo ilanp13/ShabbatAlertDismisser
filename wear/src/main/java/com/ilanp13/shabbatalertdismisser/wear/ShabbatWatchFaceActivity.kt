@@ -21,6 +21,7 @@ import androidx.wear.ambient.AmbientLifecycleObserver
 import com.ilanp13.shabbatalertdismisser.shared.HolidayCalculator
 import com.ilanp13.shabbatalertdismisser.wear.ui.ShabbatFace
 import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
+import com.ilanp13.shabbatalertdismisser.wear.ui.theme.accentColorFromName
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -105,6 +106,12 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val useAnalog = prefs.getString(WearDataReceiver.PREF_FACE_STYLE, "digital") == "analog"
         val showSeconds = prefs.getBoolean(WearDataReceiver.PREF_SHOW_SECONDS, true)
+        val accentColorName = prefs.getString(WearDataReceiver.PREF_ACCENT_COLOR, "gold") ?: "gold"
+        val clockSize = prefs.getString(WearDataReceiver.PREF_CLOCK_SIZE, "medium") ?: "medium"
+        val showBattery = prefs.getBoolean(WearDataReceiver.PREF_SHOW_BATTERY, true)
+        val showHebrewDate = prefs.getBoolean(WearDataReceiver.PREF_SHOW_HEBREW_DATE, true)
+        val showParasha = prefs.getBoolean(WearDataReceiver.PREF_SHOW_PARASHA, true)
+        val showHavdalah = prefs.getBoolean(WearDataReceiver.PREF_SHOW_HAVDALAH, true)
 
         setContent {
             ShabbatWatchTheme {
@@ -150,6 +157,12 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     batteryLevel = batteryLevel,
                     useAnalog = useAnalog,
                     showSeconds = showSeconds && !ambient,
+                    accentColor = accentColorFromName(accentColorName),
+                    clockSize = clockSize,
+                    showBattery = showBattery,
+                    showHebrewDate = showHebrewDate,
+                    showParasha = showParasha,
+                    showHavdalah = showHavdalah,
                     isAmbient = ambient
                 )
             }

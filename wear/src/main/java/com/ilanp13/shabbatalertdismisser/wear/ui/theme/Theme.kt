@@ -11,6 +11,15 @@ val ShabbatDarkBg = Color(0xFF111111)
 val ShabbatAmbientGray = Color(0xFF888888)
 val AlertRed = Color(0xFFFF4444)
 
+fun accentColorFromName(name: String): Color = when (name) {
+    "blue" -> Color(0xFF4488FF)
+    "green" -> Color(0xFF44BB66)
+    "white" -> Color(0xFFDDDDDD)
+    "red" -> Color(0xFFFF4444)
+    "purple" -> Color(0xFFAA66FF)
+    else -> ShabbatGold // "gold" default
+}
+
 @Composable
 fun ShabbatWatchTheme(content: @Composable () -> Unit) {
     MaterialTheme(
