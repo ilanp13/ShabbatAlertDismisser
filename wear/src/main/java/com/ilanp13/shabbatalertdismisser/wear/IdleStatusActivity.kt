@@ -66,7 +66,7 @@ class IdleStatusActivity : ComponentActivity() {
 
         // Check if AOD needs manual enable
         val batteryOptimizer = BatteryOptimizer(this)
-        val needsAodWarning = !batteryOptimizer.isAodEnabled() && !batteryOptimizer.isAodAutoEnabled()
+        val needsAodWarning = !batteryOptimizer.isAodEnabled()
 
         setContent {
             ShabbatWatchTheme {
