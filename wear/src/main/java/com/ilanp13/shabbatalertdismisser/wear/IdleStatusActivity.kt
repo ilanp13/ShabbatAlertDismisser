@@ -100,7 +100,7 @@ private fun IdleScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -162,10 +162,11 @@ private fun IdleScreen(
         if (aodWarning) {
             Text(
                 text = stringResource(R.string.aod_warning),
-                fontSize = 11.sp,
+                fontSize = 9.sp,
                 color = Color(0xFFFF8800),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp)
+                maxLines = 2,
+                modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp)
             )
         }
     }

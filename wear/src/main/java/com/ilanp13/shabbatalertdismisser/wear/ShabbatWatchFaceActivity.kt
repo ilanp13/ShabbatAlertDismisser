@@ -70,9 +70,7 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         controller = ShabbatModeController(this)
         bannerManager = AlertBannerManager(this)
 
-        // Use AOD ambient mode for always-on display at minimal power
-        // Combined with tilt-to-wake disabled (BatteryOptimizer), the watch
-        // stays permanently in ambient mode — no movement-based reactions
+        // Use ambient mode — AOD keeps our app visible when screen dims
         val ambientObserver = AmbientLifecycleObserver(this, object : AmbientLifecycleObserver.AmbientLifecycleCallback {
             override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {}
             override fun onExitAmbient() {}
