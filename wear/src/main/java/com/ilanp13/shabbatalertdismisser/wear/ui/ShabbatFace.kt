@@ -30,16 +30,6 @@ fun ShabbatFace(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Battery level indicator — top-right corner
-        Text(
-            text = "$batteryLevel%",
-            fontSize = 10.sp,
-            color = textColor.copy(alpha = 0.6f),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 16.dp, end = 12.dp)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -47,13 +37,27 @@ fun ShabbatFace(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = indicator,
-                fontSize = 14.sp,
-                color = accentColor,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            // Top: indicator + battery on same line
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = indicator,
+                    fontSize = 14.sp,
+                    color = accentColor,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "$batteryLevel%",
+                    fontSize = 10.sp,
+                    color = textColor.copy(alpha = 0.5f)
+                )
+            }
 
             if (useAnalog) {
                 AnalogClock(

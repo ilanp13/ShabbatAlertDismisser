@@ -114,10 +114,13 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     getString(R.string.havdalah_motzash, sdf.format(Date(havdalahMs)))
                 } else ""
 
-                val indicator = if (parasha != null && parasha != getString(R.string.shabbat_shalom)) {
-                    parasha
-                } else {
-                    getString(R.string.shabbat_shalom)
+                val indicator = when {
+                    // If we have a parasha/holiday name from the schedule, show it
+                    parasha != null && parasha != getString(R.string.shabbat_shalom) -> parasha
+                    // If inside a Shabbat window, show "Shabbat Shalom"
+                    windowInfo != null -> getString(R.string.shabbat_shalom)
+                    // "Always" mode outside Shabbat — show mode indicator
+                    else -> getString(R.string.shabbat_mode_active)
                 }
 
                 ShabbatFace(
