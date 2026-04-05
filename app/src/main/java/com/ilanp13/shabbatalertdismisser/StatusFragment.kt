@@ -1489,25 +1489,34 @@ class StatusFragment : Fragment() {
         }
 
         // Draw on mini map
-        val header = if (activeRegions.isEmpty()) getString(R.string.active_alerts_none)
-            else {
-                val alarmCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.ALARM }
-                val warningCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.WARNING }
-                val endedCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.EVENT_ENDED }
-                buildString {
-                    append("LIVE")
-                    if (alarmCount > 0) append(" 🔴$alarmCount")
-                    if (warningCount > 0) append(" 🟡$warningCount")
-                    if (endedCount > 0) append(" 🟢$endedCount")
-                }
+        val alarmCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.ALARM }
+        val warningCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.WARNING }
+        val endedCount = activeRegions.count { it.value.level == RegionAlertTracker.RegionLevel.EVENT_ENDED }
+        val hasActiveAlerts = alarmCount > 0 || warningCount > 0
+
+        val header = if (!hasActiveAlerts && endedCount == 0) {
+            "LIVE · ${getString(R.string.active_alerts_none)}"
+        } else {
+            buildString {
+                append("LIVE")
+                if (alarmCount > 0) append(" 🔴$alarmCount")
+                if (warningCount > 0) append(" 🟡$warningCount")
+                if (endedCount > 0) append(" 🟢$endedCount")
             }
-        val dominantLevel = when {
-            activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM } -> RegionAlertTracker.RegionLevel.ALARM
-            activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.WARNING } -> RegionAlertTracker.RegionLevel.WARNING
-            else -> RegionAlertTracker.RegionLevel.EVENT_ENDED
         }
-        val dominantColor = RegionAlertTracker.getLevelColor(dominantLevel)
-        drawMiniMapPolygons(regionData, activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM }, header, dominantColor)
+        val dominantColor = when {
+            alarmCount > 0 -> RegionAlertTracker.getLevelColor(RegionAlertTracker.RegionLevel.ALARM)
+            warningCount > 0 -> RegionAlertTracker.getLevelColor(RegionAlertTracker.RegionLevel.WARNING)
+            endedCount > 0 -> RegionAlertTracker.getLevelColor(RegionAlertTracker.RegionLevel.EVENT_ENDED)
+            else -> android.graphics.Color.WHITE
+        }
+        drawMiniMapPolygons(regionData, hasActiveAlerts, header, dominantColor)
+
+        // Zoom to active regions if zoom setting enabled
+        val zoomMode = prefs.getString("map_zoom_mode", "off") ?: "off"
+        if (zoomMode == "auto" && activeRegions.isNotEmpty()) {
+            zoomMiniMapToRegions(activeRegions.keys.toList())
+        }
 
         // Update blocks area with live summary
         updateLiveModeBlocks(activeRegions, selectedRegions)
@@ -1695,6 +1704,37 @@ class StatusFragment : Fragment() {
         miniMapView.post {
             miniMapView.zoomToBoundingBox(boundingBox, true)
         }
+    }
+
+    /** Zoom mini map to fit a list of region names */
+    private fun zoomMiniMapToRegions(regionNames: List<String>) {
+        if (regionNames.isEmpty()) return
+        val ctx = context ?: return
+        var minLat = Double.MAX_VALUE; var maxLat = -Double.MAX_VALUE
+        var minLon = Double.MAX_VALUE; var maxLon = -Double.MAX_VALUE
+        var hasPoints = false
+        for (region in regionNames) {
+            val polyPoints = OrefPolygons.getPolygon(ctx, region)
+            if (polyPoints != null) {
+                for (p in polyPoints) {
+                    minLat = minOf(minLat, p.latitude); maxLat = maxOf(maxLat, p.latitude)
+                    minLon = minOf(minLon, p.longitude); maxLon = maxOf(maxLon, p.longitude)
+                    hasPoints = true
+                }
+            } else {
+                val coords = OrefRegionCoords.coords[region] ?: continue
+                minLat = minOf(minLat, coords.first); maxLat = maxOf(maxLat, coords.first)
+                minLon = minOf(minLon, coords.second); maxLon = maxOf(maxLon, coords.second)
+                hasPoints = true
+            }
+        }
+        if (!hasPoints) return
+        val latPad = (maxLat - minLat) * 0.15 + 0.01
+        val lonPad = (maxLon - minLon) * 0.15 + 0.01
+        val boundingBox = org.osmdroid.util.BoundingBox(
+            maxLat + latPad, maxLon + lonPad, minLat - latPad, minLon - lonPad
+        )
+        miniMapView.post { miniMapView.zoomToBoundingBox(boundingBox, true) }
     }
 
     /** Zoom mini map to show all of Israel */
