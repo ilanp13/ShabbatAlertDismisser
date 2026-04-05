@@ -185,6 +185,17 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         return super.dispatchTouchEvent(event)
     }
 
+    override fun onPause() {
+        super.onPause()
+        // If Shabbat mode is still active and we lost focus (e.g., HOME press without
+        // Lock Task Mode), re-launch immediately to maintain the lock
+        if (controller.isShabbatModeActive()) {
+            val relaunch = Intent(this, ShabbatWatchFaceActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(relaunch)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {
