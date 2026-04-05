@@ -111,14 +111,16 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                 val alertText by bannerManager.alertText.collectAsState()
 
                 var windowInfo by remember { mutableStateOf(controller.getCurrentWindowInfo()) }
-                var hebrewDate by remember { mutableStateOf(formatHebrewDate()) }
+                var hebrewDay by remember { mutableStateOf(formatHebrewDay()) }
+                var hebrewMonth by remember { mutableStateOf(formatHebrewMonth()) }
                 var batteryLevel by remember { mutableStateOf(getBatteryLevel()) }
 
                 LaunchedEffect(Unit) {
                     while (true) {
                         delay(60_000L)
                         windowInfo = controller.getCurrentWindowInfo()
-                        hebrewDate = formatHebrewDate()
+                        hebrewDay = formatHebrewDay()
+                        hebrewMonth = formatHebrewMonth()
                         batteryLevel = getBatteryLevel()
                     }
                 }
@@ -140,9 +142,22 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     else -> getString(R.string.shabbat_mode_active)
                 }
 
+                val isShabbatActive = windowInfo != null
+                val candleLightingCountdown = if (!isShabbatActive) {
+                    controller.getNextWindowInfo()?.let { next ->
+                        val diffMs = next.first - System.currentTimeMillis()
+                        if (diffMs > 0) {
+                            val hours = (diffMs / 3_600_000).toInt()
+                            val mins = ((diffMs % 3_600_000) / 60_000).toInt()
+                            "${hours}ש ${mins}ד"
+                        } else null
+                    }
+                } else null
+
                 ShabbatFace(
                     indicator = indicator,
-                    hebrewDate = hebrewDate,
+                    hebrewDay = hebrewDay,
+                    hebrewMonth = hebrewMonth,
                     parasha = parasha,
                     havdalahTime = havdalahFormatted,
                     alertText = alertText,
@@ -155,6 +170,8 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     showHebrewDate = showHebrewDate,
                     showParasha = showParasha,
                     showHavdalah = showHavdalah,
+                    isShabbatActive = isShabbatActive,
+                    candleLightingCountdown = candleLightingCountdown,
                     isAmbient = true
                 )
             }
@@ -268,16 +285,16 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         return bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
     }
 
-    private fun formatHebrewDate(): String {
+    private fun formatHebrewDay(): String {
         val hcal = android.icu.util.HebrewCalendar()
         val day = hcal.get(android.icu.util.HebrewCalendar.DAY_OF_MONTH)
-        val month = hcal.get(android.icu.util.HebrewCalendar.MONTH)
-        val year = hcal.get(android.icu.util.HebrewCalendar.YEAR)
+        return hebrewNumeral(day)
+    }
 
-        val dayStr = hebrewNumeral(day)
-        val monthStr = hebrewMonthName(month)
-        val yearStr = hebrewNumeral(year % 1000)
-        return "$dayStr $monthStr $yearStr"
+    private fun formatHebrewMonth(): String {
+        val hcal = android.icu.util.HebrewCalendar()
+        val month = hcal.get(android.icu.util.HebrewCalendar.MONTH)
+        return hebrewMonthName(month)
     }
 
     private fun hebrewMonthName(month: Int): String {
