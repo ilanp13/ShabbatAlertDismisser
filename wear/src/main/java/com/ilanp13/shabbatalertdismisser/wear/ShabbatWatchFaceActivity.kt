@@ -220,9 +220,24 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         return true // Consume all generic motion events during lock
     }
 
+    private val tapTimestamps = mutableListOf<Long>()
+
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
-        // Block all touch events — watch face has no touch interaction.
-        // Only physical button long-press is used (handled via onKeyDown/onKeyUp).
+        // Safety escape: 5 rapid taps within 3 seconds opens emergency dialog
+        if (event?.action == MotionEvent.ACTION_DOWN) {
+            val now = System.currentTimeMillis()
+            tapTimestamps.add(now)
+            tapTimestamps.removeAll { now - it > 3000L }
+            if (tapTimestamps.size >= 5) {
+                tapTimestamps.clear()
+                Log.d(TAG, "5-tap escape triggered — opening emergency dialog")
+                val intent = Intent(this, EmergencyDialogActivity::class.java)
+                    .putExtra("last_alert", bannerManager.lastAlertText)
+                startActivity(intent)
+                return true
+            }
+        }
+        // Block all other touch events
         return true
     }
 

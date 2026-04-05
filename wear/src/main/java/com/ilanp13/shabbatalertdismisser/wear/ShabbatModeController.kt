@@ -148,7 +148,8 @@ class ShabbatModeController(private val context: Context) {
 
         context.sendBroadcast(Intent("com.ilanp13.shabbatalertdismisser.wear.STOP_LOCK_TASK").setPackage(context.packageName))
 
-        scheduleFromSyncedWindows()
+        // Don't call scheduleFromSyncedWindows() here — it would re-activate
+        // in "always" mode. Scheduling happens on next data sync or boot.
     }
 
     fun isShabbatModeActive(): Boolean {
