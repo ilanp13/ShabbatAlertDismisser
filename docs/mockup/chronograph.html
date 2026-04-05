@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shabbat Chronograph Watch Face</title>
+<style>
+  body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: sans-serif; }
+  canvas { border-radius: 50%; }
+</style>
+</head>
+<body>
+<canvas id="watch" width="480" height="480"></canvas>
+<script>
+const canvas = document.getElementById('watch');
+const ctx = canvas.getContext('2d');
+const W = 480, C = W/2, R = W/2;
+
+// Colors
+const GOLD = '#D4AF37';
+const WHITE = '#EEEEEE';
+const DIM = '#888888';
+const BG = '#111111';
+const DARK = '#1a1a1a';
+const ACCENT = GOLD;
+
+function drawWatch() {
+  ctx.clearRect(0, 0, W, W);
+
+  // Background
+  ctx.fillStyle = BG;
+  ctx.beginPath();
+  ctx.arc(C, C, R, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Outer chapter ring
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(C, C, R - 8, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Minute markers (60)
+  for (let i = 0; i < 60; i++) {
+    const angle = (i * 6 - 90) * Math.PI / 180;
+    const isHour = i % 5 === 0;
+    const inner = isHour ? R - 35 : R - 22;
+    const outer = R - 10;
+    ctx.strokeStyle = isHour ? WHITE : '#555';
+    ctx.lineWidth = isHour ? 3 : 1.5;
+    ctx.beginPath();
+    ctx.moveTo(C + inner * Math.cos(angle), C + inner * Math.sin(angle));
+    ctx.lineTo(C + outer * Math.cos(angle), C + outer * Math.sin(angle));
+    ctx.stroke();
+  }
+
+  // Hour numbers — only 6 (sub-dials replace 12, 3, 9)
+  ctx.fillStyle = WHITE;
+  ctx.font = '600 18px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 1; i <= 12; i++) {
+    if (i === 12 || i === 3 || i === 9) continue; // sub-dials here
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    const r = R - 42;
+    ctx.fillText(i.toString(), C + r * Math.cos(angle), C + r * Math.sin(angle));
+  }
+
+  // Sub-dial: Battery (top, 12 o'clock position)
+  drawSubDial(C, C - 85, 42, () => {
+    // Battery arc
+    const pct = 0.73;
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(C, C - 85, 32, 0.7 * Math.PI, 0.3 * Math.PI);
+    ctx.stroke();
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(C, C - 85, 32, 0.7 * Math.PI, (0.7 + pct * 1.6) * Math.PI);
+    ctx.stroke();
+    ctx.fillStyle = WHITE;
+    ctx.font = '600 14px sans-serif';
+    ctx.fillText('73%', C, C - 80);
+    ctx.fillStyle = DIM;
+    ctx.font = '10px sans-serif';
+    ctx.fillText('BATTERY', C, C - 68);
+  });
+
+  // Sub-dial: Shabbat indicator (left, 9 o'clock)
+  drawSubDial(C - 95, C + 15, 42, () => {
+    const cx = C - 95, cy = C + 5;
+    // Candle icons
+    drawCandle(cx - 10, cy - 4, GOLD);
+    drawCandle(cx + 10, cy - 4, GOLD);
+    // Countdown to next candle lighting (shown in non-Shabbat mode)
+    // During Shabbat: just candles + "שבת"
+    ctx.fillStyle = DIM;
+    ctx.font = '9px sans-serif';
+    ctx.fillText('3ש 42ד', cx, cy + 24);
+    ctx.font = '8px sans-serif';
+    ctx.fillText('הדלקת נרות', cx, cy + 34);
+  });
+
+  // Sub-dial: Hebrew date (right, 3 o'clock) — 2 lines only
+  drawSubDial(C + 95, C + 15, 42, () => {
+    const cx = C + 95, cy = C + 12;
+    ctx.fillStyle = WHITE;
+    ctx.font = '600 16px sans-serif';
+    ctx.fillText('י״ח', cx, cy - 6);
+    ctx.fillStyle = GOLD;
+    ctx.font = '600 13px sans-serif';
+    ctx.fillText('ניסן', cx, cy + 10);
+  });
+
+  // Havdalah time (bottom)
+  ctx.fillStyle = GOLD;
+  ctx.font = '12px sans-serif';
+  ctx.fillText('מוצ״ש: 19:42', C, C + 110);
+
+  // Parasha (below havdalah)
+  ctx.fillStyle = DIM;
+  ctx.font = '11px sans-serif';
+  ctx.fillText('פרשת אחרי מות', C, C + 128);
+
+  // Indicator text (top area, above sub-dial)
+  ctx.fillStyle = GOLD;
+  ctx.font = '600 15px sans-serif';
+  ctx.fillText('שבת שלום', C, C - 145);
+
+  // Clock hands
+  const now = new Date();
+  const h = now.getHours() % 12;
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+
+  // Hour hand (thick, tapered look)
+  const hAngle = ((h + m/60) * 30 - 90) * Math.PI / 180;
+  drawHand(hAngle, 80, 7, WHITE);
+
+  // Minute hand (slightly thinner but still bold)
+  const mAngle = ((m + s/60) * 6 - 90) * Math.PI / 180;
+  drawHand(mAngle, 115, 4.5, WHITE);
+
+  // Center dot
+  ctx.fillStyle = GOLD;
+  ctx.beginPath();
+  ctx.arc(C, C, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = BG;
+  ctx.beginPath();
+  ctx.arc(C, C, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSubDial(x, y, r, content) {
+  // Sub-dial background
+  ctx.fillStyle = DARK;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  // Sub-dial border
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  content();
+}
+
+function drawCandle(x, y, color) {
+  // Candle body
+  ctx.fillStyle = color;
+  ctx.fillRect(x - 2, y - 8, 4, 16);
+  // Flame
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.ellipse(x, y - 12, 3, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#FFA500';
+  ctx.beginPath();
+  ctx.ellipse(x, y - 11, 1.5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawHand(angle, length, width, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(C, C);
+  ctx.lineTo(C + length * Math.cos(angle), C + length * Math.sin(angle));
+  ctx.stroke();
+}
+
+drawWatch();
+setInterval(drawWatch, 1000);
+</script>
+</body>
+</html>
