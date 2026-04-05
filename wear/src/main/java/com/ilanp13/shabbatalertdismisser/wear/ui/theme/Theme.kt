@@ -10,6 +10,7 @@ val ShabbatWhite = Color(0xFFEEEEEE)
 val ShabbatDarkBg = Color(0xFF111111)
 val ShabbatAmbientGray = Color(0xFF888888)
 val AlertRed = Color(0xFFFF4444)
+val WarningOrange = Color(0xFFFF8800)
 
 fun accentColorFromName(name: String): Color = when (name) {
     "blue" -> Color(0xFF4488FF)
