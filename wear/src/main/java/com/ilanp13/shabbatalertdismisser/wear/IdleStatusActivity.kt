@@ -24,6 +24,19 @@ import java.util.Locale
 
 class IdleStatusActivity : ComponentActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(newBase)
+        val lang = prefs.getString(WearDataReceiver.PREF_LANGUAGE, null)
+        if (lang != null && lang != "system") {
+            val locale = java.util.Locale(lang)
+            val config = newBase.resources.configuration
+            config.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

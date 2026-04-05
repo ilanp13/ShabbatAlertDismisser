@@ -27,6 +27,19 @@ import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
 
 class EmergencyDialogActivity : ComponentActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(newBase)
+        val lang = prefs.getString(WearDataReceiver.PREF_LANGUAGE, null)
+        if (lang != null && lang != "system") {
+            val locale = java.util.Locale(lang)
+            val config = newBase.resources.configuration
+            config.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
     private val handler = Handler(Looper.getMainLooper())
     private var autoDismissMs = 10_000L
 

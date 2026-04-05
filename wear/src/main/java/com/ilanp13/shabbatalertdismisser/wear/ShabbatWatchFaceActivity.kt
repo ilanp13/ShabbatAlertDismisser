@@ -49,6 +49,20 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         }
     }
 
+    override fun attachBaseContext(newBase: Context) {
+        // Apply synced language preference before inflating any resources
+        val prefs = PreferenceManager.getDefaultSharedPreferences(newBase)
+        val lang = prefs.getString(WearDataReceiver.PREF_LANGUAGE, null)
+        if (lang != null && lang != "system") {
+            val locale = java.util.Locale(lang)
+            val config = newBase.resources.configuration
+            config.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         controller = ShabbatModeController(this)
