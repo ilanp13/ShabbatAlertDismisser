@@ -222,19 +222,25 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
     }
 
     private fun formatHebrewDate(): String {
-        val hd = HolidayCalculator.gregorianToHebrew(Calendar.getInstance())
-        val dayStr = hebrewNumeral(hd.day)
-        val monthStr = hebrewMonthName(hd.month)
-        val yearStr = hebrewNumeral(hd.year % 1000)
+        val hcal = android.icu.util.HebrewCalendar()
+        val day = hcal.get(android.icu.util.HebrewCalendar.DAY_OF_MONTH)
+        val month = hcal.get(android.icu.util.HebrewCalendar.MONTH)
+        val year = hcal.get(android.icu.util.HebrewCalendar.YEAR)
+
+        val dayStr = hebrewNumeral(day)
+        val monthStr = hebrewMonthName(month)
+        val yearStr = hebrewNumeral(year % 1000)
         return "$dayStr $monthStr $yearStr"
     }
 
     private fun hebrewMonthName(month: Int): String {
+        // android.icu.util.HebrewCalendar months are 0-based:
+        // 0=Tishrei, 1=Heshvan, ..., 5=Adar, 6=Adar II, 7=Nisan, ..., 12=Elul
         return when (month) {
-            1 -> "ניסן"; 2 -> "אייר"; 3 -> "סיוון"; 4 -> "תמוז"
-            5 -> "אב"; 6 -> "אלול"; 7 -> "תשרי"; 8 -> "חשוון"
-            9 -> "כסלו"; 10 -> "טבת"; 11 -> "שבט"; 12 -> "אדר"
-            13 -> "אדר ב׳"; else -> ""
+            0 -> "תשרי"; 1 -> "חשוון"; 2 -> "כסלו"; 3 -> "טבת"
+            4 -> "שבט"; 5 -> "אדר"; 6 -> "אדר ב׳"; 7 -> "ניסן"
+            8 -> "אייר"; 9 -> "סיוון"; 10 -> "תמוז"; 11 -> "אב"
+            12 -> "אלול"; else -> ""
         }
     }
 
