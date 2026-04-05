@@ -17,6 +17,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.preference.PreferenceManager
+import androidx.wear.ambient.AmbientLifecycleObserver
 import com.ilanp13.shabbatalertdismisser.shared.HolidayCalculator
 import com.ilanp13.shabbatalertdismisser.wear.ui.ShabbatFace
 import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
@@ -69,8 +70,15 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         controller = ShabbatModeController(this)
         bannerManager = AlertBannerManager(this)
 
-        // Keep screen always on — no ambient/movement behavior during Shabbat
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Use AOD ambient mode for always-on display at minimal power
+        // Combined with tilt-to-wake disabled (BatteryOptimizer), the watch
+        // stays permanently in ambient mode — no movement-based reactions
+        val ambientObserver = AmbientLifecycleObserver(this, object : AmbientLifecycleObserver.AmbientLifecycleCallback {
+            override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {}
+            override fun onExitAmbient() {}
+            override fun onUpdateAmbient() {}
+        })
+        lifecycle.addObserver(ambientObserver)
 
         enterLockTask()
 
@@ -147,7 +155,7 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     showHebrewDate = showHebrewDate,
                     showParasha = showParasha,
                     showHavdalah = showHavdalah,
-                    isAmbient = false
+                    isAmbient = true
                 )
             }
         }

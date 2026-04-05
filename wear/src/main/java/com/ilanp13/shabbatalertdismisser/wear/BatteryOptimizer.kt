@@ -21,6 +21,10 @@ class BatteryOptimizer(private val context: Context) {
         private const val PREF_PREV_TILT_WAKE = "prev_tilt_to_wake"
         private const val PREF_PREV_TOUCH_WAKE = "prev_touch_to_wake"
         private const val PREF_PREV_BODY_SENSORS = "prev_body_sensors_enabled"
+        private const val PREF_PREV_BRIGHTNESS = "prev_screen_brightness"
+        private const val PREF_PREV_BRIGHTNESS_MODE = "prev_screen_brightness_mode"
+        private const val PREF_PREV_AOD = "prev_aod_mode"
+        private const val SHABBAT_BRIGHTNESS = 10 // Very low (0-255 scale)
     }
 
     private val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -75,6 +79,17 @@ class BatteryOptimizer(private val context: Context) {
             editor.putBoolean(PREF_PREV_BODY_SENSORS, true)
             setSensorPermission(false)
             Log.d(TAG, "Health sensors disabled")
+        }
+
+        // Disable Always-On Display wrist sensor (prevents wrist-based screen changes)
+        // Screen stays in ambient mode permanently via AmbientLifecycleObserver
+        try {
+            val prevAod = Settings.Global.getInt(context.contentResolver, "aod_mode", 1)
+            editor.putInt(PREF_PREV_AOD, prevAod)
+            Settings.Global.putInt(context.contentResolver, "aod_mode", 0)
+            Log.d(TAG, "AOD sensor disabled")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not disable AOD: ${e.message}")
         }
 
         editor.apply()
@@ -139,6 +154,15 @@ class BatteryOptimizer(private val context: Context) {
         if (prefs.getBoolean(PREF_PREV_BODY_SENSORS, false)) {
             setSensorPermission(true)
             Log.d(TAG, "Health sensors restored")
+        }
+
+        // AOD
+        try {
+            val prevAod = prefs.getInt(PREF_PREV_AOD, 1)
+            Settings.Global.putInt(context.contentResolver, "aod_mode", prevAod)
+            Log.d(TAG, "AOD restored to $prevAod")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not restore AOD: ${e.message}")
         }
     }
 }
