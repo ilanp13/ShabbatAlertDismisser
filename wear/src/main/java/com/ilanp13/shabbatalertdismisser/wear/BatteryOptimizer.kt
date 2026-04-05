@@ -81,15 +81,14 @@ class BatteryOptimizer(private val context: Context) {
             Log.d(TAG, "Health sensors disabled")
         }
 
-        // Disable Always-On Display wrist sensor (prevents wrist-based screen changes)
-        // Screen stays in ambient mode permanently via AmbientLifecycleObserver
+        // Ensure Always-On Display is enabled (keeps screen on in ambient mode)
         try {
-            val prevAod = Settings.Global.getInt(context.contentResolver, "aod_mode", 1)
+            val prevAod = Settings.Global.getInt(context.contentResolver, "aod_mode", 0)
             editor.putInt(PREF_PREV_AOD, prevAod)
-            Settings.Global.putInt(context.contentResolver, "aod_mode", 0)
-            Log.d(TAG, "AOD sensor disabled")
+            Settings.Global.putInt(context.contentResolver, "aod_mode", 1)
+            Log.d(TAG, "AOD enabled for Shabbat mode")
         } catch (e: Exception) {
-            Log.w(TAG, "Could not disable AOD: ${e.message}")
+            Log.w(TAG, "Could not enable AOD: ${e.message}")
         }
 
         editor.apply()
