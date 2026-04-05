@@ -11,39 +11,26 @@ import androidx.preference.PreferenceManager
 /**
  * Accessibility service that enforces the Shabbat lock.
  *
- * Safety mechanisms:
- * - 5 rapid button presses = emergency deactivation (always works)
- * - Long press (configurable) = emergency dialog
- * - PREF_SHABBAT_MODE_ACTIVE=false = service stops blocking
- * - 26-hour auto-timeout from activation = automatic deactivation
- * - Phone unlock command sets pref to false = service stops blocking
+ * Safety escape mechanisms:
+ * - 5 rapid button presses within 3 seconds = immediate deactivation
+ * - Long press (configurable, default 10s) = emergency dialog
+ * - Phone "End Watch Shabbat Mode" button = remote deactivation
+ * - PREF_SHABBAT_MODE_ACTIVE=false = service stops blocking instantly
  */
 class ShabbatLockService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ShabbatLockService"
         private const val RAPID_PRESS_COUNT = 5
-        private const val RAPID_PRESS_WINDOW_MS = 3000L // 5 presses within 3 seconds
-        private const val MAX_SHABBAT_DURATION_MS = 26L * 60 * 60 * 1000 // 26 hours
+        private const val RAPID_PRESS_WINDOW_MS = 3000L
     }
 
     private var keyDownTime = 0L
     private val rapidPressTimestamps = mutableListOf<Long>()
 
     private fun isShabbatMode(): Boolean {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val active = prefs.getBoolean(ShabbatModeController.PREF_SHABBAT_MODE_ACTIVE, false)
-        if (!active) return false
-
-        // Auto-timeout safety: check if Shabbat mode has been active too long
-        val activatedAt = prefs.getLong("shabbat_mode_activated_at", 0)
-        if (activatedAt > 0 && System.currentTimeMillis() - activatedAt > MAX_SHABBAT_DURATION_MS) {
-            Log.w(TAG, "Shabbat mode exceeded 26-hour safety timeout — auto-deactivating")
-            ShabbatModeController(this).deactivateShabbatMode()
-            return false
-        }
-
-        return true
+        return PreferenceManager.getDefaultSharedPreferences(this)
+            .getBoolean(ShabbatModeController.PREF_SHABBAT_MODE_ACTIVE, false)
     }
 
     override fun onServiceConnected() {
@@ -88,21 +75,21 @@ class ShabbatLockService : AccessibilityService() {
                 val now = System.currentTimeMillis()
                 val duration = now - keyDownTime
 
-                // Check for rapid press escape (5 presses in 3 seconds)
+                // Safety: 5 rapid presses within 3 seconds = emergency exit
                 rapidPressTimestamps.add(now)
                 rapidPressTimestamps.removeAll { now - it > RAPID_PRESS_WINDOW_MS }
                 if (rapidPressTimestamps.size >= RAPID_PRESS_COUNT) {
-                    Log.w(TAG, "Rapid press escape triggered — deactivating Shabbat mode")
+                    Log.w(TAG, "Rapid press escape — deactivating Shabbat mode")
                     rapidPressTimestamps.clear()
                     ShabbatModeController(this).deactivateShabbatMode()
                     return true
                 }
 
-                // Check for long press → emergency dialog
+                // Long press → emergency dialog
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this)
                 val thresholdMs = prefs.getInt(WearDataReceiver.PREF_LONG_PRESS_SECONDS, 10) * 1000L
                 if (duration >= thresholdMs) {
-                    Log.d(TAG, "Long press detected (${duration}ms) — opening emergency dialog")
+                    Log.d(TAG, "Long press (${duration}ms) — opening emergency dialog")
                     val intent = Intent(this, EmergencyDialogActivity::class.java)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     startActivity(intent)
@@ -110,7 +97,7 @@ class ShabbatLockService : AccessibilityService() {
             }
         }
 
-        return true // Consume all key events during Shabbat mode
+        return true
     }
 
     override fun onInterrupt() {

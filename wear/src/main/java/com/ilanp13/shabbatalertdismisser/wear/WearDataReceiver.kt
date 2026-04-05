@@ -111,8 +111,8 @@ class WearDataReceiver : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         when (messageEvent.path) {
             PATH_UNLOCK -> {
-                Log.d(TAG, "Unlock command received from phone")
-                sendBroadcast(Intent("com.ilanp13.shabbatalertdismisser.wear.UNLOCK_SHABBAT").setPackage(packageName))
+                Log.d(TAG, "Unlock command received from phone — deactivating directly")
+                ShabbatModeController(this).deactivateShabbatMode()
             }
         }
     }

@@ -111,10 +111,7 @@ class ShabbatModeController(private val context: Context) {
 
     fun activateShabbatMode() {
         Log.d(TAG, "Activating Shabbat mode")
-        prefs.edit()
-            .putBoolean(PREF_SHABBAT_MODE_ACTIVE, true)
-            .putLong("shabbat_mode_activated_at", System.currentTimeMillis())
-            .apply()
+        prefs.edit().putBoolean(PREF_SHABBAT_MODE_ACTIVE, true).commit()
 
         batteryOptimizer.applyShabbatSettings()
 
@@ -136,10 +133,7 @@ class ShabbatModeController(private val context: Context) {
         Log.d(TAG, "Deactivating Shabbat mode")
         // Use commit() (synchronous) to ensure the pref is written BEFORE
         // any accessibility service or onPause check reads it
-        prefs.edit()
-            .putBoolean(PREF_SHABBAT_MODE_ACTIVE, false)
-            .remove("shabbat_mode_activated_at")
-            .commit()
+        prefs.edit().putBoolean(PREF_SHABBAT_MODE_ACTIVE, false).commit()
 
         batteryOptimizer.restoreSettings()
 
