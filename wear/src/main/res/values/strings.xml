@@ -23,4 +23,5 @@
     <string name="sync_from_phone">Open phone app to sync</string>
     <string name="emergency_number">100</string>
     <string name="lock_service_description">Keeps the Shabbat watch face active by preventing navigation away during Shabbat mode.</string>
+    <string name="aod_warning">Enable Always-On Display in watch Settings > Display for screen to stay on</string>
 </resources>

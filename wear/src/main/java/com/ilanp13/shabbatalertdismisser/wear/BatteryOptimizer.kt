@@ -86,12 +86,29 @@ class BatteryOptimizer(private val context: Context) {
             val prevAod = Settings.Global.getInt(context.contentResolver, "aod_mode", 0)
             editor.putInt(PREF_PREV_AOD, prevAod)
             Settings.Global.putInt(context.contentResolver, "aod_mode", 1)
+            editor.putBoolean("aod_auto_enabled", true)
             Log.d(TAG, "AOD enabled for Shabbat mode")
         } catch (e: Exception) {
-            Log.w(TAG, "Could not enable AOD: ${e.message}")
+            // WRITE_SECURE_SETTINGS not granted — can't change AOD programmatically
+            editor.putBoolean("aod_auto_enabled", false)
+            Log.w(TAG, "Could not enable AOD (no permission): ${e.message}")
         }
 
         editor.apply()
+    }
+
+    /** Returns true if AOD was set automatically, false if user needs to enable it manually */
+    fun isAodAutoEnabled(): Boolean {
+        return prefs.getBoolean("aod_auto_enabled", false)
+    }
+
+    /** Returns true if AOD is currently enabled on the device */
+    fun isAodEnabled(): Boolean {
+        return try {
+            Settings.Global.getInt(context.contentResolver, "aod_mode", 0) == 1
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun setSensorPermission(granted: Boolean) {

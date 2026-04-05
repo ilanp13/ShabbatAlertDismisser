@@ -23,4 +23,5 @@
     <string name="sync_from_phone">פתח את האפליקציה בטלפון לסנכרון</string>
     <string name="emergency_number">100</string>
     <string name="lock_service_description">שומר על פני השעון של שבת פעילים על ידי מניעת ניווט החוצה במצב שבת.</string>
+    <string name="aod_warning">הפעל תצוגה תמידית בהגדרות השעון > תצוגה כדי שהמסך יישאר דלוק</string>
 </resources>

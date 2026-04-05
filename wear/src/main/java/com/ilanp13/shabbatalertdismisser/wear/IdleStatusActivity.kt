@@ -64,12 +64,17 @@ class IdleStatusActivity : ComponentActivity() {
         val nextWindow = controller.getNextWindowInfo()
         val sdf = SimpleDateFormat("EEE dd/MM HH:mm", Locale.getDefault())
 
+        // Check if AOD needs manual enable
+        val batteryOptimizer = BatteryOptimizer(this)
+        val needsAodWarning = !batteryOptimizer.isAodEnabled() && !batteryOptimizer.isAodAutoEnabled()
+
         setContent {
             ShabbatWatchTheme {
                 IdleScreen(
                     nextCandleLighting = nextWindow?.let { sdf.format(Date(it.first)) },
                     nextHavdalah = nextWindow?.let { sdf.format(Date(it.second)) },
                     parasha = nextWindow?.third,
+                    aodWarning = needsAodWarning,
                     onActivateEarly = {
                         controller.activateShabbatMode()
                         startActivity(
@@ -89,6 +94,7 @@ private fun IdleScreen(
     nextCandleLighting: String?,
     nextHavdalah: String?,
     parasha: String?,
+    aodWarning: Boolean = false,
     onActivateEarly: () -> Unit
 ) {
     Column(
@@ -150,6 +156,16 @@ private fun IdleScreen(
                 fontSize = 11.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.Center
+            )
+        }
+
+        if (aodWarning) {
+            Text(
+                text = stringResource(R.string.aod_warning),
+                fontSize = 11.sp,
+                color = Color(0xFFFF8800),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
