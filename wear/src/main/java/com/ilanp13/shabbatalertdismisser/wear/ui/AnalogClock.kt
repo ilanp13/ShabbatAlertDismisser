@@ -111,8 +111,8 @@ fun AnalogClock(
             // === Sub-dial: Battery (12 o'clock) ===
             if (showBattery) {
                 val bx = C.x
-                val by = C.y - 85f * scaleFactor
-                val br = 42f * scaleFactor
+                val by = C.y - 100f * scaleFactor
+                val br = 50f * scaleFactor
                 drawSubDial(C = Offset(bx, by), radius = br, bg = darkBg, border = dimColor)
                 drawBatteryArc(Offset(bx, by), br - 10f, batteryLevel, accent, ambient)
                 val battPaint = android.graphics.Paint().apply {
@@ -137,9 +137,9 @@ fun AnalogClock(
             }
 
             // === Sub-dial: Shabbat status (9 o'clock) ===
-            val sx = C.x - 95f * scaleFactor
+            val sx = C.x - 110f * scaleFactor
             val sy = C.y + 15f * scaleFactor
-            val sr = 42f * scaleFactor
+            val sr = 50f * scaleFactor
             drawSubDial(Offset(sx, sy), sr, darkBg, dimColor)
             drawCandles(Offset(sx, sy), accent, ambient, scaleFactor)
             if (!isShabbatActive && candleLightingCountdown != null) {
@@ -170,9 +170,9 @@ fun AnalogClock(
 
             // === Sub-dial: Hebrew date (3 o'clock) ===
             if (showHebrewDate) {
-                val hx = C.x + 95f * scaleFactor
+                val hx = C.x + 110f * scaleFactor
                 val hy = C.y + 15f * scaleFactor
-                val hr = 42f * scaleFactor
+                val hr = 50f * scaleFactor
                 drawSubDial(Offset(hx, hy), hr, darkBg, dimColor)
                 val dayPaint = android.graphics.Paint().apply {
                     this.color = textColor.toArgb()
@@ -202,14 +202,14 @@ fun AnalogClock(
             val second = calendar.get(Calendar.SECOND)
 
             val hAngle = Math.toRadians(((hour + minute / 60.0) * 30 - 90))
-            drawHand(C, hAngle, 80f * scaleFactor, textColor, 7f)
+            drawHand(C, hAngle, 95f * scaleFactor, textColor, 8f)
 
             val mAngle = Math.toRadians((minute * 6 - 90).toDouble())
-            drawHand(C, mAngle, 115f * scaleFactor, textColor, 4.5f)
+            drawHand(C, mAngle, 135f * scaleFactor, textColor, 5f)
 
             if (showSeconds && !ambient) {
                 val sAngle = Math.toRadians((second * 6 - 90).toDouble())
-                drawHand(C, sAngle, 120f * scaleFactor, accent, 1f)
+                drawHand(C, sAngle, 140f * scaleFactor, accent, 1.5f)
             }
 
             drawCircle(color = accent, radius = 5f, center = C)
