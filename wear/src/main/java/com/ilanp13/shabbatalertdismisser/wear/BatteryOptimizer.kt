@@ -96,9 +96,10 @@ class BatteryOptimizer(private val context: Context) {
 
     // Samsung Wear OS AOD setting names to try (varies by firmware version)
     private val aodSettingNames = arrayOf(
+        "ambient_enabled",             // Samsung Galaxy Watch
         "aod_mode",                    // Standard Wear OS
-        "aod_tap_to_show_mode",        // Samsung specific
-        "always_on_display",           // Alternative
+        "aod_tap_to_show_mode",        // Samsung alternative
+        "always_on_display",           // Other OEMs
     )
 
     private fun tryEnableAod(editor: android.content.SharedPreferences.Editor): Boolean {

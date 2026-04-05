@@ -20,7 +20,7 @@ android {
         applicationId = "com.ilanp13.shabbatalertdismisser"
         minSdk = 26
         targetSdk = 35
-        versionCode = 64
+        versionCode = 65
         versionName = "2.4.0"
     }
 
