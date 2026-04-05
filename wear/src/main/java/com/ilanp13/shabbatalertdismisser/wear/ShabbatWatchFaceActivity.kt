@@ -173,16 +173,9 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
     }
 
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
-        // Allow normal touch for Compose UI but block edge swipe gestures
-        // by consuming ACTION_MOVE events that start near screen edges
-        if (event != null && event.action == MotionEvent.ACTION_MOVE) {
-            val x = event.x
-            val width = window.decorView.width.toFloat()
-            if (x < 20f || x > width - 20f) {
-                return true // Consume edge swipes
-            }
-        }
-        return super.dispatchTouchEvent(event)
+        // Block all touch events — watch face has no touch interaction.
+        // Only physical button long-press is used (handled via onKeyDown/onKeyUp).
+        return true
     }
 
     override fun onPause() {
