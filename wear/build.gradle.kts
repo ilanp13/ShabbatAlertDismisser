@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.github.triplet.play")
+}
+
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) load(keystorePropsFile.inputStream())
 }
 
 android {
@@ -12,7 +20,7 @@ android {
         applicationId = "com.ilanp13.shabbatalertdismisser"
         minSdk = 26
         targetSdk = 35
-        versionCode = 36
+        versionCode = 41
         versionName = "2.4.0"
     }
 
@@ -25,9 +33,32 @@ android {
         jvmTarget = "1.8"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(keystoreProps.getProperty("storeFile", ""))
+            storePassword = keystoreProps.getProperty("storePassword", "")
+            keyAlias = keystoreProps.getProperty("keyAlias", "")
+            keyPassword = keystoreProps.getProperty("keyPassword", "")
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
+}
+
+play {
+    serviceAccountCredentials.set(file("../play-publisher.json"))
+    track.set("internal")
+    defaultToAppBundles.set(true)
+    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT)
 }
 
 dependencies {
