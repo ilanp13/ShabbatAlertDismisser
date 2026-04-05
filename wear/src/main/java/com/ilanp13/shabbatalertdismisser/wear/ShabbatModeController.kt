@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.ilanp13.shabbatalertdismisser.shared.HebcalService
@@ -74,22 +75,37 @@ class ShabbatModeController(private val context: Context) {
         Log.d(TAG, "Scheduled: activate=$activateTime, deactivate=$deactivateTime")
     }
 
+    private fun canScheduleExactAlarms(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }
+
+    private fun scheduleAlarm(requestCode: Int, timeMs: Long, intent: Intent) {
+        val pi = PendingIntent.getBroadcast(
+            context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (canScheduleExactAlarms()) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeMs, pi)
+        } else {
+            // Fallback to inexact alarm — may fire up to 10 min late
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeMs, pi)
+            Log.w(TAG, "Exact alarm permission not granted, using inexact alarm")
+        }
+    }
+
     private fun scheduleActivation(timeMs: Long) {
         val intent = Intent(ACTION_ACTIVATE).setPackage(context.packageName)
-        val pi = PendingIntent.getBroadcast(
-            context, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeMs, pi)
+        scheduleAlarm(1, timeMs, intent)
     }
 
     private fun scheduleDeactivation(timeMs: Long) {
         val mode = prefs.getString(WearDataReceiver.PREF_ACTIVATION_MODE, "auto")
         if (mode == "auto") {
             val intent = Intent(ACTION_DEACTIVATE).setPackage(context.packageName)
-            val pi = PendingIntent.getBroadcast(
-                context, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeMs, pi)
+            scheduleAlarm(2, timeMs, intent)
         }
     }
 
