@@ -17,7 +17,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.preference.PreferenceManager
-import androidx.wear.ambient.AmbientLifecycleObserver
 import com.ilanp13.shabbatalertdismisser.shared.HolidayCalculator
 import com.ilanp13.shabbatalertdismisser.wear.ui.ShabbatFace
 import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
@@ -37,19 +36,6 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
     private lateinit var controller: ShabbatModeController
     private lateinit var bannerManager: AlertBannerManager
     private var buttonDownTime = 0L
-    private val isAmbient = mutableStateOf(false)
-
-    private val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
-        override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
-            isAmbient.value = true
-        }
-        override fun onExitAmbient() {
-            isAmbient.value = false
-        }
-        override fun onUpdateAmbient() {
-            // Called periodically in ambient mode — good for time updates
-        }
-    }
 
     private val stopLockTaskReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -83,9 +69,8 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         controller = ShabbatModeController(this)
         bannerManager = AlertBannerManager(this)
 
-        // Use ambient mode for always-on display (power-efficient, dims when wrist down)
-        val ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
-        lifecycle.addObserver(ambientObserver)
+        // Keep screen always on — no ambient/movement behavior during Shabbat
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         enterLockTask()
 
@@ -116,7 +101,6 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         setContent {
             ShabbatWatchTheme {
                 val alertText by bannerManager.alertText.collectAsState()
-                val ambient by isAmbient
 
                 var windowInfo by remember { mutableStateOf(controller.getCurrentWindowInfo()) }
                 var hebrewDate by remember { mutableStateOf(formatHebrewDate()) }
@@ -156,14 +140,14 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     alertText = alertText,
                     batteryLevel = batteryLevel,
                     useAnalog = useAnalog,
-                    showSeconds = showSeconds && !ambient,
+                    showSeconds = showSeconds,
                     accentColor = accentColorFromName(accentColorName),
                     clockSize = clockSize,
                     showBattery = showBattery,
                     showHebrewDate = showHebrewDate,
                     showParasha = showParasha,
                     showHavdalah = showHavdalah,
-                    isAmbient = ambient
+                    isAmbient = false
                 )
             }
         }
@@ -175,9 +159,16 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
             val admin = AdminReceiver.getComponentName(this)
             dpm.setLockTaskPackages(admin, arrayOf(packageName))
             startLockTask()
-            Log.d(TAG, "Lock Task Mode entered")
+            Log.d(TAG, "Lock Task Mode entered (device owner)")
         } else {
-            Log.w(TAG, "Not device owner — Lock Task Mode unavailable")
+            // Fallback: screen pinning — shows a one-time confirmation dialog
+            // Once pinned, HOME, notifications, and quick settings are blocked by the system
+            try {
+                startLockTask()
+                Log.d(TAG, "Screen pinning requested (no device owner)")
+            } catch (e: Exception) {
+                Log.w(TAG, "Screen pinning failed: ${e.message}")
+            }
         }
     }
 
