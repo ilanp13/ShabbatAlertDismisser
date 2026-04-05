@@ -214,4 +214,20 @@
     <string name="watch_disable_step_counter">כבה מונה צעדים</string>
     <string name="watch_disable_body_sensors">כבה חיישני גוף נוספים</string>
     <string name="watch_show_seconds">הצג שניות על פני השעון</string>
+    <string name="watch_appearance_title">מראה פני השעון</string>
+    <string name="watch_accent_color_label">צבע הדגשה</string>
+    <string name="watch_accent_gold">זהב</string>
+    <string name="watch_accent_blue">כחול</string>
+    <string name="watch_accent_green">ירוק</string>
+    <string name="watch_accent_white">לבן</string>
+    <string name="watch_accent_red">אדום</string>
+    <string name="watch_accent_purple">סגול</string>
+    <string name="watch_show_battery">הצג רמת סוללה</string>
+    <string name="watch_show_hebrew_date">הצג תאריך עברי</string>
+    <string name="watch_show_parasha">הצג פרשת השבוע</string>
+    <string name="watch_show_havdalah">הצג זמן הבדלה</string>
+    <string name="watch_clock_size_label">גודל השעון</string>
+    <string name="watch_clock_small">קטן</string>
+    <string name="watch_clock_medium">בינוני</string>
+    <string name="watch_clock_large">גדול</string>
 </resources>

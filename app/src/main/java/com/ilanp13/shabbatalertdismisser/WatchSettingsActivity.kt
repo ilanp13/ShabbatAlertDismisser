@@ -20,6 +20,7 @@ class WatchSettingsActivity : AppCompatActivity() {
         setupWatchStatus()
         setupFaceStyle()
         setupToggle(R.id.switchShowSeconds, "watch_show_seconds", true)
+        setupAppearance()
         setupActivationMode()
         setupOffsets()
         setupBatteryToggles()
@@ -41,6 +42,59 @@ class WatchSettingsActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun setupAppearance() {
+        // Accent color spinner
+        val spinnerColor = findViewById<Spinner>(R.id.spinnerAccentColor)
+        val colorNames = arrayOf(
+            getString(R.string.watch_accent_gold),
+            getString(R.string.watch_accent_blue),
+            getString(R.string.watch_accent_green),
+            getString(R.string.watch_accent_white),
+            getString(R.string.watch_accent_red),
+            getString(R.string.watch_accent_purple)
+        )
+        val colorValues = arrayOf("gold", "blue", "green", "white", "red", "purple")
+        spinnerColor.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, colorNames)
+        val savedColor = prefs.getString("watch_accent_color", "gold") ?: "gold"
+        spinnerColor.setSelection(colorValues.indexOf(savedColor).coerceAtLeast(0))
+        var ignoreColorInit = true
+        spinnerColor.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                if (ignoreColorInit) { ignoreColorInit = false; return }
+                prefs.edit().putString("watch_accent_color", colorValues[pos]).apply()
+                WatchSyncService.syncSettings(this@WatchSettingsActivity)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Clock size spinner
+        val spinnerSize = findViewById<Spinner>(R.id.spinnerClockSize)
+        val sizeNames = arrayOf(
+            getString(R.string.watch_clock_small),
+            getString(R.string.watch_clock_medium),
+            getString(R.string.watch_clock_large)
+        )
+        val sizeValues = arrayOf("small", "medium", "large")
+        spinnerSize.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, sizeNames)
+        val savedSize = prefs.getString("watch_clock_size", "medium") ?: "medium"
+        spinnerSize.setSelection(sizeValues.indexOf(savedSize).coerceAtLeast(0))
+        var ignoreSizeInit = true
+        spinnerSize.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                if (ignoreSizeInit) { ignoreSizeInit = false; return }
+                prefs.edit().putString("watch_clock_size", sizeValues[pos]).apply()
+                WatchSyncService.syncSettings(this@WatchSettingsActivity)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Show/hide toggles
+        setupToggle(R.id.switchShowBattery, "watch_show_battery", true)
+        setupToggle(R.id.switchShowHebrewDate, "watch_show_hebrew_date", true)
+        setupToggle(R.id.switchShowParasha, "watch_show_parasha", true)
+        setupToggle(R.id.switchShowHavdalah, "watch_show_havdalah", true)
     }
 
     private fun setupFaceStyle() {

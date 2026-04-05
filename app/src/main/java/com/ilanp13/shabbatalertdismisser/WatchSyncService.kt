@@ -92,6 +92,12 @@ object WatchSyncService {
             dataMap.putInt("banner_timeout_sec", prefs.getInt("watch_banner_timeout_sec", 30))
             dataMap.putInt("long_press_seconds", prefs.getInt("watch_long_press_seconds", 10))
             dataMap.putBoolean("show_seconds", prefs.getBoolean("watch_show_seconds", true))
+            dataMap.putString("accent_color", prefs.getString("watch_accent_color", "gold") ?: "gold")
+            dataMap.putString("clock_size", prefs.getString("watch_clock_size", "medium") ?: "medium")
+            dataMap.putBoolean("show_battery", prefs.getBoolean("watch_show_battery", true))
+            dataMap.putBoolean("show_hebrew_date", prefs.getBoolean("watch_show_hebrew_date", true))
+            dataMap.putBoolean("show_parasha", prefs.getBoolean("watch_show_parasha", true))
+            dataMap.putBoolean("show_havdalah", prefs.getBoolean("watch_show_havdalah", true))
             dataMap.putBoolean("emergency_sos", prefs.getBoolean("watch_emergency_sos", true))
             dataMap.putBoolean("emergency_last_alert", prefs.getBoolean("watch_emergency_last_alert", true))
             val lang = prefs.getString("app_language", "iw") ?: "iw"

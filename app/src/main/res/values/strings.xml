@@ -214,4 +214,20 @@
     <string name="watch_disable_step_counter">Disable step counter</string>
     <string name="watch_disable_body_sensors">Disable other body sensors</string>
     <string name="watch_show_seconds">Show seconds on watch face</string>
+    <string name="watch_appearance_title">Watch Face Appearance</string>
+    <string name="watch_accent_color_label">Accent color</string>
+    <string name="watch_accent_gold">Gold</string>
+    <string name="watch_accent_blue">Blue</string>
+    <string name="watch_accent_green">Green</string>
+    <string name="watch_accent_white">White</string>
+    <string name="watch_accent_red">Red</string>
+    <string name="watch_accent_purple">Purple</string>
+    <string name="watch_show_battery">Show battery level</string>
+    <string name="watch_show_hebrew_date">Show Hebrew date</string>
+    <string name="watch_show_parasha">Show parasha</string>
+    <string name="watch_show_havdalah">Show havdalah time</string>
+    <string name="watch_clock_size_label">Clock size</string>
+    <string name="watch_clock_small">Small</string>
+    <string name="watch_clock_medium">Medium</string>
+    <string name="watch_clock_large">Large</string>
 </resources>
