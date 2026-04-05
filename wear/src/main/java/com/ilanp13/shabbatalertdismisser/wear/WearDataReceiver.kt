@@ -81,6 +81,16 @@ class WearDataReceiver : WearableListenerService() {
                     editor.putBoolean(PREF_SHOW_SECONDS, data.getBoolean("show_seconds", true))
                     editor.apply()
                     Log.d(TAG, "Settings synced")
+
+                    // If "always" mode, immediately activate Shabbat mode
+                    val mode = data.getString("activation_mode", "auto")
+                    if (mode == "always") {
+                        val controller = ShabbatModeController(this)
+                        if (!controller.isShabbatModeActive()) {
+                            controller.activateShabbatMode()
+                            Log.d(TAG, "Always-on mode: activated Shabbat mode on sync")
+                        }
+                    }
                 }
             }
         }
