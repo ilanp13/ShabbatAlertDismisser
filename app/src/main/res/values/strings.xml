@@ -213,4 +213,5 @@
     <string name="watch_disable_spo2">Disable blood oxygen (SpO2)</string>
     <string name="watch_disable_step_counter">Disable step counter</string>
     <string name="watch_disable_body_sensors">Disable other body sensors</string>
+    <string name="watch_show_seconds">Show seconds on watch face</string>
 </resources>

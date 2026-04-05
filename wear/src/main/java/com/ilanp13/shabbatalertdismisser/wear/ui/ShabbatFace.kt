@@ -21,6 +21,7 @@ fun ShabbatFace(
     alertText: String?,
     batteryLevel: Int,
     useAnalog: Boolean,
+    showSeconds: Boolean,
     isAmbient: Boolean
 ) {
     val textColor = if (isAmbient) ShabbatAmbientGray else ShabbatWhite
@@ -64,12 +65,14 @@ fun ShabbatFace(
                     modifier = Modifier.weight(1f),
                     color = textColor,
                     accentColor = accentColor,
+                    showSeconds = showSeconds,
                     isAmbient = isAmbient
                 )
             } else {
                 DigitalClock(
                     modifier = Modifier.weight(1f),
                     color = textColor,
+                    showSeconds = showSeconds,
                     isAmbient = isAmbient
                 )
             }

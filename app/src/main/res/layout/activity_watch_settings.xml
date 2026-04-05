@@ -54,6 +54,14 @@
                 android:text="@string/watch_face_analog" />
         </RadioGroup>
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchShowSeconds"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/watch_show_seconds"
+            android:checked="true"
+            android:layout_marginBottom="16dp" />
+
         <!-- Activation Mode -->
         <TextView
             android:layout_width="wrap_content"

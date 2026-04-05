@@ -17,6 +17,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.preference.PreferenceManager
+import androidx.wear.ambient.AmbientLifecycleObserver
 import com.ilanp13.shabbatalertdismisser.shared.HolidayCalculator
 import com.ilanp13.shabbatalertdismisser.wear.ui.ShabbatFace
 import com.ilanp13.shabbatalertdismisser.wear.ui.theme.ShabbatWatchTheme
@@ -35,6 +36,19 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
     private lateinit var controller: ShabbatModeController
     private lateinit var bannerManager: AlertBannerManager
     private var buttonDownTime = 0L
+    private val isAmbient = mutableStateOf(false)
+
+    private val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
+        override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
+            isAmbient.value = true
+        }
+        override fun onExitAmbient() {
+            isAmbient.value = false
+        }
+        override fun onUpdateAmbient() {
+            // Called periodically in ambient mode — good for time updates
+        }
+    }
 
     private val stopLockTaskReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -68,7 +82,9 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
         controller = ShabbatModeController(this)
         bannerManager = AlertBannerManager(this)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Use ambient mode for always-on display (power-efficient, dims when wrist down)
+        val ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
+        lifecycle.addObserver(ambientObserver)
 
         enterLockTask()
 
@@ -88,10 +104,12 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val useAnalog = prefs.getString(WearDataReceiver.PREF_FACE_STYLE, "digital") == "analog"
+        val showSeconds = prefs.getBoolean(WearDataReceiver.PREF_SHOW_SECONDS, true)
 
         setContent {
             ShabbatWatchTheme {
                 val alertText by bannerManager.alertText.collectAsState()
+                val ambient by isAmbient
 
                 var windowInfo by remember { mutableStateOf(controller.getCurrentWindowInfo()) }
                 var hebrewDate by remember { mutableStateOf(formatHebrewDate()) }
@@ -131,7 +149,8 @@ class ShabbatWatchFaceActivity : ComponentActivity() {
                     alertText = alertText,
                     batteryLevel = batteryLevel,
                     useAnalog = useAnalog,
-                    isAmbient = false
+                    showSeconds = showSeconds && !ambient,
+                    isAmbient = ambient
                 )
             }
         }

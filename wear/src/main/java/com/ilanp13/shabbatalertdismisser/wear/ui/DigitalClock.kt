@@ -17,27 +17,29 @@ import java.util.Locale
 fun DigitalClock(
     modifier: Modifier = Modifier,
     color: Color = Color.White,
+    showSeconds: Boolean = true,
     isAmbient: Boolean = false
 ) {
-    var time by remember { mutableStateOf(formatTime()) }
+    val format = if (showSeconds) "HH:mm:ss" else "HH:mm"
+    var time by remember(format) { mutableStateOf(formatTime(format)) }
 
-    LaunchedEffect(isAmbient) {
+    LaunchedEffect(isAmbient, showSeconds) {
         while (true) {
-            time = formatTime()
-            delay(if (isAmbient) 60_000L else 1_000L)
+            time = formatTime(format)
+            delay(if (isAmbient || !showSeconds) 60_000L else 1_000L)
         }
     }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Text(
             text = time,
-            fontSize = 48.sp,
+            fontSize = if (showSeconds) 40.sp else 48.sp,
             fontWeight = FontWeight.Light,
             color = color
         )
     }
 }
 
-private fun formatTime(): String {
-    return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+private fun formatTime(format: String): String {
+    return SimpleDateFormat(format, Locale.getDefault()).format(Date())
 }

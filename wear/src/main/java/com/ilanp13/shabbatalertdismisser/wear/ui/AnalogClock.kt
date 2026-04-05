@@ -22,14 +22,15 @@ fun AnalogClock(
     modifier: Modifier = Modifier,
     color: Color = Color.White,
     accentColor: Color = ShabbatGold,
+    showSeconds: Boolean = true,
     isAmbient: Boolean = false
 ) {
     var calendar by remember { mutableStateOf(Calendar.getInstance()) }
 
-    LaunchedEffect(isAmbient) {
+    LaunchedEffect(isAmbient, showSeconds) {
         while (true) {
             calendar = Calendar.getInstance()
-            delay(if (isAmbient) 60_000L else 1_000L)
+            delay(if (isAmbient || !showSeconds) 60_000L else 1_000L)
         }
     }
 
@@ -66,7 +67,7 @@ fun AnalogClock(
             val minuteAngle = Math.toRadians((minute * 6 - 90).toDouble())
             drawHand(center, minuteAngle, radius * 0.7f, color, 2.5f)
 
-            if (!isAmbient) {
+            if (showSeconds && !isAmbient) {
                 val secondAngle = Math.toRadians((second * 6 - 90).toDouble())
                 drawHand(center, secondAngle, radius * 0.75f, accentColor, 1f)
             }

@@ -213,4 +213,5 @@
     <string name="watch_disable_spo2">כבה מד חמצן בדם</string>
     <string name="watch_disable_step_counter">כבה מונה צעדים</string>
     <string name="watch_disable_body_sensors">כבה חיישני גוף נוספים</string>
+    <string name="watch_show_seconds">הצג שניות על פני השעון</string>
 </resources>

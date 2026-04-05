@@ -19,6 +19,7 @@ class WatchSettingsActivity : AppCompatActivity() {
 
         setupWatchStatus()
         setupFaceStyle()
+        setupToggle(R.id.switchShowSeconds, "watch_show_seconds", true)
         setupActivationMode()
         setupOffsets()
         setupBatteryToggles()
