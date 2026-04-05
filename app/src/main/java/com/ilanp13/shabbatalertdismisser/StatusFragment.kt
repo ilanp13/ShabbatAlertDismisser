@@ -786,7 +786,7 @@ class StatusFragment : Fragment() {
         val color = getAlertTypeColor(alert.type)
         val regionData = regions.map { MapRegionData(it, color, 0.35f, it in selectedRegions) }
         val header = getString(R.string.map_now_header, alert.title)
-        drawMiniMapPolygons(regionData, true, header)
+        drawMiniMapPolygons(regionData, true, header, getAlertTypeColor(alert.type))
     }
 
     private fun updateMiniMapFromCached(alert: AlertCacheService.CachedAlert) {
@@ -1282,7 +1282,8 @@ class StatusFragment : Fragment() {
     private fun drawMiniMapPolygons(
         regionData: List<MapRegionData>,
         isActive: Boolean,
-        headerText: String?
+        headerText: String?,
+        headerColor: Int = android.graphics.Color.RED
     ) {
         val ctx = context ?: return
         miniMapView.overlays.removeAll { it !is org.osmdroid.views.overlay.compass.CompassOverlay }
@@ -1399,7 +1400,7 @@ class StatusFragment : Fragment() {
                         else android.graphics.Color.parseColor("#CC333333")
                     paint.style = android.graphics.Paint.Style.FILL
                     canvas.drawRect(0f, 0f, canvas.width.toFloat(), 40f, paint)
-                    paint.color = if (isActive) android.graphics.Color.RED else android.graphics.Color.WHITE
+                    paint.color = if (isActive) headerColor else android.graphics.Color.WHITE
                     paint.textSize = 22f
                     paint.typeface = if (isActive) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
                     canvas.drawText(currentHeader, 8f, 30f, paint)
@@ -1500,7 +1501,13 @@ class StatusFragment : Fragment() {
                     if (endedCount > 0) append(" 🟢$endedCount")
                 }
             }
-        drawMiniMapPolygons(regionData, activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM }, header)
+        val dominantLevel = when {
+            activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM } -> RegionAlertTracker.RegionLevel.ALARM
+            activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.WARNING } -> RegionAlertTracker.RegionLevel.WARNING
+            else -> RegionAlertTracker.RegionLevel.EVENT_ENDED
+        }
+        val dominantColor = RegionAlertTracker.getLevelColor(dominantLevel)
+        drawMiniMapPolygons(regionData, activeRegions.any { it.value.level == RegionAlertTracker.RegionLevel.ALARM }, header, dominantColor)
 
         // Update blocks area with live summary
         updateLiveModeBlocks(activeRegions, selectedRegions)
@@ -1564,6 +1571,8 @@ class StatusFragment : Fragment() {
             }
             val regionNames = regions.map { it.key }
                 .sortedWith(compareByDescending<String> { it in selectedRegions }.thenBy { it })
+            val lastUpdate = regions.maxOf { it.value.lastUpdate }
+            val lastUpdateAgo = AlertCacheService.formatTimeAgo(ctx, lastUpdate)
 
             val userLat = prefs.getFloat("latitude", 31.7683f).toDouble()
             val userLon = prefs.getFloat("longitude", 35.2137f).toDouble()
@@ -1610,7 +1619,7 @@ class StatusFragment : Fragment() {
             }
 
             block.addView(TextView(ctx).apply {
-                text = "$levelName (${regionNames.size})"
+                text = "$levelName (${regionNames.size}) · $lastUpdateAgo"
                 textSize = 10f
                 setTypeface(null, android.graphics.Typeface.BOLD)
             })

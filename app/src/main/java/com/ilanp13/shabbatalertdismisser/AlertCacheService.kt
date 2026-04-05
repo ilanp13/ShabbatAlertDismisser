@@ -159,7 +159,7 @@ object AlertCacheService {
         val grouped = alerts.groupBy { alert ->
             val age = now - alert.timestampMs
             val bucketSize = when {
-                age < thirtyMin -> 60_000L          // 1 minute
+                age < thirtyMin -> 3 * 60_000L      // 3 minutes
                 age < threeHours -> 10 * 60_000L    // 10 minutes
                 else -> 30 * 60_000L                 // 30 minutes
             }
