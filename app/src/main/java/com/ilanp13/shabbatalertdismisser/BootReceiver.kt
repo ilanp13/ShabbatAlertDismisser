@@ -42,7 +42,8 @@ class BootReceiver : BroadcastReceiver() {
                     editor.putString("hebcal_parasha", result.parasha)
                 }
                 editor.apply()
-                WatchSyncService.syncSchedule(context)
+                // Watch sync disabled for now
+                // WatchSyncService.syncSchedule(context)
                 Log.d("BootReceiver", "Hebcal times refreshed: ${result.windows.size} windows")
             }
         }.start()

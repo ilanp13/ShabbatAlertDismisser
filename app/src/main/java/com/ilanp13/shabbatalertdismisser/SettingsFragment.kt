@@ -98,7 +98,8 @@ class SettingsFragment : Fragment() {
         setupLanguageSpinner()
         setupThemeSpinner()
         setupRegionPicker()
-        setupWatchSettingsButton()
+        // Watch features disabled for now — uncomment to re-enable
+        // setupWatchSettingsButton()
 
         updateLocationText()
         updateRegionPickerLabel()
@@ -410,7 +411,8 @@ class SettingsFragment : Fragment() {
                     editor.putString("hebcal_parasha", result.parasha)
                 }
                 editor.apply()
-                WatchSyncService.syncSchedule(requireContext())
+                // Watch sync disabled for now
+                // WatchSyncService.syncSchedule(requireContext())
             }
         }.start()
     }
